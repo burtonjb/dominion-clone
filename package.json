@@ -2,7 +2,6 @@
   "name": "dominion-clone",
   "version": "1.0.0",
   "description": "",
-  "type": "module",
   "scripts": {
     "setup": "npm install && npm run build",
     "clean": "rm -rf dist/*",
