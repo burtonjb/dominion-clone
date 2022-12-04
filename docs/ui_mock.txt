@@ -1,0 +1,34 @@
+============= Supply ============
+{46} Copper   (0) [Treasure] +1 Money
+{40} Silver   (3) [Treasure] +2 Money
+{30} Gold     (6) [Treasure] +3 Money
+{8}  Estate   (2) [Victory]  1 VP
+{8}  Duchy    (5) [Victory]  3 VP
+{8}  Province (8) [Victory]  6 VP
+-------------------------------
+{10} Cellar   (2) [Action]   +1 Action. Discard any number of cards, then draw that many.
+{10} Market   (5) [Action]   +1 Card. +1 Action. +1 Buy. +1 Money.
+{10} Merchant (3) [Action]   +1 Card. +1 Action. The first time you play a silver this...
+{10} Militia  (4) [Act, Att] +2 Money. Each other player discards down to 3 cards in hand.
+{10} Mine     (5) [Action]   Trash a treasure from your hand. Gain a Treasure to your hand...
+{10} Moat     (2) [Act, Rea] +2 Cards | When another player plays an attack...
+{10} Remodel  (4) [Action]   Trash a card from your hand. Gain a card costing up to (2) more
+{10} Smithy   (4) [Action]   +3 Cards.
+{10} Village  (4) [Action]   +1 Card. +2 Actions
+{10} Workshop (3) [Action]   Gain a card costing up to (4)
+=============== Player Info ============
+Player1: Deck: 5 | Hand: 5 | Discard: 0 | VP: 3
+Player2: Deck: 5 | Hand: 5 | Discard: 0 | VP: 3
+
+Active Player: Name: Player1 | Action: 1 | Buy: 1 | Money: 0
+Active Phase: Buy
+============== Hand Info ===============
+{3}  Copper   (0) [Treasure] +1 Money
+{2}  Estate   (2) [Victory]  1 VP
+
+====== Prompt ======
+You may play treasures (type the name, ALL, or DONE)
+> 
+====== Help ======
+h: open help modal      esc: quit
+t: open trash           l: toggle logs
