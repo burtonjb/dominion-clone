@@ -1,12 +1,16 @@
-import { Card } from "./Card";
+import { CardPile } from "./CardPile";
 import { Kingdom } from "./Kingdom";
 
 export class Supply {
-  public baseCards: Array<Array<Card>>;
+  public baseCards: Array<CardPile>;
   public kingdom: Kingdom;
 
-  constructor(baseCards: Array<Array<Card>>, kingdom: Kingdom) {
+  constructor(baseCards: Array<CardPile>, kingdom: Kingdom) {
     this.baseCards = baseCards;
     this.kingdom = kingdom;
+  }
+
+  public allPiles(): Array<CardPile> {
+    return [...this.baseCards, ...this.kingdom.kingdomCards];
   }
 }

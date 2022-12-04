@@ -24,12 +24,12 @@ export class KingdomConfigRegistry {
     return this.kingdoms.get(name);
   }
 
-  newKingdom(name: string): Kingdom | undefined {
+  newKingdom(numberOfPlayers: number, name: string): Kingdom | undefined {
     const config = this.kingdoms.get(name);
     if (config == undefined) {
       return undefined;
     }
-    return createKingdom(config.cards);
+    return createKingdom(numberOfPlayers, config.cards);
   }
 }
 

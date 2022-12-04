@@ -42,8 +42,4 @@ export class Card {
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
   }
-
-  public toString(): string {
-    return `${this.name} (${this.cost}) ${this.types}`;
-  }
 }

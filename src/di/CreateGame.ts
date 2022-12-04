@@ -1,4 +1,5 @@
 import * as BasicCards from "../config/cards/Basic";
+import { CardPile } from "../model/CardPile";
 import { Game } from "../model/Game";
 import { Kingdom } from "../model/Kingdom";
 import { Player } from "../model/Player";
@@ -16,7 +17,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
   const players = createPlayers(random, numberOfPlayers);
 
   // create the kingdom based on the number of players
-  const kingdom = createKingdom([]);
+  const kingdom = createKingdom(numberOfPlayers, []);
 
   const supply = createSupply(numberOfPlayers, kingdom);
 
@@ -41,17 +42,38 @@ function createSupply(numberOfPlayers: number, kingdom: Kingdom): Supply {
   return new Supply(
     [
       // populate with basic treasures
-      createNInstances(60 - numberOfPlayers, () => cardConfigRegistry.newCard(BasicCards.Copper.name)!),
-      createNInstances(40, () => cardConfigRegistry.newCard(BasicCards.Silver.name)!),
-      createNInstances(30, () => cardConfigRegistry.newCard(BasicCards.Gold.name)!),
+      new CardPile(
+        BasicCards.Copper.name,
+        createNInstances(60 - numberOfPlayers * 7, () => cardConfigRegistry.newCard(BasicCards.Copper.name)!)
+      ),
+      new CardPile(
+        BasicCards.Silver.name,
+        createNInstances(40, () => cardConfigRegistry.newCard(BasicCards.Silver.name)!)
+      ),
+      new CardPile(
+        BasicCards.Gold.name,
+        createNInstances(30, () => cardConfigRegistry.newCard(BasicCards.Gold.name)!)
+      ),
 
       // populate with victory cards - 2 players have 8 of each type, 3 or more have 12 of each type
-      createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Estate.name)!),
-      createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Duchy.name)!),
-      createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Gold.name)!),
+      new CardPile(
+        BasicCards.Estate.name,
+        createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Estate.name)!)
+      ),
+      new CardPile(
+        BasicCards.Duchy.name,
+        createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Duchy.name)!)
+      ),
+      new CardPile(
+        BasicCards.Province.name,
+        createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Gold.name)!)
+      ),
 
       // curses. 10 in the supply for each player beyond the first
-      createNInstances((numberOfPlayers - 1) * 10, () => cardConfigRegistry.newCard(BasicCards.Curse.name)!),
+      new CardPile(
+        BasicCards.Curse.name,
+        createNInstances((numberOfPlayers - 1) * 10, () => cardConfigRegistry.newCard(BasicCards.Curse.name)!)
+      ),
     ],
     kingdom
   );

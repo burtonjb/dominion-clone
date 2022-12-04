@@ -1,4 +1,5 @@
 import { Card, DominionExpansion } from "./Card";
+import { CardPile } from "./CardPile";
 
 export interface KingdomParams {
   name: string;
@@ -7,9 +8,9 @@ export interface KingdomParams {
 }
 
 export class Kingdom {
-  public kingdomCards: Array<Array<Card>>;
+  public kingdomCards: Array<CardPile>;
 
-  constructor(kingdomCards: Array<Array<Card>>) {
+  constructor(kingdomCards: Array<CardPile>) {
     this.kingdomCards = kingdomCards;
   }
 }

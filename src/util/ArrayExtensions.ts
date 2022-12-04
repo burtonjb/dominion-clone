@@ -26,3 +26,11 @@ export function createNInstances<T>(n: number, ctor: () => T): Array<T> {
   }
   return out;
 }
+
+// Somewhat dumb function, but I don't really do inline for-loops anymore so I feel like this
+// is more natural. Otherwise its 3 lines to do something n times which can quickly get messy
+export function doNTimes(n: number, f: (a?: any) => any) {
+  for (let i = 0; i < n; i++) {
+    f();
+  }
+}
