@@ -1,10 +1,11 @@
-import { Random } from "../util/Random";
+import { Random } from "../../util/Random";
 import { Card } from "./Card";
 import { Player } from "./Player";
 import { Supply } from "./Supply";
-import * as BasicCards from "../config/cards/Basic";
+import * as BasicCards from "../../config/cards/Basic";
 import { CardPile } from "./CardPile";
-import { doNTimes } from "../util/ArrayExtensions";
+import { doNTimes } from "../../util/ArrayExtensions";
+import { EventLog } from "../events/EventLog";
 
 export interface GameParams {
   seed: number;
@@ -26,6 +27,8 @@ export class Game {
 
   public trash: Array<Card>;
 
+  public eventLog: EventLog;
+
   constructor(random: Random, players: Array<Player>, supply: Supply) {
     this.random = random;
     this.players = players;
@@ -35,6 +38,8 @@ export class Game {
     // pick the first player randomly
     this.activePlayerIndex = this.random.randomInt(0, players.length);
     this.currentPhase = TurnPhase.ACTION;
+
+    this.eventLog = new EventLog();
   }
 
   // determines if the game is still in progress or is finished
@@ -48,42 +53,44 @@ export class Game {
   public playCard(card: Card, player: Player) {
     // only handles treasure cards with only money values right now
     player.money += card.worth;
-    player.hand = player.hand.filter((c) => c != card);
+    player.removeCard(card);
     player.cardsInPlay.push(card);
+    this.eventLog.publishEvent({ type: "PlayCardEvent", player: player, card: card });
   }
 
   public buyCard(cardPile: CardPile, player: Player) {
     const activePlayer = this.getActivePlayer();
-    const gainedCard = this.gainCard(cardPile, player);
+    const gainedCard = this.gainCard(cardPile, player, true);
     activePlayer.buys -= 1;
     activePlayer.money -= gainedCard.cost;
   }
 
-  public gainCard(cardPile: CardPile, player: Player): Card {
+  public gainCard(cardPile: CardPile, player: Player, wasBought: boolean): Card {
     // only handles gaining cards from the supply to the player's discard pile for now
     const cardToGain = cardPile.cards.shift();
     if (cardToGain == undefined) {
       throw new Error("Card not found in pile"); // there UX layer did not validate the inputs properly so throwing.
     }
     player.discardPile.unshift(cardToGain);
+    this.eventLog.publishEvent({ type: "GainCardEvent", player: player, card: cardToGain, wasBought: wasBought });
     return cardToGain;
   }
 
-  public discardCard(source: Array<Card>, card: Card, player: Player) {
-    const index = source.findIndex((c) => c == card);
-    source.splice(index, 1);
+  public discardCard(card: Card, player: Player) {
+    player.removeCard(card);
     player.discardPile.unshift(card); // put on-top of discard pile
+    this.eventLog.publishEvent({ type: "DiscardCardEvent", player: player, card: card });
   }
 
   public cleanUp() {
     const activePlayer = this.getActivePlayer();
     // discard all cards in play
     const cardsInPlay = activePlayer.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
-    cardsInPlay.forEach((card) => this.discardCard(activePlayer.cardsInPlay, card, activePlayer));
+    cardsInPlay.forEach((card) => this.discardCard(card, activePlayer));
 
     // discard all cards in hand
     const cardsInHand = activePlayer.hand.slice();
-    cardsInHand.forEach((card) => this.discardCard(activePlayer.hand, card, activePlayer));
+    cardsInHand.forEach((card) => this.discardCard(card, activePlayer));
 
     // draw a new hand of 5 cards
     doNTimes(5, () => activePlayer.drawCard());

@@ -1,6 +1,6 @@
-import { CardParams, CardType } from "../model/Card";
-import { CardPile } from "../model/CardPile";
-import { Kingdom } from "../model/Kingdom";
+import { CardParams, CardType } from "../domain/objects/Card";
+import { CardPile } from "../domain/objects/CardPile";
+import { Kingdom } from "../domain/objects/Kingdom";
 import { createNInstances } from "../util/ArrayExtensions";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 

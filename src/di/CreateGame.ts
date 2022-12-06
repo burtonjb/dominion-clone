@@ -1,9 +1,9 @@
 import * as BasicCards from "../config/cards/Basic";
-import { CardPile } from "../model/CardPile";
-import { Game } from "../model/Game";
-import { Kingdom } from "../model/Kingdom";
-import { Player } from "../model/Player";
-import { Supply } from "../model/Supply";
+import { CardPile } from "../domain/objects/CardPile";
+import { Game } from "../domain/objects/Game";
+import { Kingdom } from "../domain/objects/Kingdom";
+import { Player } from "../domain/objects/Player";
+import { Supply } from "../domain/objects/Supply";
 import { createNInstances } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
@@ -33,9 +33,13 @@ function createPlayers(random: Random, numberOfPlayers: number): Array<Player> {
     const coppers = createNInstances(7, () => cardConfigRegistry.newCard(BasicCards.Copper.name)!);
     const estates = createNInstances(3, () => cardConfigRegistry.newCard(BasicCards.Estate.name)!);
     const initialCards = [...coppers, ...estates];
-    players.push(new Player(random, initialCards));
+    players.push(new Player(createName(i), random, initialCards));
   }
   return players;
+}
+
+function createName(index: number): string {
+  return `player_${index}`;
 }
 
 function createSupply(numberOfPlayers: number, kingdom: Kingdom): Supply {

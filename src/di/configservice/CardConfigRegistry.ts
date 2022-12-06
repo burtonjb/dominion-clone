@@ -1,4 +1,4 @@
-import { Card, CardParams } from "../../model/Card";
+import { Card, CardParams } from "../../domain/objects/Card";
 
 /* 
 Provides information about all cards that are available

@@ -1,4 +1,4 @@
-import { Kingdom, KingdomParams } from "../../model/Kingdom";
+import { Kingdom, KingdomParams } from "../../domain/objects/Kingdom";
 import { createKingdom } from "../CreateKingdom";
 
 export class KingdomConfigRegistry {

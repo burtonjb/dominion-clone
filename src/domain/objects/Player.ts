@@ -1,5 +1,5 @@
-import { doNTimes, shuffleArray } from "../util/ArrayExtensions";
-import { Random } from "../util/Random";
+import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
+import { Random } from "../../util/Random";
 import { Card } from "./Card";
 
 let playerId = 0;
@@ -7,6 +7,7 @@ let playerId = 0;
 export class Player {
   private random: Random;
   private id: number;
+  public readonly name: string;
 
   public hand: Array<Card>;
   public drawPile: Array<Card>;
@@ -19,9 +20,10 @@ export class Player {
 
   public turns: number;
 
-  constructor(random: Random, initialCards: Array<Card>) {
+  constructor(name: string, random: Random, initialCards: Array<Card>) {
     this.random = random;
     this.id = playerId++;
+    this.name = name;
 
     // right now start game logic is in the constructor, but I might want to change this
     shuffleArray(initialCards, random);
@@ -61,6 +63,17 @@ export class Player {
 
   public allCards(): Array<Card> {
     return [...this.hand, ...this.drawPile, ...this.discardPile, ...this.cardsInPlay];
+  }
+
+  // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)
+  public removeCard(card: Card) {
+    const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile];
+    for (const container of containers) {
+      const index = container.findIndex((c) => c == card);
+      if (index > -1) {
+        container.splice(index, 1); // remove the card from the container (in place)
+      }
+    }
   }
 
   public calculateVictoryPoints() {

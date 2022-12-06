@@ -1,5 +1,5 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
-import { CardParams, CardType, DominionExpansion } from "../../model/Card";
+import { CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 
 const Cellar: CardParams = {
   name: "Cellar",

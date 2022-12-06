@@ -1,10 +1,10 @@
 import { createGame } from "./di/CreateGame";
-import { CardType } from "./model/Card";
-import { Game, TurnPhase } from "./model/Game";
-import { Player } from "./model/Player";
-import readLineSync from "readline-sync";
+import { CardType } from "./domain/objects/Card";
+import { Game, TurnPhase } from "./domain/objects/Game";
+import * as BasicCards from "./config/cards/Basic";
+import { question } from "./util/PromiseExtensions";
 
-function main() {
+async function main() {
   const game = createGame(2, new Date().getTime());
   // while no winner
   // start turn
@@ -16,7 +16,7 @@ function main() {
     if (game.currentPhase == TurnPhase.ACTION) {
       game.currentPhase = TurnPhase.BUY; // no-op the action phase for now since I don't have actions
     } else if (game.currentPhase == TurnPhase.BUY) {
-      handleBuyPhase(game);
+      await handleBuyPhase(game);
     } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
       handleCleanUpPhase(game);
     }
@@ -27,12 +27,12 @@ function main() {
 // The buy phase is broken up into two parts:
 // 1. playing treasures
 // 2. and then actually buying cards
-function handleBuyPhase(game: Game) {
+async function handleBuyPhase(game: Game) {
   const activePlayer = game.getActivePlayer();
   console.log(activePlayer.infoString());
   let donePlayingTreasures = !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE)); //skip this if there's no treasures
   while (!donePlayingTreasures) {
-    const input = readLineSync.question(
+    const input = await question(
       `Play a treasure from your hand: ${activePlayer.hand.map((c) => c.name)}, or 'end' to end\n> `
     );
     const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
@@ -43,6 +43,12 @@ function handleBuyPhase(game: Game) {
     if (input.length > 0 && singleMatch) {
       const matchingCard = matchingCards[0];
       game.playCard(matchingCard, activePlayer);
+    } else if (input.toLowerCase() == "all") {
+      // play all coppers, silvers, golds
+      const m = activePlayer.hand.filter(
+        (c) => c.name == BasicCards.Copper.name || c.name == BasicCards.Silver.name || c.name == BasicCards.Gold.name
+      );
+      m.forEach((c) => game.playCard(c, activePlayer));
     } else if (input.toLowerCase() == "end") {
       donePlayingTreasures = true;
     } else {
@@ -55,7 +61,7 @@ function handleBuyPhase(game: Game) {
   }
   let doneBuying = activePlayer.buys <= 0;
   while (!doneBuying) {
-    const input = readLineSync.question(
+    const input = await question(
       `Buy a treasure from the supply: ${game.supply.allPiles().map((p) => p.name)}, or 'end' to end.\n> `
     );
     const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
@@ -82,10 +88,6 @@ function handleCleanUpPhase(game: Game) {
   console.log("Cleaning up player: " + game.activePlayerIndex);
   game.cleanUp();
   game.currentPhase = TurnPhase.ACTION;
-}
-
-function printPlayerInfo(player: Player) {
-  console.log(player.infoString());
 }
 
 main();

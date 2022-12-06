@@ -1,6 +1,6 @@
 import { kingdomConfigRegistry } from "../../di/configservice/KingdomConfigRegistry";
-import { DominionExpansion } from "../../model/Card";
-import { KingdomParams } from "../../model/Kingdom";
+import { DominionExpansion } from "../../domain/objects/Card";
+import { KingdomParams } from "../../domain/objects/Kingdom";
 import * as BaseCards from "../cards/Base";
 
 const FirstGame: KingdomParams = {

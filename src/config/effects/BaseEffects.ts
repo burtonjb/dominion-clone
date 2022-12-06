@@ -1,6 +1,6 @@
-import { CardEffect } from "../../model/CardEffect";
-import { Kingdom } from "../../model/Kingdom";
-import { Player } from "../../model/Player";
+import { CardEffect } from "../../domain/objects/CardEffect";
+import { Kingdom } from "../../domain/objects/Kingdom";
+import { Player } from "../../domain/objects/Player";
 
 interface GainMoneyParams {
   amount: number;
