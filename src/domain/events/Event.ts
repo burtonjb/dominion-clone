@@ -1,7 +1,17 @@
+import { GainActionsParams, GainBuysParams, GainMoneyParams } from "../../config/effects/BaseEffects";
 import { Card } from "../objects/Card";
-import { Player } from "../objects/Player";
+import { CardLocation, Player } from "../objects/Player";
 
-export type Event = PlayCardEvent | GainMoneyEvent | GainCardEvent | DiscardCardEvent;
+export type Event =
+  | PlayCardEvent
+  | GainMoneyEvent
+  | GainCardEvent
+  | GainActionsEvent
+  | DiscardCardEvent
+  | GainBuysEvent
+  | DrawCardEvent
+  | RevealCardEvent
+  | TrashCardEvent;
 
 export interface BaseEvent {
   readonly type: string;
@@ -10,23 +20,49 @@ export interface BaseEvent {
 }
 
 export interface PlayCardEvent extends BaseEvent {
-  readonly type: "PlayCardEvent";
+  readonly type: "PlayCard";
   readonly card: Card;
 }
 
-export interface GainMoneyEvent extends BaseEvent {
-  readonly type: "GainMoneyEvent";
-  readonly source: Event;
-  readonly amount: number;
+export interface GainMoneyEvent extends BaseEvent, GainMoneyParams {
+  readonly type: "GainMoney";
+  readonly card: Card;
+}
+
+export interface GainActionsEvent extends BaseEvent, GainActionsParams {
+  readonly type: "GainActions";
+  readonly card: Card;
+}
+
+export interface GainBuysEvent extends BaseEvent, GainBuysParams {
+  readonly type: "GainBuys";
+  readonly card: Card;
 }
 
 export interface GainCardEvent extends BaseEvent {
-  readonly type: "GainCardEvent";
+  readonly type: "GainCard";
   readonly card: Card;
   readonly wasBought: boolean;
+  readonly toLocation?: CardLocation;
 }
 
 export interface DiscardCardEvent extends BaseEvent {
-  readonly type: "DiscardCardEvent";
+  readonly type: "DiscardCard";
+  readonly card: Card;
+}
+
+export interface DrawCardEvent extends BaseEvent {
+  readonly type: "DrawCard";
+  // FIXME: have a param for the source effect and a param for the card that will be drawn
+  readonly card: Card;
+}
+
+export interface RevealCardEvent extends BaseEvent {
+  readonly type: "RevealCard";
+  readonly card: Card;
+}
+
+export interface TrashCardEvent extends BaseEvent {
+  readonly type: "TrashCard";
   readonly card: Card;
 }

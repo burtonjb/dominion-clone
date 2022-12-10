@@ -1,8 +1,16 @@
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
+import { Game } from "./Game";
 
 let playerId = 0;
+
+export enum CardLocation {
+  TOP_OF_DECK = "TopOfDeck",
+  HAND = "Hand",
+  DISCARD = "Discard",
+  IN_PLAY = "InPlay",
+}
 
 export class Player {
   private random: Random;
@@ -29,8 +37,7 @@ export class Player {
     shuffleArray(initialCards, random);
     this.drawPile = initialCards;
     this.hand = [];
-    // draw cards from deck
-    doNTimes(5, () => this.drawCard());
+    this.drawHand();
 
     this.discardPile = [];
     this.cardsInPlay = [];
@@ -40,6 +47,11 @@ export class Player {
     this.money = 0;
 
     this.turns = 0;
+  }
+
+  public drawHand() {
+    // draw cards from deck
+    doNTimes(5, () => this.drawCard());
   }
 
   public drawCard() {
@@ -61,11 +73,29 @@ export class Player {
     }
   }
 
+  public topNCards(numberOfCards: number): Array<Card> {
+    if (this.drawPile.length >= numberOfCards) {
+      // draw a card from your deck
+    } else if (this.drawPile.length < numberOfCards && this.discardPile.length > 0) {
+      // shuffle your discard, put it below your deck, and then draw
+      shuffleArray(this.discardPile, this.random);
+      while (this.discardPile.length > 0) {
+        const topCard = this.discardPile.shift()!;
+        this.drawPile.push(topCard);
+      }
+    } else {
+      // do nothing, no cards left in deck and discardPile
+    }
+    return this.drawPile.slice(0, numberOfCards);
+  }
+
   public allCards(): Array<Card> {
     return [...this.hand, ...this.drawPile, ...this.discardPile, ...this.cardsInPlay];
   }
 
   // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)
+  // this might actually be wrong, since once the card is lost track of (e.g. shuffled into the deck)
+  // its no longer tracked. But this method will still track the card...
   public removeCard(card: Card) {
     const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile];
     for (const container of containers) {
@@ -76,9 +106,9 @@ export class Player {
     }
   }
 
-  public calculateVictoryPoints() {
+  public calculateVictoryPoints(game: Game) {
     return this.allCards()
-      .map((card) => card.victoryPoints)
+      .map((card) => card.calculateVictoryPoints(this, game))
       .reduce((prev, cur) => prev + cur);
   }
 

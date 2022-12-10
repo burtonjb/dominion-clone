@@ -1,6 +1,6 @@
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
-import { Player } from "./Player";
+import { CardLocation, Player } from "./Player";
 import { Supply } from "./Supply";
 import * as BasicCards from "../../config/cards/Basic";
 import { CardPile } from "./CardPile";
@@ -55,7 +55,7 @@ export class Game {
     player.money += card.worth;
     player.removeCard(card);
     player.cardsInPlay.push(card);
-    this.eventLog.publishEvent({ type: "PlayCardEvent", player: player, card: card });
+    this.eventLog.publishEvent({ type: "PlayCard", player: player, card: card });
   }
 
   public buyCard(cardPile: CardPile, player: Player) {
@@ -65,21 +65,48 @@ export class Game {
     activePlayer.money -= gainedCard.cost;
   }
 
-  public gainCard(cardPile: CardPile, player: Player, wasBought: boolean): Card {
+  public gainCard(cardPile: CardPile, player: Player, wasBought: boolean, toLocation?: CardLocation): Card {
     // only handles gaining cards from the supply to the player's discard pile for now
     const cardToGain = cardPile.cards.shift();
     if (cardToGain == undefined) {
       throw new Error("Card not found in pile"); // there UX layer did not validate the inputs properly so throwing.
     }
-    player.discardPile.unshift(cardToGain);
-    this.eventLog.publishEvent({ type: "GainCardEvent", player: player, card: cardToGain, wasBought: wasBought });
+    if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
+      player.discardPile.unshift(cardToGain);
+    } else if (toLocation == CardLocation.TOP_OF_DECK) {
+      player.drawPile.unshift(cardToGain);
+    } else if (toLocation == CardLocation.HAND) {
+      player.hand.unshift(cardToGain);
+    }
+    this.eventLog.publishEvent({
+      type: "GainCard",
+      player: player,
+      card: cardToGain,
+      wasBought: wasBought,
+      toLocation: toLocation,
+    });
     return cardToGain;
+  }
+
+  public gainCardByName(cardName: string, player: Player, wasBought: boolean): Card | undefined {
+    const pile = this.supply.allPiles().find((pile) => pile.name == cardName);
+    if (pile != undefined) {
+      return this.gainCard(pile, player, wasBought);
+    } else {
+      return undefined;
+    }
   }
 
   public discardCard(card: Card, player: Player) {
     player.removeCard(card);
     player.discardPile.unshift(card); // put on-top of discard pile
-    this.eventLog.publishEvent({ type: "DiscardCardEvent", player: player, card: card });
+    this.eventLog.publishEvent({ type: "DiscardCard", player: player, card: card });
+  }
+
+  public trashCard(card: Card, player: Player) {
+    player.removeCard(card);
+    this.trash.push(card);
+    this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
   }
 
   public cleanUp() {
@@ -104,6 +131,9 @@ export class Game {
     this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
   }
 
+  /*
+  Returns the active/current player
+  */
   public getActivePlayer(): Player {
     return this.players[this.activePlayerIndex];
   }
@@ -111,12 +141,12 @@ export class Game {
   public calculateWinners(): Array<Player> {
     // winner is the player with the highest VP then with the lowest number of turns taken.
     // If there's a tie, they all win!
-    const highestVp = Math.max(...this.players.map((p) => p.calculateVictoryPoints()));
+    const highestVp = Math.max(...this.players.map((p) => p.calculateVictoryPoints(this)));
     const lowestTurnWithHighestVp = Math.min(
-      ...this.players.filter((player) => player.calculateVictoryPoints() == highestVp).map((player) => player.turns)
+      ...this.players.filter((player) => player.calculateVictoryPoints(this) == highestVp).map((player) => player.turns)
     );
     return this.players.filter(
-      (player) => player.calculateVictoryPoints() == highestVp && player.turns == lowestTurnWithHighestVp
+      (player) => player.calculateVictoryPoints(this) == highestVp && player.turns == lowestTurnWithHighestVp
     );
   }
 }

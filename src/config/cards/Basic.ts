@@ -1,7 +1,9 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { GainMoney } from "../effects/BaseEffects";
 
 // This file is the basic cards from the base dominion set
+// - copper, silver, gold, estate, duchy, province, curse
 
 const Copper: CardParams = {
   name: "Copper",
@@ -10,6 +12,7 @@ const Copper: CardParams = {
   worth: 1,
   kingdomCard: false,
   expansion: DominionExpansion.BASE,
+  playEffects: [new GainMoney({ amount: 1 })],
 };
 
 const Silver: CardParams = {
@@ -19,6 +22,7 @@ const Silver: CardParams = {
   worth: 2,
   kingdomCard: false,
   expansion: DominionExpansion.BASE,
+  playEffects: [new GainMoney({ amount: 2 })],
 };
 
 const Gold: CardParams = {
@@ -28,6 +32,7 @@ const Gold: CardParams = {
   worth: 3,
   kingdomCard: false,
   expansion: DominionExpansion.BASE,
+  playEffects: [new GainMoney({ amount: 3 })],
 };
 
 const Estate: CardParams = {

@@ -1,3 +1,7 @@
+import { BasicCardEffectConfig, CardEffect, CardEffectConfig } from "./CardEffect";
+import { Game } from "./Game";
+import { Player } from "./Player";
+
 // internal counter for tracking cards' uniqueness (for debugging if required)
 let cardNumber = 0;
 
@@ -14,6 +18,10 @@ export enum DominionExpansion {
   BASE = "Base",
 }
 
+export interface ReactionEffects {
+  onOtherPlayEffect?: Array<CardEffectConfig>;
+}
+
 export interface CardParams {
   name: string;
   types: Array<CardType>;
@@ -22,6 +30,9 @@ export interface CardParams {
   victoryPoints?: number;
   expansion: DominionExpansion;
   kingdomCard: boolean;
+  playEffects?: Array<CardEffectConfig>;
+  reactionEffects?: ReactionEffects;
+  calculateVictoryPoints?: (player: Player, game: Game) => number;
 }
 
 export class Card {
@@ -32,6 +43,7 @@ export class Card {
   public types: Array<CardType>;
   public worth: number;
   public victoryPoints: number;
+  private playEffects: Array<CardEffectConfig>;
 
   constructor(params: CardParams) {
     this.params = params;
@@ -41,5 +53,14 @@ export class Card {
     this.types = params.types.slice(); // copy of the config
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
+    this.playEffects = params.playEffects ? params.playEffects : [];
+  }
+
+  public calculateVictoryPoints(player: Player, game: Game): number {
+    if (this.params.calculateVictoryPoints) {
+      return this.params.calculateVictoryPoints(player, game);
+    } else {
+      return this.victoryPoints;
+    }
   }
 }

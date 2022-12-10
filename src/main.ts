@@ -6,12 +6,6 @@ import { question } from "./util/PromiseExtensions";
 
 async function main() {
   const game = createGame(2, new Date().getTime());
-  // while no winner
-  // start turn
-  // allow playing of actions (there are none right now, so skip)
-  // allow playing of treasures (1x1 or all default)
-  // allow buying of cards (or skip)
-  // go to the next players' turn
   while (!game.isGameFinished()) {
     if (game.currentPhase == TurnPhase.ACTION) {
       game.currentPhase = TurnPhase.BUY; // no-op the action phase for now since I don't have actions

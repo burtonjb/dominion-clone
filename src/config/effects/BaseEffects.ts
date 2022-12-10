@@ -1,12 +1,14 @@
-import { CardEffect } from "../../domain/objects/CardEffect";
-import { Kingdom } from "../../domain/objects/Kingdom";
-import { Player } from "../../domain/objects/Player";
+import { Card } from "../../domain/objects/Card";
+import { BasicCardEffectConfig } from "../../domain/objects/CardEffect";
+import { Game } from "../../domain/objects/Game";
+import { CardLocation, Player } from "../../domain/objects/Player";
+import { doNTimes } from "../../util/ArrayExtensions";
 
-interface GainMoneyParams {
+export interface GainMoneyParams {
   amount: number;
 }
 
-class GainMoney implements CardEffect<GainMoneyParams> {
+export class GainMoney implements BasicCardEffectConfig<GainMoneyParams> {
   public readonly type = "GainMoney";
   public params: GainMoneyParams;
 
@@ -14,32 +16,39 @@ class GainMoney implements CardEffect<GainMoneyParams> {
     this.params = params;
   }
 
-  effect(player: Player, kingdom: Kingdom) {
+  async effect(card: Card, player: Player, game: Game) {
     player.money += this.params.amount;
+    game.eventLog.publishEvent({
+      type: "GainMoney",
+      card: card,
+      player: player,
+      amount: this.params.amount,
+    });
   }
 }
 
-interface GainActionParams {
+export interface GainActionsParams {
   amount: number;
 }
 
-class GainActions implements CardEffect<GainActionParams> {
+export class GainActions implements BasicCardEffectConfig<GainActionsParams> {
   public readonly type = "GainActions";
-  public params: GainActionParams;
+  public params: GainActionsParams;
 
   constructor(params: GainMoneyParams) {
     this.params = params;
   }
 
-  effect(player: Player, kingdom: Kingdom) {
+  async effect(card: Card, player: Player, game: Game) {
     player.actions += this.params.amount;
+    game.eventLog.publishEvent({ type: "GainActions", card: card, player: player, amount: this.params.amount });
   }
 }
 
-interface DrawCardsParams {
+export interface DrawCardsParams {
   amount: number;
 }
-class DrawCards implements CardEffect<DrawCardsParams> {
+export class DrawCards implements BasicCardEffectConfig<DrawCardsParams> {
   public readonly type = "DrawCards";
   public params: DrawCardsParams;
 
@@ -47,15 +56,18 @@ class DrawCards implements CardEffect<DrawCardsParams> {
     this.params = params;
   }
 
-  effect(player: Player, kingdom: Kingdom) {
-    //FIXME: implement drawing and gaining cards
+  async effect(card: Card, player: Player, game: Game) {
+    doNTimes(this.params.amount, () => {
+      player.drawCard();
+    });
+    game.eventLog.publishEvent({ type: "DrawCard", player: player, card: card });
   }
 }
 
-interface GainBuysParams {
+export interface GainBuysParams {
   amount: number;
 }
-class GainBuys implements CardEffect<GainBuysParams> {
+export class GainBuys implements BasicCardEffectConfig<GainBuysParams> {
   public readonly type = "GainActions";
   public params: GainBuysParams;
 
@@ -63,7 +75,30 @@ class GainBuys implements CardEffect<GainBuysParams> {
     this.params = params;
   }
 
-  effect(player: Player, kingdom: Kingdom) {
+  async effect(card: Card, player: Player, game: Game) {
     player.buys += this.params.amount;
+    game.eventLog.publishEvent({
+      type: "GainBuys",
+      card: card,
+      player: player,
+      amount: this.params.amount,
+    });
+  }
+}
+
+export interface GainCardParams {
+  name: string;
+  toLocation?: CardLocation;
+}
+export class GainCard implements BasicCardEffectConfig<GainCardParams> {
+  public readonly type = "GainCard";
+  public params: GainCardParams;
+
+  constructor(params: GainCardParams) {
+    this.params = params;
+  }
+
+  async effect(source: Card, player: Player, game: Game) {
+    game.gainCardByName(this.params.name, player, false);
   }
 }
