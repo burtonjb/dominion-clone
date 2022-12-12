@@ -37,6 +37,7 @@ export class Game {
 
     // pick the first player randomly
     this.activePlayerIndex = this.random.randomInt(0, players.length);
+    this.getActivePlayer().turns += 1;
     this.currentPhase = TurnPhase.ACTION;
 
     this.eventLog = new EventLog();
@@ -50,9 +51,8 @@ export class Game {
     return isProvincePileEmpty || areAtLeast3PilesEmpty;
   }
 
-  public playCard(card: Card, player: Player) {
-    // only handles treasure cards with only money values right now
-    player.money += card.worth;
+  public async playCard(card: Card, player: Player) {
+    card.play(player, this);
     player.removeCard(card);
     player.cardsInPlay.push(card);
     this.eventLog.publishEvent({ type: "PlayCard", player: player, card: card });
@@ -88,7 +88,12 @@ export class Game {
     return cardToGain;
   }
 
-  public gainCardByName(cardName: string, player: Player, wasBought: boolean): Card | undefined {
+  public gainCardByName(
+    cardName: string,
+    player: Player,
+    wasBought: boolean,
+    toLocation?: CardLocation
+  ): Card | undefined {
     const pile = this.supply.allPiles().find((pile) => pile.name == cardName);
     if (pile != undefined) {
       return this.gainCard(pile, player, wasBought);
@@ -129,6 +134,7 @@ export class Game {
 
     // advance the active player index, have the next player start their turn
     this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
+    this.getActivePlayer().turns += 1;
   }
 
   /*
@@ -141,12 +147,12 @@ export class Game {
   public calculateWinners(): Array<Player> {
     // winner is the player with the highest VP then with the lowest number of turns taken.
     // If there's a tie, they all win!
-    const highestVp = Math.max(...this.players.map((p) => p.calculateVictoryPoints(this)));
+    const highestVp = Math.max(...this.players.map((p) => p.calculateVictoryPoints()));
     const lowestTurnWithHighestVp = Math.min(
-      ...this.players.filter((player) => player.calculateVictoryPoints(this) == highestVp).map((player) => player.turns)
+      ...this.players.filter((player) => player.calculateVictoryPoints() == highestVp).map((player) => player.turns)
     );
     return this.players.filter(
-      (player) => player.calculateVictoryPoints(this) == highestVp && player.turns == lowestTurnWithHighestVp
+      (player) => player.calculateVictoryPoints() == highestVp && player.turns == lowestTurnWithHighestVp
     );
   }
 }

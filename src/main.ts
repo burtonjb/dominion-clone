@@ -5,10 +5,10 @@ import * as BasicCards from "./config/cards/Basic";
 import { question } from "./util/PromiseExtensions";
 
 async function main() {
-  const game = createGame(2, new Date().getTime());
+  const game = createGame(1, new Date().getTime());
   while (!game.isGameFinished()) {
     if (game.currentPhase == TurnPhase.ACTION) {
-      game.currentPhase = TurnPhase.BUY; // no-op the action phase for now since I don't have actions
+      await handleActionPhase(game);
     } else if (game.currentPhase == TurnPhase.BUY) {
       await handleBuyPhase(game);
     } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
@@ -16,6 +16,36 @@ async function main() {
     }
   }
   console.dir(game.calculateWinners(), { depth: 3 });
+}
+
+async function handleActionPhase(game: Game) {
+  const activePlayer = game.getActivePlayer();
+  console.log(activePlayer.infoString());
+  let donePlayingActions = !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
+  const actionsRemaining = activePlayer.actions > 0;
+  while (!donePlayingActions && actionsRemaining) {
+    const input = await question(
+      `Play an action from your hand: ${activePlayer.hand.map((c) => c.name)}, or 'end' to end\n> `
+    );
+    const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
+    const matchingCards = activePlayer.hand
+      .filter((c) => c.types.includes(CardType.ACTION))
+      .filter((card) => card.name.match(inputMatch));
+    const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
+    if (input.length > 0 && singleMatch) {
+      const matchingCard = matchingCards[0];
+      activePlayer.actions -= 1;
+      await game.playCard(matchingCard, activePlayer);
+    } else if (input.toLowerCase() == "end") {
+      donePlayingActions = true;
+    } else {
+      console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+    }
+    // End the action playing phase if there's no actions left (to speed up game-play)
+    donePlayingActions = donePlayingActions || !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
+    console.log(activePlayer.infoString());
+  }
+  game.currentPhase = TurnPhase.BUY;
 }
 
 // The buy phase is broken up into two parts:

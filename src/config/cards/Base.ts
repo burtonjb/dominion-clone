@@ -1,6 +1,6 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { BooleanOption, ChooseCards } from "../../domain/objects/Choice";
+import { BooleanChoice, CardsFromPlayerChoice, ChooseCardFromSupply } from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, Player } from "../../domain/objects/Player";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
@@ -17,11 +17,12 @@ const Cellar: CardParams = {
     // active player chooses any cards from hand. For each card, discard it, then draw a card
     {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseCards(activePlayer, game, activePlayer.hand);
-        while (!input.isDone()) {
-          await input.loop();
-        }
-        const selectedCards = input.getSelected();
+        const input = new CardsFromPlayerChoice(
+          "Choose any cards to discard from your hand. For each card discarded, draw a new one",
+          activePlayer,
+          activePlayer.hand
+        );
+        const selectedCards = await input.getChoice();
 
         selectedCards.forEach((card) => {
           game.discardCard(card, activePlayer);
@@ -42,11 +43,13 @@ const Chapel: CardParams = {
     {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         // Choose up to 4 cards from hand to trash
-        const input = new ChooseCards(activePlayer, game, activePlayer.hand, { maxCards: 4 });
-        while (!input.isDone()) {
-          await input.loop();
-        }
-        const selectedCards = input.getSelected();
+        const input = new CardsFromPlayerChoice(
+          "Choose up to 4 cards to trash from your hand",
+          activePlayer,
+          activePlayer.hand,
+          { maxCards: 4 }
+        );
+        const selectedCards = await input.getChoice();
 
         selectedCards.forEach((card) => {
           game.trashCard(card, activePlayer);
@@ -80,11 +83,13 @@ const Harbinger: CardParams = {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         if (activePlayer.discardPile.length == 0) return; // skip if the player's discard is empty
 
-        const input = new ChooseCards(activePlayer, game, activePlayer.discardPile, { maxCards: 1 });
-        while (!input.isDone()) {
-          await input.loop();
-        }
-        const selectedCards = input.getSelected();
+        const input = new CardsFromPlayerChoice(
+          "Choose a card from your discard pile to add to the top of your deck",
+          activePlayer,
+          activePlayer.discardPile,
+          { maxCards: 1 }
+        );
+        const selectedCards = await input.getChoice();
 
         selectedCards.forEach((card) => {
           activePlayer.removeCard(card);
@@ -118,15 +123,14 @@ const Vassal: CardParams = {
       // Discard the top card of your deck (which can cause a reshuffle).
       // If it's an action card, you may play it (which doesn't use an action)
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        // const tCard = player.getTopCard() -- have to check for reshuffle
         const topCard = activePlayer.topNCards(1);
         if (topCard.length == 0) return; // just return if there's no cards in draw/discard piles
         game.discardCard(topCard[0], activePlayer);
         if (!topCard[0].types.includes(CardType.ACTION)) return; // exit early if the top card is not an action
-        const input = new BooleanOption(activePlayer, game);
-        const selected = await input.loop();
+        const input = new BooleanChoice("You may play the action card discarded", true);
+        const selected = await input.getChoice();
         if (selected) {
-          // play card (without using an action)
+          game.playCard(topCard[0], activePlayer);
         }
       },
     },
@@ -146,6 +150,19 @@ const Workshop: CardParams = {
   cost: 3,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new ChooseCardFromSupply(
+          "Choose a card to gain costing 4 or less",
+          game.supply,
+          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 4
+        );
+        const selected = await input.getChoice();
+        game.gainCard(selected, activePlayer, false);
+      },
+    },
+  ],
 };
 const Bureaucrat: CardParams = {
   name: "Bureaucrat",
@@ -164,7 +181,7 @@ const Gardens: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
-  calculateVictoryPoints: (player: Player, game: Game) => {
+  calculateVictoryPoints: (player: Player) => {
     return Math.floor(player.allCards().length / 10);
   },
 };
@@ -174,6 +191,10 @@ const Militia: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    // TODO: add attack
+  ],
 };
 const Moneylender: CardParams = {
   name: "Moneylender",
@@ -181,6 +202,22 @@ const Moneylender: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    {
+      // you may trash a copper from your hand for +3 money
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const copper = activePlayer.hand.find((c) => (c.name = BasicCards.Copper.name));
+        if (copper == undefined) return; // just return early if no coppers in hand
+
+        const input = new BooleanChoice("Trash a copper from your hand for +3 copper", true);
+        const selected = await input.getChoice();
+        if (selected) {
+          game.trashCard(copper, activePlayer);
+          await new GainMoney({ amount: 3 }).effect(card, activePlayer, game);
+        }
+      },
+    },
+  ],
 };
 const Poacher: CardParams = {
   name: "Poacher",
@@ -188,6 +225,25 @@ const Poacher: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      // discard a card for each empty pile in the supply
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const numberOfEmptyPiles = game.supply.emptyPiles().length;
+        if (numberOfEmptyPiles == 0) return; // return early if nothing's empty
+        const input = new CardsFromPlayerChoice("Choose cards to discard", activePlayer, activePlayer.discardPile, {
+          minCards: numberOfEmptyPiles,
+          maxCards: numberOfEmptyPiles,
+        });
+        const selected = await input.getChoice();
+        selected.forEach((card) => {
+          game.discardCard(card, activePlayer);
+        });
+      },
+    },
+  ],
 };
 const Remodel: CardParams = {
   name: "Remodel",
@@ -195,6 +251,32 @@ const Remodel: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    // trash a card from your hand. Gain one costing up to 2 more than the trashed card
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice(
+          "Choose a card from your hand to trash",
+          activePlayer,
+          activePlayer.hand,
+          {
+            minCards: 1,
+          }
+        );
+        const selected = await input.getChoice();
+
+        game.trashCard(selected[0], activePlayer);
+
+        const toGain = new ChooseCardFromSupply(
+          `Choose a card costing up to ${selected[0].cost}`,
+          game.supply,
+          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= selected[0].cost + 2
+        );
+        const gainPile = await toGain.getChoice();
+        game.gainCard(gainPile, activePlayer, false);
+      },
+    },
+  ],
 };
 const Smithy: CardParams = {
   name: "Smithy",
@@ -202,7 +284,7 @@ const Smithy: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
-  playEffects: [new DrawCards({ amount: 2 })],
+  playEffects: [new DrawCards({ amount: 3 })],
 };
 const ThroneRoom: CardParams = {
   name: "Throne Room",
@@ -210,6 +292,24 @@ const ThroneRoom: CardParams = {
   cost: 4,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    {
+      // play a card from your hand twice (it doesn't take additional actions)
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice(
+          "Choose an action card from your hand to play twice",
+          activePlayer,
+          activePlayer.hand.filter((card) => card.types.includes(CardType.ACTION)),
+          { maxCards: 1 }
+        );
+        const selected = await input.getChoice();
+        if (selected.length > 0) {
+          game.playCard(selected[0], activePlayer);
+          game.playCard(selected[0], activePlayer);
+        }
+      },
+    },
+  ],
 };
 const Bandit: CardParams = {
   name: "Bandit",
@@ -217,6 +317,10 @@ const Bandit: CardParams = {
   cost: 5,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    new GainCard({ name: BasicCards.Gold.name }),
+    // TODO: add the attack here
+  ],
 };
 const CouncilRoom: CardParams = {
   name: "Council Room",
@@ -229,12 +333,9 @@ const CouncilRoom: CardParams = {
     new GainBuys({ amount: 1 }),
     {
       prompt: "Each other player draws a card",
-      effect: async (card: Card, player: Player, game: Game) => {
-        game.players.forEach((p) => {
-          if (p != player) {
-            p.drawCard();
-          }
-        });
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.players.filter((p) => p != activePlayer);
+        otherPlayers.forEach((p) => p.drawCard());
       },
     },
   ],
@@ -281,6 +382,33 @@ const Mine: CardParams = {
   cost: 5,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    // trash a treasure from your hand. Gain another treasure costing up to 3 more than the trashed card to your hand
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice(
+          "Choose a card from your hand to trash",
+          activePlayer,
+          activePlayer.hand.filter((card) => card.types.includes(CardType.TREASURE)),
+          { minCards: 1 }
+        );
+        const selected = await input.getChoice();
+
+        game.trashCard(selected[0], activePlayer);
+
+        const toGain = new ChooseCardFromSupply(
+          `Choose a card costing up to ${selected[0].cost}`,
+          game.supply,
+          (pile) =>
+            pile.cards.length > 0 &&
+            pile.cards[0].cost <= selected[0].cost + 3 &&
+            pile.cards[0].types.includes(CardType.TREASURE)
+        );
+        const gainPile = await toGain.getChoice();
+        game.gainCard(gainPile, activePlayer, false, CardLocation.HAND);
+      },
+    },
+  ],
 };
 const Sentry: CardParams = {
   name: "Sentry",
@@ -295,6 +423,19 @@ const Witch: CardParams = {
   cost: 5,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    // TODO: wrap this in an attack method so moat/lighthouse can block it
+    {
+      // each other player gains a curse
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.players.filter((p) => p != activePlayer);
+        otherPlayers.forEach((otherPlayer) => {
+          game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+        });
+      },
+    },
+  ],
 };
 const Artisan: CardParams = {
   name: "Artisan",

@@ -106,16 +106,16 @@ export class Player {
     }
   }
 
-  public calculateVictoryPoints(game: Game) {
+  public calculateVictoryPoints() {
     return this.allCards()
-      .map((card) => card.calculateVictoryPoints(this, game))
+      .map((card) => card.calculateVictoryPoints(this))
       .reduce((prev, cur) => prev + cur);
   }
 
   public infoString(): string {
     return `Player${this.id} | actions: ${this.actions} | buys: ${this.buys} | money: ${this.money} | deck: ${
       this.drawPile.length
-    } | discard: ${this.discardPile.length} 
+    } | discard: ${this.discardPile.length} | VP: ${this.calculateVictoryPoints()}
     hand: ${this.hand.map((c) => c.name)}
     inPlay: ${this.cardsInPlay.map((c) => c.name)}`;
   }

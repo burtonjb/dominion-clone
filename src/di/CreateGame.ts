@@ -1,4 +1,5 @@
 import * as BasicCards from "../config/cards/Basic";
+import * as BaseCards from "../config/cards/Base";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
@@ -17,7 +18,11 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
   const players = createPlayers(random, numberOfPlayers);
 
   // create the kingdom based on the number of players
-  const kingdom = createKingdom(numberOfPlayers, []);
+  const kingdom = createKingdom(numberOfPlayers, [
+    BaseCards.Village.name,
+    BaseCards.Smithy.name,
+    BaseCards.Market.name,
+  ]);
 
   const supply = createSupply(numberOfPlayers, kingdom);
 

@@ -32,18 +32,17 @@ export interface CardParams {
   kingdomCard: boolean;
   playEffects?: Array<CardEffectConfig>;
   reactionEffects?: ReactionEffects;
-  calculateVictoryPoints?: (player: Player, game: Game) => number;
+  calculateVictoryPoints?: (player: Player) => number;
 }
 
 export class Card {
-  public readonly params: CardParams;
+  private readonly params: CardParams;
   private id: number;
   public name: string;
   public cost: number;
   public types: Array<CardType>;
   public worth: number;
   public victoryPoints: number;
-  private playEffects: Array<CardEffectConfig>;
 
   constructor(params: CardParams) {
     this.params = params;
@@ -53,14 +52,20 @@ export class Card {
     this.types = params.types.slice(); // copy of the config
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
-    this.playEffects = params.playEffects ? params.playEffects : [];
   }
 
-  public calculateVictoryPoints(player: Player, game: Game): number {
+  public calculateVictoryPoints(player: Player): number {
     if (this.params.calculateVictoryPoints) {
-      return this.params.calculateVictoryPoints(player, game);
+      return this.params.calculateVictoryPoints(player);
     } else {
       return this.victoryPoints;
+    }
+  }
+
+  public async play(player: Player, game: Game) {
+    if (!this.params.playEffects) return;
+    for (let i = 0; i < this.params.playEffects?.length; i++) {
+      await this.params.playEffects[i].effect(this, player, game);
     }
   }
 }
