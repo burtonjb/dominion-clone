@@ -11,6 +11,10 @@ export class CardConfigRegistry {
     this.cards = new Map();
   }
 
+  keys(): Array<string> {
+    return Array.from(this.cards.keys());
+  }
+
   values(): Array<CardParams> {
     return Array.from(this.cards.entries()).map((pair) => pair[1]);
   }

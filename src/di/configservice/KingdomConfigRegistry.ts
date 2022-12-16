@@ -8,6 +8,10 @@ export class KingdomConfigRegistry {
     this.kingdoms = new Map();
   }
 
+  keys(): Array<string> {
+    return Array.from(this.kingdoms.keys());
+  }
+
   values(): Array<KingdomParams> {
     return Array.from(this.kingdoms.entries()).map((pair) => pair[1]);
   }

@@ -25,8 +25,7 @@ export class BooleanChoice implements Choice<boolean> {
   }
 
   public async getChoice(): Promise<boolean> {
-    console.log(`${this.prompt} (t=yes, f=no)\n>`);
-    const input = await question(this.prompt);
+    const input = await question(`${this.prompt} (t=yes, f=no)\n> `);
     if (this.defaultValue == true) {
       if (input.toLowerCase().startsWith("f")) return false;
       return true;
@@ -73,13 +72,12 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
 
     while (!done) {
       const availableOptions = this.options.filter((card) => !selected.includes(card));
-      console.log(
+
+      const input = await question(
         `${this.prompt} (available: ${availableOptions.map((c) => c.name)}) (already selected: ${selected.map(
           (s) => s.name
         )})\n> `
       );
-
-      const input = await question(this.prompt);
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingCards = this.options
@@ -97,7 +95,7 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
       } else if (input.toLowerCase() == "end") {
         if (this.config.minCards && selected.length >= this.config.minCards) {
           done = true;
-        } else if (this.config.minCards == undefined) {
+        } else if (!this.config.minCards) {
           done = true;
         } else {
           console.debug("Not enough cards selected");
@@ -132,10 +130,9 @@ export class ChooseCardFromSupply implements Choice<CardPile> {
         .filter((pile) => pile.cards.length > 0) // filter out non-empty piles
         .filter((pile) => (this.filter ? this.filter(pile) : true));
 
-      const availableDisplay = available.map((p) => `{${p.cards.length}} ${p.name}`);
+      const availableDisplay = available.map((p) => `[{${p.cards.length}} ${p.name}] `);
 
-      console.log(`${this.prompt}. (available: ${availableDisplay}`);
-      const input = await question(this.prompt);
+      const input = await question(`${this.prompt}. (available: ${availableDisplay}\n> `);
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingPiles = this.supply

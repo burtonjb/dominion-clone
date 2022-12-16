@@ -137,9 +137,9 @@ export class Player {
   }
 
   public infoString(): string {
-    return `Player${this.id} | actions: ${this.actions} | buys: ${this.buys} | money: ${this.money} | deck: ${
-      this.drawPile.length
-    } | discard: ${this.discardPile.length} | VP: ${this.calculateVictoryPoints()}
+    return `Player${this.id} | actions: ${this.actions} | buys: ${this.buys} | money: ${this.money} | hand: ${
+      this.hand.length
+    } | deck: ${this.drawPile.length} | discard: ${this.discardPile.length} | VP: ${this.calculateVictoryPoints()}
     hand: ${this.hand.map((c) => c.name)}
     inPlay: ${this.cardsInPlay.map((c) => c.name)}`;
   }

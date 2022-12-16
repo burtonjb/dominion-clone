@@ -51,7 +51,6 @@ const Chapel: CardParams = {
           { maxCards: 4 }
         );
         const selectedCards = await input.getChoice();
-
         selectedCards.forEach((card) => {
           game.trashCard(card, activePlayer);
         });
@@ -113,11 +112,11 @@ const Merchant: CardParams = {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const source = card; // hold the merchant
         const gainMoneyOnFirstSilver: CardEffect = async (playedCard: Card, player: Player, game: Game) => {
-          //TODO: this is slightly wrong (it should be the first silver played, not if there's no silvers in play) but it doesn't materially affect the base set
-          if (card.name != BasicCards.Silver.name) return;
-          if (activePlayer.cardsInPlay.find((c) => c.name == BasicCards.Silver.name)) return;
+          if (playedCard.name != BasicCards.Silver.name) return;
+          if (activePlayer.cardsInPlay.filter((c) => c.name == BasicCards.Silver.name).length > 1) return;
           await new GainMoney({ amount: 1 }).effect(source, activePlayer, game);
         };
+        activePlayer.onPlayCardTriggers.push(gainMoneyOnFirstSilver);
       },
     },
   ],
@@ -138,10 +137,10 @@ const Vassal: CardParams = {
         if (topCard.length == 0) return; // just return if there's no cards in draw/discard piles
         game.discardCard(topCard[0], activePlayer);
         if (!topCard[0].types.includes(CardType.ACTION)) return; // exit early if the top card is not an action
-        const input = new BooleanChoice("You may play the action card discarded", true);
+        const input = new BooleanChoice(`You may play the action card discarded (${topCard[0].name})`, true);
         const selected = await input.getChoice();
         if (selected) {
-          game.playCard(topCard[0], activePlayer);
+          await game.playCard(topCard[0], activePlayer);
         }
       },
     },
@@ -279,12 +278,13 @@ const Poacher: CardParams = {
   playEffects: [
     new DrawCards({ amount: 1 }),
     new GainActions({ amount: 1 }),
+    new GainMoney({ amount: 1 }),
     {
       // discard a card for each empty pile in the supply
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const numberOfEmptyPiles = game.supply.emptyPiles().length;
         if (numberOfEmptyPiles == 0) return; // return early if nothing's empty
-        const input = new CardsFromPlayerChoice("Choose cards to discard", activePlayer, activePlayer.discardPile, {
+        const input = new CardsFromPlayerChoice("Choose cards to discard", activePlayer, activePlayer.hand, {
           minCards: numberOfEmptyPiles,
           maxCards: numberOfEmptyPiles,
         });
@@ -310,9 +310,7 @@ const Remodel: CardParams = {
           "Choose a card from your hand to trash",
           activePlayer,
           activePlayer.hand,
-          {
-            minCards: 1,
-          }
+          { minCards: 1, maxCards: 1 }
         );
         const selected = await input.getChoice();
 
@@ -355,8 +353,8 @@ const ThroneRoom: CardParams = {
         );
         const selected = await input.getChoice();
         if (selected.length > 0) {
-          game.playCard(selected[0], activePlayer);
-          game.playCard(selected[0], activePlayer);
+          await game.playCard(selected[0], activePlayer);
+          await game.playCard(selected[0], activePlayer);
         }
       },
     },

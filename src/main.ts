@@ -86,12 +86,12 @@ async function handleBuyPhase(game: Game) {
     // End the treasure playing phase if there's no treasures left (to speed up game-play)
     donePlayingTreasures =
       donePlayingTreasures || !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE));
-    console.log(activePlayer.infoString());
   }
   let doneBuying = activePlayer.buys <= 0;
   while (!doneBuying) {
+    console.log(activePlayer.infoString());
     const input = await question(
-      `Buy a treasure from the supply: ${game.supply
+      `Buy a card from the supply: ${game.supply
         .allPiles()
         .filter((p) => p.cards.length > 0 && p.cards[0].cost <= activePlayer.money)
         .map((p) => p.name)}, or 'end' to end.\n> `

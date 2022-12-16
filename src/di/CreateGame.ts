@@ -18,11 +18,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
   const players = createPlayers(random, numberOfPlayers);
 
   // create the kingdom based on the number of players
-  const kingdom = createKingdom(numberOfPlayers, [
-    BaseCards.Village.name,
-    BaseCards.Smithy.name,
-    BaseCards.Market.name,
-  ]);
+  const kingdom = createKingdom(numberOfPlayers, [BaseCards.Library.name]);
 
   const supply = createSupply(numberOfPlayers, kingdom);
 
@@ -78,10 +74,13 @@ function createSupply(numberOfPlayers: number, kingdom: Kingdom): Supply {
         createNInstances(numberOfPlayers <= 2 ? 8 : 12, () => cardConfigRegistry.newCard(BasicCards.Gold.name)!)
       ),
 
-      // curses. 10 in the supply for each player beyond the first
+      // curses. 10 in the supply for each player beyond the first (If there's one pile, I guess there's 10 curses)
       new CardPile(
         BasicCards.Curse.name,
-        createNInstances((numberOfPlayers - 1) * 10, () => cardConfigRegistry.newCard(BasicCards.Curse.name)!)
+        createNInstances(
+          numberOfPlayers == 1 ? 10 : (numberOfPlayers - 1) * 10,
+          () => cardConfigRegistry.newCard(BasicCards.Curse.name)!
+        )
       ),
     ],
     kingdom

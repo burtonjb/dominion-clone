@@ -15,6 +15,7 @@ export class EventLog {
       event.timestamp = new Date().getTime();
     }
     this.events.push(event); // assuming already ordered by timestamp
+    // console.log(event)
   }
 
   public getEventsAfter(timestamp: number) {

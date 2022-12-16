@@ -48,16 +48,30 @@ export class Game {
     const isProvincePileEmpty =
       this.supply.baseCards.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
     const areAtLeast3PilesEmpty = this.supply.allPiles().filter((pile) => pile.cards.length == 0).length >= 3;
-    return isProvincePileEmpty || areAtLeast3PilesEmpty;
+
+    const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty;
+    if (gameFinished) {
+      console.warn("Provinces empty? " + isProvincePileEmpty);
+
+      console.warn(
+        "Empty piles: " +
+          this.supply
+            .allPiles()
+            .filter((pile) => pile.cards.length == 0)
+            .map((p) => p.name)
+      );
+    }
+
+    return gameFinished;
   }
 
   public async playCard(card: Card, player: Player) {
-    card.play(player, this);
+    player.removeCard(card);
+    player.cardsInPlay.push(card);
+    await card.play(player, this);
     for (const effect of player.onPlayCardTriggers) {
       await effect.call(this, card, player, this);
     }
-    player.removeCard(card);
-    player.cardsInPlay.push(card);
     this.eventLog.publishEvent({ type: "PlayCard", player: player, card: card });
   }
 
@@ -103,7 +117,7 @@ export class Game {
   ): Card | undefined {
     const pile = this.supply.allPiles().find((pile) => pile.name == cardName);
     if (pile != undefined) {
-      return this.gainCard(pile, player, wasBought);
+      return this.gainCard(pile, player, wasBought, toLocation);
     } else {
       return undefined;
     }
