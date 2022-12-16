@@ -5,3 +5,4 @@
 * client/server split
 * add intrigue
 * persistence layer (store results to sqlite?)
+* Add eslint config to remove unused imports

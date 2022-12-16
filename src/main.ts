@@ -22,10 +22,12 @@ async function handleActionPhase(game: Game) {
   const activePlayer = game.getActivePlayer();
   console.log(activePlayer.infoString());
   let donePlayingActions = !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
-  const actionsRemaining = activePlayer.actions > 0;
+  let actionsRemaining = activePlayer.actions > 0;
   while (!donePlayingActions && actionsRemaining) {
     const input = await question(
-      `Play an action from your hand: ${activePlayer.hand.map((c) => c.name)}, or 'end' to end\n> `
+      `Play an action from your hand: ${activePlayer.hand
+        .filter((c) => c.types.includes(CardType.ACTION))
+        .map((c) => c.name)}, or 'end' to end\n> `
     );
     const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
     const matchingCards = activePlayer.hand
@@ -43,6 +45,7 @@ async function handleActionPhase(game: Game) {
     }
     // End the action playing phase if there's no actions left (to speed up game-play)
     donePlayingActions = donePlayingActions || !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
+    actionsRemaining = activePlayer.actions > 0;
     console.log(activePlayer.infoString());
   }
   game.currentPhase = TurnPhase.BUY;
@@ -57,7 +60,9 @@ async function handleBuyPhase(game: Game) {
   let donePlayingTreasures = !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE)); //skip this if there's no treasures
   while (!donePlayingTreasures) {
     const input = await question(
-      `Play a treasure from your hand: ${activePlayer.hand.map((c) => c.name)}, or 'end' to end\n> `
+      `Play a treasure from your hand: ${activePlayer.hand
+        .filter((c) => c.types.includes(CardType.TREASURE))
+        .map((c) => c.name)}, or 'end' to end\n> `
     );
     const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
     const matchingCards = activePlayer.hand
@@ -86,7 +91,10 @@ async function handleBuyPhase(game: Game) {
   let doneBuying = activePlayer.buys <= 0;
   while (!doneBuying) {
     const input = await question(
-      `Buy a treasure from the supply: ${game.supply.allPiles().map((p) => p.name)}, or 'end' to end.\n> `
+      `Buy a treasure from the supply: ${game.supply
+        .allPiles()
+        .filter((p) => p.cards.length > 0 && p.cards[0].cost <= activePlayer.money)
+        .map((p) => p.name)}, or 'end' to end.\n> `
     );
     const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
     const matchingCards = game.supply

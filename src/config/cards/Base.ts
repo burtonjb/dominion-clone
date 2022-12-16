@@ -1,8 +1,9 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { attack, CardEffect } from "../../domain/objects/CardEffect";
 import { BooleanChoice, CardsFromPlayerChoice, ChooseCardFromSupply } from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
-import { CardLocation, Player } from "../../domain/objects/Player";
+import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 import * as BasicCards from "./Basic";
 
@@ -66,7 +67,7 @@ const Moat: CardParams = {
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
   playEffects: [new DrawCards({ amount: 2 })],
-  // TODO: reaction effects
+  // TODO: reaction effects (I've hacked in the reaction for now)
 };
 
 const Harbinger: CardParams = {
@@ -108,7 +109,17 @@ const Merchant: CardParams = {
   playEffects: [
     new DrawCards({ amount: 1 }),
     new GainActions({ amount: 1 }),
-    // TODO: add the triggered effect from the money gaining
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const source = card; // hold the merchant
+        const gainMoneyOnFirstSilver: CardEffect = async (playedCard: Card, player: Player, game: Game) => {
+          //TODO: this is slightly wrong (it should be the first silver played, not if there's no silvers in play) but it doesn't materially affect the base set
+          if (card.name != BasicCards.Silver.name) return;
+          if (activePlayer.cardsInPlay.find((c) => c.name == BasicCards.Silver.name)) return;
+          await new GainMoney({ amount: 1 }).effect(source, activePlayer, game);
+        };
+      },
+    },
   ],
 };
 const Vassal: CardParams = {
@@ -172,7 +183,30 @@ const Bureaucrat: CardParams = {
   kingdomCard: true,
   playEffects: [
     new GainCard({ name: BasicCards.Silver.name, toLocation: CardLocation.TOP_OF_DECK }),
-    // TODO: the attack part of the card
+    {
+      // each other player reveals a victory card from their hand and top-decks it, or reveals their hand if they have no victory cards
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            const victoryCardsInHand = otherPlayer.hand.filter((c) => c.types.includes(CardType.VICTORY));
+            if (victoryCardsInHand.length == 0) {
+              // if no victory cards, reveal on
+              game.revealCards(otherPlayer.hand, otherPlayer);
+              return;
+            }
+            const input = new CardsFromPlayerChoice("Choose victory card to topdeck", otherPlayer, victoryCardsInHand, {
+              minCards: 1,
+              maxCards: 1,
+            });
+            const selected = await input.getChoice();
+            selected.forEach((c) => {
+              otherPlayer.transferCard(c, otherPlayer.hand, otherPlayer.drawPile, CardPosition.TOP);
+            });
+          });
+        }
+      },
+    },
   ],
 };
 const Gardens: CardParams = {
@@ -193,7 +227,24 @@ const Militia: CardParams = {
   kingdomCard: true,
   playEffects: [
     new GainMoney({ amount: 2 }),
-    // TODO: add attack
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            const handSize = otherPlayer.hand.length;
+            const numToDiscard = handSize - 3;
+            if (numToDiscard <= 0) return;
+            const input = new CardsFromPlayerChoice("Choose cards to discard", otherPlayer, otherPlayer.hand, {
+              minCards: numToDiscard,
+              maxCards: numToDiscard,
+            });
+            const selected = await input.getChoice();
+            selected.forEach((c) => game.discardCard(c, otherPlayer));
+          });
+        }
+      },
+    },
   ],
 };
 const Moneylender: CardParams = {
@@ -268,7 +319,7 @@ const Remodel: CardParams = {
         game.trashCard(selected[0], activePlayer);
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].cost}`,
+          `Choose a card costing up to ${selected[0].cost + 2}`,
           game.supply,
           (pile) => pile.cards.length > 0 && pile.cards[0].cost <= selected[0].cost + 2
         );
@@ -319,7 +370,30 @@ const Bandit: CardParams = {
   kingdomCard: true,
   playEffects: [
     new GainCard({ name: BasicCards.Gold.name }),
-    // TODO: add the attack here
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          attack(card, otherPlayer, game, async () => {
+            const top2 = otherPlayer.topNCards(2);
+            game.revealCards(top2, otherPlayer);
+            const treasures = top2.filter((c) => c.name != BasicCards.Copper.name);
+            const other = top2.filter((c) => !top2.includes(c));
+            if (treasures.length > 0) {
+              const input = new CardsFromPlayerChoice(
+                "Choose an action card from your hand to play twice",
+                otherPlayer,
+                treasures,
+                { minCards: 1, maxCards: 1 }
+              );
+              const selected = await input.getChoice();
+              game.trashCard(selected[0], otherPlayer);
+            }
+            other.forEach((c) => game.discardCard(c, otherPlayer));
+          });
+        }
+      },
+    },
   ],
 };
 const CouncilRoom: CardParams = {
@@ -362,6 +436,32 @@ const Library: CardParams = {
   cost: 5,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const actions: Array<Card> = [];
+        while (
+          activePlayer.hand.length < 7 &&
+          (activePlayer.drawPile.length > 0 || activePlayer.discardPile.length > 0)
+        ) {
+          const topCard = activePlayer.topNCards(1);
+          if (!topCard[0].types.includes(CardType.ACTION)) {
+            activePlayer.drawCard();
+          } else {
+            const input = new BooleanChoice(`Put action: ${topCard[0].name} into hand?`, true);
+            const choice = await input.getChoice();
+            if (choice) {
+              activePlayer.drawCard();
+            } else {
+              const toSetAside = activePlayer.drawPile.shift()!;
+              actions.unshift(toSetAside);
+            }
+          }
+        }
+        actions.forEach((c) => game.discardCard(c, activePlayer));
+      },
+    },
+  ],
 };
 const Market: CardParams = {
   name: "Market",
@@ -397,7 +497,7 @@ const Mine: CardParams = {
         game.trashCard(selected[0], activePlayer);
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].cost}`,
+          `Choose a card costing up to ${selected[0].cost + 3}`,
           game.supply,
           (pile) =>
             pile.cards.length > 0 &&
@@ -416,6 +516,36 @@ const Sentry: CardParams = {
   cost: 5,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const top2 = activePlayer.topNCards(2);
+        const trashInput = new CardsFromPlayerChoice("Choose card(s) to trash", activePlayer, top2);
+        const toTrash = await trashInput.getChoice();
+        toTrash.forEach((c) => game.trashCard(c, activePlayer));
+        const remaining = top2.filter((c) => !toTrash.includes(c));
+
+        const discardInput = new CardsFromPlayerChoice("Choose card(s) to trash", activePlayer, remaining);
+        const toDiscard = await discardInput.getChoice();
+        toDiscard.forEach((c) => game.discardCard(c, activePlayer));
+        const afterDiscard = remaining.filter((c) => !toDiscard.includes(c));
+
+        if (afterDiscard.length == 2) {
+          const swapInput = new BooleanChoice(`Swap cards? ${afterDiscard.map((c) => c.name)}`, false);
+          const shouldSwap = await swapInput.getChoice();
+          if (shouldSwap) {
+            // pop the top 2 cards from the draw pile
+            const [c1, c2] = [activePlayer.drawPile.shift()!, activePlayer.drawPile.shift()!];
+            // push them back in swapped order
+            activePlayer.drawPile.unshift(c1);
+            activePlayer.drawPile.unshift(c2);
+          }
+        }
+      },
+    },
+  ],
 };
 const Witch: CardParams = {
   name: "Witch",
@@ -425,14 +555,15 @@ const Witch: CardParams = {
   kingdomCard: true,
   playEffects: [
     new DrawCards({ amount: 2 }),
-    // TODO: wrap this in an attack method so moat/lighthouse can block it
     {
       // each other player gains a curse
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const otherPlayers = game.players.filter((p) => p != activePlayer);
-        otherPlayers.forEach((otherPlayer) => {
-          game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
-        });
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+          });
+        }
       },
     },
   ],
@@ -443,6 +574,31 @@ const Artisan: CardParams = {
   cost: 6,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
+  playEffects: [
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new ChooseCardFromSupply(
+          `Choose a card costing up to 5`,
+          game.supply,
+          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 5
+        );
+        const pile = await input.getChoice();
+        game.gainCard(pile, activePlayer, false, CardLocation.HAND);
+      },
+    },
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice(
+          "Choose a card from your hand to topdeck",
+          activePlayer,
+          activePlayer.hand.filter((card) => card.types.includes(CardType.TREASURE)),
+          { minCards: 1, maxCards: 1 }
+        );
+        const selected = await input.getChoice();
+        activePlayer.transferCard(selected[0], activePlayer.hand, activePlayer.drawPile, CardPosition.TOP);
+      },
+    },
+  ],
 };
 
 cardConfigRegistry.registerAll(

@@ -64,6 +64,13 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
     const selected: Array<Card> = [];
     let done = false;
 
+    // if the number of cards is less than the required minimum, just return all the
+    // cards that are available (e.g.) if its trash 1 card from hand, and there's only 1
+    // card, then just return/trash that card
+    if (this.config.minCards && this.options.length <= this.config.minCards) {
+      return this.options;
+    }
+
     while (!done) {
       const availableOptions = this.options.filter((card) => !selected.includes(card));
       console.log(

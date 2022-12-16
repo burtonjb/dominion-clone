@@ -1,6 +1,7 @@
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
+import { CardEffect } from "./CardEffect";
 import { Game } from "./Game";
 
 let playerId = 0;
@@ -12,6 +13,11 @@ export enum CardLocation {
   IN_PLAY = "InPlay",
 }
 
+export enum CardPosition {
+  TOP = "Top",
+  BOTTOM = "Bottom",
+}
+
 export class Player {
   private random: Random;
   private id: number;
@@ -21,6 +27,8 @@ export class Player {
   public drawPile: Array<Card>;
   public discardPile: Array<Card>;
   public cardsInPlay: Array<Card>;
+
+  public onPlayCardTriggers: Array<CardEffect>;
 
   public actions: number;
   public buys: number;
@@ -45,6 +53,8 @@ export class Player {
     this.actions = 1;
     this.buys = 1;
     this.money = 0;
+
+    this.onPlayCardTriggers = [];
 
     this.turns = 0;
   }
@@ -106,6 +116,20 @@ export class Player {
     }
   }
 
+  public transferCard(card: Card, from: Array<Card>, to: Array<Card>, position: CardPosition) {
+    const cardIndex = from.findIndex((c) => c == card);
+    if (cardIndex == -1) {
+      console.warn("Unable to find card in transfercard method");
+      return;
+    }
+    from.splice(cardIndex, 1);
+    if (position == CardPosition.TOP) {
+      to.unshift(card);
+    } else if (position == CardPosition.BOTTOM) {
+      to.push(card);
+    }
+  }
+
   public calculateVictoryPoints() {
     return this.allCards()
       .map((card) => card.calculateVictoryPoints(this))
@@ -118,5 +142,26 @@ export class Player {
     } | discard: ${this.discardPile.length} | VP: ${this.calculateVictoryPoints()}
     hand: ${this.hand.map((c) => c.name)}
     inPlay: ${this.cardsInPlay.map((c) => c.name)}`;
+  }
+
+  public cleanUp(game: Game) {
+    // discard all cards in play
+    const cardsInPlay = this.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
+    cardsInPlay.forEach((card) => game.discardCard(card, this));
+
+    // discard all cards in hand
+    const cardsInHand = this.hand.slice();
+    cardsInHand.forEach((card) => game.discardCard(card, this));
+
+    // draw a new hand of 5 cards
+    doNTimes(5, () => this.drawCard());
+
+    // reset buys/actions/money
+    this.buys = 1;
+    this.money = 0;
+    this.actions = 1;
+
+    // clean up the onPlay effects
+    this.onPlayCardTriggers.length = 0;
   }
 }

@@ -53,9 +53,16 @@ export class Game {
 
   public async playCard(card: Card, player: Player) {
     card.play(player, this);
+    for (const effect of player.onPlayCardTriggers) {
+      await effect.call(this, card, player, this);
+    }
     player.removeCard(card);
     player.cardsInPlay.push(card);
     this.eventLog.publishEvent({ type: "PlayCard", player: player, card: card });
+  }
+
+  public revealCards(cards: Array<Card>, player: Player) {
+    this.eventLog.publishEvent({ type: "RevealCard", cards: cards, player: player });
   }
 
   public buyCard(cardPile: CardPile, player: Player) {
@@ -116,21 +123,7 @@ export class Game {
 
   public cleanUp() {
     const activePlayer = this.getActivePlayer();
-    // discard all cards in play
-    const cardsInPlay = activePlayer.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
-    cardsInPlay.forEach((card) => this.discardCard(card, activePlayer));
-
-    // discard all cards in hand
-    const cardsInHand = activePlayer.hand.slice();
-    cardsInHand.forEach((card) => this.discardCard(card, activePlayer));
-
-    // draw a new hand of 5 cards
-    doNTimes(5, () => activePlayer.drawCard());
-
-    // reset buys/actions/money
-    activePlayer.buys = 1;
-    activePlayer.money = 0;
-    activePlayer.actions = 1;
+    activePlayer.cleanUp(this);
 
     // advance the active player index, have the next player start their turn
     this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
@@ -142,6 +135,14 @@ export class Game {
   */
   public getActivePlayer(): Player {
     return this.players[this.activePlayerIndex];
+  }
+
+  /*
+  Return the other players in the game. 
+  */
+  public otherPlayers(player?: Player): Array<Player> {
+    const filterPlayer = player ? player : this.getActivePlayer();
+    return this.players.filter((p) => p != filterPlayer);
   }
 
   public calculateWinners(): Array<Player> {

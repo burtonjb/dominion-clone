@@ -10,7 +10,7 @@ export type Event =
   | DiscardCardEvent
   | GainBuysEvent
   | DrawCardEvent
-  | RevealCardEvent
+  | RevealCardsEvent
   | TrashCardEvent;
 
 export interface BaseEvent {
@@ -57,9 +57,9 @@ export interface DrawCardEvent extends BaseEvent {
   readonly card: Card;
 }
 
-export interface RevealCardEvent extends BaseEvent {
+export interface RevealCardsEvent extends BaseEvent {
   readonly type: "RevealCard";
-  readonly card: Card;
+  readonly cards: Array<Card>; // use an array of cards instead of a single card to lower log-spam
 }
 
 export interface TrashCardEvent extends BaseEvent {
