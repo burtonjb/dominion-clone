@@ -6,10 +6,10 @@ import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 
 export function createKingdom(numberOfPlayers: number, cardNames: Array<string>): Kingdom {
   const cards = cardNames.map((cardName) => {
-    const card = cardConfigRegistry.getParams(cardName)!;
+    const card = cardConfigRegistry.getParams(cardName);
     return new CardPile(
       cardName,
-      createNInstances(getNumberOfPileCards(numberOfPlayers, card), () => cardConfigRegistry.newCard(cardName)!)
+      createNInstances(getNumberOfPileCards(numberOfPlayers, card), () => cardConfigRegistry.newCard(cardName))
     );
   });
   return new Kingdom(cards);

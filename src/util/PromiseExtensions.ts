@@ -10,19 +10,3 @@ export const question = (prompt: string) =>
       resolve(input);
     })
   );
-
-type Callback<A> = (args: A) => void;
-
-/*
-Custom function for promisifying other functions.
-utils.promisify assumes the function is of the form f(args, (err, res)),
-but some functions don't have an error and this is breaking my code
-*/
-export function promisify<I, O>(f: (args: I, cb: Callback<O>) => void): (args: I) => Promise<O> {
-  return (args: I) =>
-    new Promise((resolve) => {
-      f(args, (callbackArgs) => {
-        resolve(callbackArgs);
-      });
-    });
-}

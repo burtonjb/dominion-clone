@@ -132,7 +132,7 @@ export class ChooseCardFromSupply implements Choice<CardPile> {
 
       const availableDisplay = available.map((p) => `[{${p.cards.length}} ${p.name}] `);
 
-      const input = await question(`${this.prompt}. (available: ${availableDisplay}\n> `);
+      const input = await question(`${this.prompt}. (available: ${availableDisplay})\n> `);
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingPiles = this.supply

@@ -1,6 +1,7 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack, CardEffect } from "../../domain/objects/CardEffect";
+import { CardPile } from "../../domain/objects/CardPile";
 import { BooleanChoice, CardsFromPlayerChoice, ChooseCardFromSupply } from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
@@ -485,22 +486,26 @@ const Mine: CardParams = {
     {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const input = new CardsFromPlayerChoice(
-          "Choose a card from your hand to trash",
+          "Choose a treasure from your hand to trash",
           activePlayer,
           activePlayer.hand.filter((card) => card.types.includes(CardType.TREASURE)),
-          { minCards: 1 }
+          { maxCards: 1 }
         );
         const selected = await input.getChoice();
 
         game.trashCard(selected[0], activePlayer);
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].cost + 3}`,
+          `Choose a treasure to gain costing up to ${selected[0].cost + 3}`,
           game.supply,
-          (pile) =>
-            pile.cards.length > 0 &&
-            pile.cards[0].cost <= selected[0].cost + 3 &&
-            pile.cards[0].types.includes(CardType.TREASURE)
+          (pile: CardPile) => {
+            const pileLength = pile.cards.length;
+            if (pileLength <= 0) return false; // return early if the pile is empty (so that later statements don't error)
+            const pileCost = pile.cards[0].cost;
+            const pileIsTreasure = pile.cards[0].types.includes(CardType.TREASURE);
+            const isApplicable = pileLength > 0 && pileCost <= selected[0].cost + 3 && pileIsTreasure;
+            return isApplicable;
+          }
         );
         const gainPile = await toGain.getChoice();
         game.gainCard(gainPile, activePlayer, false, CardLocation.HAND);
@@ -523,14 +528,17 @@ const Sentry: CardParams = {
         const trashInput = new CardsFromPlayerChoice("Choose card(s) to trash", activePlayer, top2);
         const toTrash = await trashInput.getChoice();
         toTrash.forEach((c) => game.trashCard(c, activePlayer));
-        const remaining = top2.filter((c) => !toTrash.includes(c));
 
-        const discardInput = new CardsFromPlayerChoice("Choose card(s) to trash", activePlayer, remaining);
+        const remaining = top2.filter((c) => !toTrash.includes(c));
+        if (remaining.length <= 0) return; // return early if both cards trashed
+
+        const discardInput = new CardsFromPlayerChoice("Choose card(s) to discard", activePlayer, remaining);
         const toDiscard = await discardInput.getChoice();
         toDiscard.forEach((c) => game.discardCard(c, activePlayer));
         const afterDiscard = remaining.filter((c) => !toDiscard.includes(c));
 
         if (afterDiscard.length == 2) {
+          // only provide the swap prompt if both cards are left
           const swapInput = new BooleanChoice(`Swap cards? ${afterDiscard.map((c) => c.name)}`, false);
           const shouldSwap = await swapInput.getChoice();
           if (shouldSwap) {
@@ -589,7 +597,7 @@ const Artisan: CardParams = {
         const input = new CardsFromPlayerChoice(
           "Choose a card from your hand to topdeck",
           activePlayer,
-          activePlayer.hand.filter((card) => card.types.includes(CardType.TREASURE)),
+          activePlayer.hand,
           { minCards: 1, maxCards: 1 }
         );
         const selected = await input.getChoice();

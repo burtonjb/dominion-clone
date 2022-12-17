@@ -4,7 +4,6 @@ import { CardLocation, Player } from "./Player";
 import { Supply } from "./Supply";
 import * as BasicCards from "../../config/cards/Basic";
 import { CardPile } from "./CardPile";
-import { doNTimes } from "../../util/ArrayExtensions";
 import { EventLog } from "../events/EventLog";
 
 export interface GameParams {
