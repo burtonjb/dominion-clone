@@ -1,7 +1,7 @@
-============= Supply ============
-{46} Copper   (0) [Treasure] +1 Money
-{40} Silver   (3) [Treasure] +2 Money
-{30} Gold     (6) [Treasure] +3 Money
+============= Supply ============                                                                                 |EVENT LOG HERE (still todo for EL UI)
+{46} Copper   (0) [Treasure] +1 Money                                                                             |Event 1
+{40} Silver   (3) [Treasure] +2 Money                                                                             |Event 2 ...
+{30} Gold     (6) [Treasure] +3 Money                                                                             |
 {8}  Estate   (2) [Victory]  1 VP
 {8}  Duchy    (5) [Victory]  3 VP
 {8}  Province (8) [Victory]  6 VP
