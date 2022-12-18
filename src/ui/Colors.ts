@@ -1,11 +1,11 @@
 import fs from "node:fs";
 
 export interface XTermColor {
-  colorId: number;
-  hexString: string;
-  rgb: { r: number; g: number; b: number };
-  hsl: { h: number; s: number; l: number };
-  name: string;
+  readonly colorId: number;
+  readonly hexString: string;
+  readonly rgb: { r: number; g: number; b: number };
+  readonly hsl: { h: number; s: number; l: number };
+  readonly name: string;
 }
 
 let xtermConfigFilePath = "./src/ui/data/XtermColors.json";
