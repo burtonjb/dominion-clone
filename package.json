@@ -14,7 +14,8 @@
     "test": "mocha",
     "build": "run-s prettier lint-fix compile test",
     "release": "run-s clean build",
-    "main": "ts-node-esm src/main.ts"
+    "main": "ts-node-esm src/main.ts",
+    "ui": "ts-node-esm src/ui-stub.ts"
   },
   "author": "",
   "license": "",
