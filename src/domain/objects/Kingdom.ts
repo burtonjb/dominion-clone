@@ -2,9 +2,9 @@ import { Card, DominionExpansion } from "./Card";
 import { CardPile } from "./CardPile";
 
 export interface KingdomParams {
-  name: string;
-  expansions: Array<DominionExpansion>;
-  cards: Array<string>;
+  readonly name: string;
+  readonly expansions: Array<DominionExpansion>;
+  readonly cards: Array<string>;
 }
 
 export class Kingdom {

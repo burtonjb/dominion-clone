@@ -87,13 +87,24 @@ export class Game {
 
   public buyCard(cardPile: CardPile, player: Player) {
     const activePlayer = this.getActivePlayer();
-    const gainedCard = this.gainCard(cardPile, player, true);
+    const gainedCard = this.gainCardFromSupply(cardPile, player, true);
     activePlayer.buys -= 1;
     activePlayer.money -= gainedCard.cost;
   }
 
-  public gainCard(cardPile: CardPile, player: Player, wasBought: boolean, toLocation?: CardLocation): Card {
-    // only handles gaining cards from the supply to the player's discard pile for now
+  // TODO: unify this with the below method. Right now I've just hacked it to support the Lurker function
+  public gainCard(card: Card, player: Player) {
+    player.discardPile.unshift(card);
+    this.eventLog.publishEvent({
+      type: "GainCard",
+      player: player,
+      card: card,
+      wasBought: false,
+      toLocation: undefined,
+    });
+  }
+
+  public gainCardFromSupply(cardPile: CardPile, player: Player, wasBought: boolean, toLocation?: CardLocation): Card {
     const cardToGain = cardPile.cards.shift();
     if (cardToGain == undefined) {
       throw new Error("Card not found in pile"); // there UX layer did not validate the inputs properly so throwing.
@@ -123,7 +134,7 @@ export class Game {
   ): Card | undefined {
     const pile = this.supply.allPiles().find((pile) => pile.name == cardName);
     if (pile != undefined) {
-      return this.gainCard(pile, player, wasBought, toLocation);
+      return this.gainCardFromSupply(pile, player, wasBought, toLocation);
     } else {
       return undefined;
     }
@@ -133,6 +144,14 @@ export class Game {
     player.removeCard(card);
     player.discardPile.unshift(card); // put on-top of discard pile
     this.eventLog.publishEvent({ type: "DiscardCard", player: player, card: card });
+  }
+
+  // TODO: unify the trash from player and trash from supply APIs
+  public trashCardFromSupply(pile: CardPile, player: Player) {
+    const card = pile.cards.shift();
+    if (!card) return;
+    this.trash.push(card);
+    this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
   }
 
   public trashCard(card: Card, player: Player) {

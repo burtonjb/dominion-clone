@@ -16,6 +16,7 @@ export enum CardType {
 
 export enum DominionExpansion {
   BASE = "Base",
+  INTRIGUE = "Intrigue",
 }
 
 export interface ReactionEffects {
@@ -23,16 +24,16 @@ export interface ReactionEffects {
 }
 
 export interface CardParams {
-  name: string;
-  types: Array<CardType>;
-  cost: number;
-  worth?: number;
-  victoryPoints?: number;
-  expansion: DominionExpansion;
-  kingdomCard: boolean;
-  playEffects?: Array<CardEffectConfig>;
-  reactionEffects?: ReactionEffects;
-  calculateVictoryPoints?: (player: Player) => number;
+  readonly name: string;
+  readonly types: Array<CardType>;
+  readonly cost: number;
+  readonly worth?: number;
+  readonly victoryPoints?: number;
+  readonly expansion: DominionExpansion;
+  readonly kingdomCard: boolean;
+  readonly playEffects?: Array<CardEffectConfig>;
+  readonly reactionEffects?: ReactionEffects;
+  readonly calculateVictoryPoints?: (player: Player) => number;
 }
 
 export class Card {

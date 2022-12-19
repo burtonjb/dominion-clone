@@ -170,7 +170,7 @@ const Workshop: CardParams = {
           (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 4
         );
         const selected = await input.getChoice();
-        game.gainCard(selected, activePlayer, false);
+        game.gainCardFromSupply(selected, activePlayer, false);
       },
     },
   ],
@@ -323,7 +323,7 @@ const Remodel: CardParams = {
           (pile) => pile.cards.length > 0 && pile.cards[0].cost <= selected[0].cost + 2
         );
         const gainPile = await toGain.getChoice();
-        game.gainCard(gainPile, activePlayer, false);
+        game.gainCardFromSupply(gainPile, activePlayer, false);
       },
     },
   ],
@@ -508,7 +508,7 @@ const Mine: CardParams = {
           }
         );
         const gainPile = await toGain.getChoice();
-        game.gainCard(gainPile, activePlayer, false, CardLocation.HAND);
+        game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.HAND);
       },
     },
   ],
@@ -590,7 +590,7 @@ const Artisan: CardParams = {
           (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 5
         );
         const pile = await input.getChoice();
-        game.gainCard(pile, activePlayer, false, CardLocation.HAND);
+        game.gainCardFromSupply(pile, activePlayer, false, CardLocation.HAND);
       },
     },
     {
@@ -609,34 +609,37 @@ const Artisan: CardParams = {
   ],
 };
 
-cardConfigRegistry.registerAll(
-  Cellar,
-  Chapel,
-  Moat,
-  Harbinger,
-  Merchant,
-  Vassal,
-  Village,
-  Workshop,
-  Bureaucrat,
-  Gardens,
-  Militia,
-  Moneylender,
-  Poacher,
-  Remodel,
-  Smithy,
-  ThroneRoom,
-  Bandit,
-  CouncilRoom,
-  Festival,
-  Laboratory,
-  Library,
-  Market,
-  Mine,
-  Sentry,
-  Witch,
-  Artisan
-);
+export function register() {
+  cardConfigRegistry.registerAll(
+    Cellar,
+    Chapel,
+    Moat,
+    Harbinger,
+    Merchant,
+    Vassal,
+    Village,
+    Workshop,
+    Bureaucrat,
+    Gardens,
+    Militia,
+    Moneylender,
+    Poacher,
+    Remodel,
+    Smithy,
+    ThroneRoom,
+    Bandit,
+    CouncilRoom,
+    Festival,
+    Laboratory,
+    Library,
+    Market,
+    Mine,
+    Sentry,
+    Witch,
+    Artisan
+  );
+}
+register();
 
 export {
   Cellar,
