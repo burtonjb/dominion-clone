@@ -1,7 +1,7 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import * as BasicCards from "./Basic";
 import { CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { CardPosition, Player } from "../../domain/objects/Player";
+import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { Card } from "../../domain/objects/Card";
 import { Game } from "../../domain/objects/Game";
 import { DrawCards, GainActions, GainMoney, GainBuys, GainCard } from "../effects/BaseEffects";
@@ -11,6 +11,7 @@ import {
   ChooseCardFromSupply,
   ChooseEffectChoice,
 } from "../../domain/objects/Choice";
+import { attack } from "../../domain/objects/CardEffect";
 
 const Courtyard: CardParams = {
   name: "Courtyard",
@@ -321,6 +322,33 @@ const Mill: CardParams = {
   victoryPoints: 1,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "You may discard two cards for +2 money",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new BooleanChoice("Discard two cards for +2 money?", false);
+        const selected = await input.getChoice();
+        if (selected) {
+          const cardInput = new CardsFromPlayerChoice(
+            "Discard two cards from your hand",
+            activePlayer,
+            activePlayer.hand,
+            { minCards: 2, maxCards: 2 }
+          );
+          const selectedCards = await cardInput.getChoice();
+
+          selectedCards.forEach((card) => {
+            game.discardCard(card, activePlayer);
+          });
+          if (selectedCards.length >= 2) {
+            await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
+          }
+        }
+      },
+    },
+  ],
 };
 
 const MiningVillage: CardParams = {
@@ -329,6 +357,21 @@ const MiningVillage: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 2 }),
+    {
+      prompt: "You may trash this for +2 money",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new BooleanChoice("Trash this for +2 money?", false);
+        const selected = await input.getChoice();
+        if (selected) {
+          game.trashCard(card, activePlayer);
+          await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
+        }
+      },
+    },
+  ],
 };
 
 const SecretPassage: CardParams = {
@@ -345,6 +388,39 @@ const Courtier: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Reveal a card from your hand. For each type it has choose 1: +1 Action, +1 Buy, +3 money, gain a gold",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const cardInput = new CardsFromPlayerChoice("Reveal a card from your hand", activePlayer, activePlayer.hand, {
+          minCards: 1,
+          maxCards: 1,
+        });
+        const selectedCards = await cardInput.getChoice();
+        game.revealCards(selectedCards, activePlayer);
+
+        if (selectedCards.length > 0) {
+          const selectedCard = selectedCards[0];
+          const input = new ChooseEffectChoice(
+            `Choose ${selectedCard.types.length} effects (all must be different)`,
+            activePlayer,
+            [
+              new GainActions({ amount: 1 }),
+              new GainBuys({ amount: 1 }),
+              new GainMoney({ amount: 3 }),
+              new GainCard({ name: BasicCards.Gold.name }),
+            ],
+            { minChoices: selectedCard.types.length, maxChoices: selectedCard.types.length }
+          );
+
+          const selected = await input.getChoice();
+          for (const choice of selected) {
+            await choice.effect(card, activePlayer, game);
+          }
+        }
+      },
+    },
+  ],
 };
 
 const Duke: CardParams = {
@@ -364,6 +440,35 @@ const Minion: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    new GainActions({ amount: 1 }),
+    {
+      prompt:
+        "Choose 1: +2 money, or discard your hand and draw 4 cards and each other player with at least 5 cards in hand discards their hand and draws 4 cards",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new ChooseEffectChoice(
+          `Choose 1: `,
+          activePlayer,
+          [
+            new GainMoney({ amount: 2 }),
+            {
+              prompt:
+                "Discard your hand and draw 4 cards. Each other player with at least 5 cards in hand discards their hand and draws 4 cards",
+              effect: async (card: Card, activePlayer: Player, game: Game) => {
+                // TODO.
+              },
+            },
+          ],
+          { minChoices: 1, maxChoices: 1 }
+        );
+
+        const selected = await input.getChoice();
+        for (const choice of selected) {
+          await choice.effect(card, activePlayer, game);
+        }
+      },
+    },
+  ],
 };
 
 const Patrol: CardParams = {
@@ -380,6 +485,42 @@ const Replace: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    {
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice(
+          "Choose a card from your hand to trash",
+          activePlayer,
+          activePlayer.hand,
+          { minCards: 1, maxCards: 1 }
+        );
+        const selected = await input.getChoice();
+
+        game.trashCard(selected[0], activePlayer);
+
+        const toGain = new ChooseCardFromSupply(
+          `Choose a card costing up to ${selected[0].cost + 2}`,
+          game.supply,
+          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= selected[0].cost + 2
+        );
+        const gainPile = await toGain.getChoice();
+        const cardToGain = gainPile.cards[0];
+        if (cardToGain.types.includes(CardType.ACTION) || cardToGain.types.includes(CardType.TREASURE)) {
+          game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.TOP_OF_DECK);
+        } else {
+          game.gainCardFromSupply(gainPile, activePlayer, false);
+        }
+        if (cardToGain.types.includes(CardType.VICTORY)) {
+          const otherPlayers = game.otherPlayers();
+          for (const otherPlayer of otherPlayers) {
+            await attack(card, otherPlayer, game, async () => {
+              game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+            });
+          }
+        }
+      },
+    },
+  ],
 };
 
 const Torturer: CardParams = {
@@ -423,6 +564,24 @@ const Nobles: CardParams = {
   victoryPoints: 2,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Choose 1: +3 cards, or +2 actions",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new ChooseEffectChoice(
+          "Choose 1",
+          activePlayer,
+          [new DrawCards({ amount: 3 }), new GainActions({ amount: 2 })],
+          { minChoices: 1, maxChoices: 1 }
+        );
+
+        const selected = await input.getChoice();
+        if (selected.length > 0) {
+          await selected[0].effect(card, activePlayer, game);
+        }
+      },
+    },
+  ],
 };
 
 export function register() {
