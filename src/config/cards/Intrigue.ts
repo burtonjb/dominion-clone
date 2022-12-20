@@ -134,6 +134,7 @@ const Masquerade: CardParams = {
   cost: 3,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  //TODO
 };
 
 const ShantyTown: CardParams = {
@@ -206,6 +207,7 @@ const Swindler: CardParams = {
   cost: 3,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  // TODO
 };
 
 const WishingWell: CardParams = {
@@ -214,6 +216,7 @@ const WishingWell: CardParams = {
   cost: 3,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  // TODO
 };
 
 const Baron: CardParams = {
@@ -252,6 +255,7 @@ const Bridge: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  // TODO
 };
 
 const Conspirator: CardParams = {
@@ -281,6 +285,7 @@ const Diplomat: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  // TODO
 };
 
 const Ironworks: CardParams = {
@@ -380,6 +385,7 @@ const SecretPassage: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  // TODO
 };
 
 const Courtier: CardParams = {
@@ -455,7 +461,24 @@ const Minion: CardParams = {
               prompt:
                 "Discard your hand and draw 4 cards. Each other player with at least 5 cards in hand discards their hand and draws 4 cards",
               effect: async (card: Card, activePlayer: Player, game: Game) => {
-                // TODO.
+                const hand = activePlayer.hand;
+                for (const card of hand) {
+                  game.discardCard(card, activePlayer);
+                }
+                await new DrawCards({ amount: 4 }).effect(card, activePlayer, game);
+
+                const otherPlayers = game.otherPlayers();
+                for (const otherPlayer of otherPlayers) {
+                  await attack(card, otherPlayer, game, async () => {
+                    if (otherPlayer.hand.length >= 5) {
+                      const hand = otherPlayer.hand;
+                      for (const card of hand) {
+                        game.discardCard(card, activePlayer);
+                      }
+                      await new DrawCards({ amount: 4 }).effect(card, otherPlayer, game);
+                    }
+                  });
+                }
               },
             },
           ],
@@ -477,6 +500,21 @@ const Patrol: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 3 }),
+    {
+      // FIXME: the effect of putting the remaining cards back in any order will probably not be fixed
+      prompt: "Reveal the top 4 cards of your deck. Put the Victory cards and Curses into your hand.",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const top4 = activePlayer.topNCards(4);
+        game.revealCards(top4, activePlayer);
+        const toHand = top4.filter((c) => c.types.includes(CardType.CURSE) || c.types.includes(CardType.VICTORY));
+        for (const c of toHand) {
+          activePlayer.transferCard(c, activePlayer.drawPile, activePlayer.hand, CardPosition.BOTTOM);
+        }
+      },
+    },
+  ],
 };
 
 const Replace: CardParams = {
@@ -529,6 +567,7 @@ const Torturer: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  // TODO
 };
 
 const TradingPost: CardParams = {
@@ -537,6 +576,24 @@ const TradingPost: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Trash 2 cards from your hand to gain a silver to your hand",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice("Trash 2 cards from your hand", activePlayer, activePlayer.hand, {
+          minCards: 2,
+          maxCards: 2,
+        });
+        const selectedCards = await input.getChoice();
+        selectedCards.forEach((card) => {
+          game.trashCard(card, activePlayer);
+        });
+        if (selectedCards.length == 2) {
+          game.gainCardByName(BasicCards.Silver.name, activePlayer, false, CardLocation.HAND);
+        }
+      },
+    },
+  ],
 };
 
 const Upgrade: CardParams = {
@@ -545,6 +602,38 @@ const Upgrade: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "Trash a card from your hand. Gain a card costing exactly $1 more than it",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = new CardsFromPlayerChoice(
+          "Choose a card from your hand to trash",
+          activePlayer,
+          activePlayer.hand,
+          { minCards: 1, maxCards: 1 }
+        );
+        const selected = await input.getChoice();
+        if (selected.length == 0) return; // return early if no cards picked
+
+        game.trashCard(selected[0], activePlayer);
+
+        const applicableCosts = game.supply
+          .allPiles()
+          .filter((p) => p.cards.length > 0 && p.cards[0].cost == selected[0].cost + 1);
+        if (applicableCosts.length == 0) return; // return early if there's no cards with a valid cost
+
+        const toGain = new ChooseCardFromSupply(
+          `Choose a card costing up to ${selected[0].cost + 1}`,
+          game.supply,
+          (pile) => pile.cards.length > 0 && pile.cards[0].cost == selected[0].cost + 1
+        );
+        const gainPile = await toGain.getChoice();
+        game.gainCardFromSupply(gainPile, activePlayer, false);
+      },
+    },
+  ],
 };
 
 const Harem: CardParams = {
@@ -555,6 +644,7 @@ const Harem: CardParams = {
   victoryPoints: 2,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  playEffects: [new GainMoney({ amount: 2 })],
 };
 
 const Nobles: CardParams = {
