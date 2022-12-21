@@ -223,3 +223,45 @@ export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
     return selected;
   }
 }
+
+export class StringChoice implements Choice<string> {
+  public readonly prompt: string;
+  public readonly options = "";
+
+  constructor(prompt: string) {
+    this.prompt = prompt;
+  }
+
+  public async getChoice(): Promise<string> {
+    const input = await question(`${this.prompt}\n> `);
+    return input;
+  }
+}
+
+export class IntegerChoice implements Choice<number> {
+  public readonly prompt: string;
+  public readonly options = -1;
+
+  constructor(prompt: string, private defaultValue: number, private minValue?: number, private maxValue?: number) {
+    this.prompt = prompt;
+  }
+
+  public async getChoice(): Promise<number> {
+    const input = await question(`${this.prompt}\n> `);
+    try {
+      const out = Number.parseInt(input.trim());
+      if (this.minValue && out < this.minValue) {
+        return this.minValue;
+      }
+      if (this.maxValue && out > this.maxValue) {
+        return this.maxValue;
+      }
+      if (Number.isNaN(out)) {
+        return this.defaultValue;
+      }
+      return out;
+    } catch {
+      return this.defaultValue;
+    }
+  }
+}

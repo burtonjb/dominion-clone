@@ -10,6 +10,8 @@ import {
   CardsFromPlayerChoice,
   ChooseCardFromSupply,
   ChooseEffectChoice,
+  IntegerChoice,
+  StringChoice,
 } from "../../domain/objects/Choice";
 import { attack } from "../../domain/objects/CardEffect";
 
@@ -134,7 +136,48 @@ const Masquerade: CardParams = {
   cost: 3,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  //TODO
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    {
+      prompt: "Each player with cards in their hand passes one card to the player on their left (all at once).",
+      effect: async (thisCard: Card, activePlayer: Player, game: Game) => {
+        const allPlayersWithNonEmptyHands = game.players.filter((p) => p.hand.length > 0);
+        if (allPlayersWithNonEmptyHands.length <= 1) return; // return early if no cards will be passed
+
+        const selectedCards = await Promise.all(
+          allPlayersWithNonEmptyHands.map((player) =>
+            new CardsFromPlayerChoice("Select 1 card to pass to the next player", player, player.hand, {
+              minCards: 1,
+              maxCards: 1,
+            }).getChoice()
+          )
+        );
+
+        // each player removes their selected card from their hand and then the next player is giving that card (does not trigger "gain" effects)
+        for (let i = 0; i < allPlayersWithNonEmptyHands.length; i++) {
+          const currentCard = selectedCards[i][0];
+          const currentPlayer = allPlayersWithNonEmptyHands[i];
+          const nextPlayer = allPlayersWithNonEmptyHands[(i + 1) % allPlayersWithNonEmptyHands.length];
+          currentPlayer.removeCard(currentCard);
+          nextPlayer.hand.push(currentCard);
+        }
+      },
+    },
+    {
+      prompt: "You may trash a card from your hand",
+      effect: async (thisCard: Card, activePlayer: Player, game: Game) => {
+        // TODO: pull this out into an "advanced effect" - trash cards from hand
+        const input = new CardsFromPlayerChoice("Trash up to 1 card from your hand", activePlayer, activePlayer.hand, {
+          minCards: 0,
+          maxCards: 1,
+        });
+        const selectedCards = await input.getChoice();
+        selectedCards.forEach((card) => {
+          game.trashCard(card, activePlayer);
+        });
+      },
+    },
+  ],
 };
 
 const ShantyTown: CardParams = {
@@ -207,7 +250,40 @@ const Swindler: CardParams = {
   cost: 3,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  // TODO
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    {
+      prompt:
+        "Each other player trashes the top card of their deck and gains a card with the same cost that you choose.",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            const topCards = otherPlayer.topNCards(1);
+            if (topCards.length == 0) return; // return early if no cards left to trash
+
+            const topCard = topCards[0];
+            game.trashCard(topCard, otherPlayer);
+
+            const applicableCosts = game.supply
+              .allPiles()
+              .filter((p) => p.cards.length > 0 && p.cards[0].cost == topCard.cost);
+            if (applicableCosts.length == 0) return; // return early if there's no cards with a valid cost
+
+            // FIXME: the active player chooses what card for the attacked player to choose
+            const toGain = new ChooseCardFromSupply(
+              `Choose a card costing exactly ${topCard.cost}`,
+              game.supply,
+              (pile) => pile.cards.length > 0 && pile.cards[0].cost == topCard.cost
+            );
+
+            const gainPile = await toGain.getChoice();
+            game.gainCardFromSupply(gainPile, otherPlayer, false);
+          });
+        }
+      },
+    },
+  ],
 };
 
 const WishingWell: CardParams = {
@@ -216,7 +292,24 @@ const WishingWell: CardParams = {
   cost: 3,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  // TODO
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "Name a card and then reveal the top card. If you named it, put it into your hand",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const input = new StringChoice("Name the top card of your deck");
+        const named = await input.getChoice();
+
+        const topCards = player.topNCards(1);
+        if (topCards.length == 0) return; // return early if no cards
+        const topCard = topCards[0];
+        if (topCard.name.toLowerCase() == named.toLowerCase()) {
+          player.transferCard(topCard, player.drawPile, player.hand, CardPosition.BOTTOM);
+        }
+      },
+    },
+  ],
 };
 
 const Baron: CardParams = {
@@ -255,7 +348,12 @@ const Bridge: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  // TODO
+  playEffects: [
+    new GainBuys({ amount: 1 }),
+    new GainMoney({ amount: 1 }),
+    // TODO add a cost reduction function and a method to calculate cost (for all checks.)
+    // the cost reductions are applied on the game (since they're applied everywhere) and clear at end of turn
+  ],
 };
 
 const Conspirator: CardParams = {
@@ -285,7 +383,18 @@ const Diplomat: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  // TODO
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    {
+      prompt: "If you have 5 or fewer cards in hand (after drawing), +2 actions",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        if (activePlayer.hand.length <= 5) {
+          await new GainActions({ amount: 2 }).effect(card, activePlayer, game);
+        }
+      },
+    },
+  ],
+  // TODO: reaction effect for being attack
 };
 
 const Ironworks: CardParams = {
@@ -385,7 +494,35 @@ const SecretPassage: CardParams = {
   cost: 4,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  // TODO
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "Take a card from your hand an place it anywhere in your deck",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const cardInput = new CardsFromPlayerChoice(
+          "Select a card from your hand to place into your deck",
+          activePlayer,
+          activePlayer.hand,
+          { minCards: 1, maxCards: 1 }
+        );
+        const selectedCards = await cardInput.getChoice();
+        if (selectedCards.length <= 0) return;
+        const selectedCard = selectedCards[0];
+
+        const posInput = new IntegerChoice(
+          "Choose the place to put the card in your draw pile",
+          0,
+          0,
+          activePlayer.drawPile.length - 1
+        );
+        const pos = await posInput.getChoice();
+
+        activePlayer.removeCard(selectedCard);
+        activePlayer.drawPile.splice(pos, 0, selectedCard); // insert into draw pile at pos (splice is kind of a dumb function, but it seems to work)
+      },
+    },
+  ],
 };
 
 const Courtier: CardParams = {
@@ -567,7 +704,52 @@ const Torturer: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
-  // TODO
+  playEffects: [
+    new DrawCards({ amount: 3 }),
+    {
+      prompt: "Each other player either discards two cards or gains a curse to their hand",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            const input = new ChooseEffectChoice(
+              "Choose 1",
+              activePlayer,
+              [
+                {
+                  prompt: "Discard two cards from your hand",
+                  effect: async (c: Card, p: Player, g: Game) => {
+                    const input = new CardsFromPlayerChoice(
+                      "Discard two cards from your hand",
+                      otherPlayer,
+                      otherPlayer.hand,
+                      { minCards: 2, maxCards: 2 }
+                    );
+                    const selectedCards = await input.getChoice();
+                    selectedCards.forEach((card) => {
+                      game.discardCard(card, activePlayer);
+                    });
+                  },
+                },
+                {
+                  prompt: "Gain a curse to your hand",
+                  effect: async (c: Card, p: Player, g: Game) => {
+                    game.gainCardByName(BasicCards.Curse.name, otherPlayer, false, CardLocation.HAND);
+                  },
+                },
+              ],
+              { minChoices: 1, maxChoices: 1 }
+            );
+
+            const selected = await input.getChoice();
+            for (const effect of selected) {
+              await effect.effect(card, otherPlayer, game);
+            }
+          });
+        }
+      },
+    },
+  ],
 };
 
 const TradingPost: CardParams = {
