@@ -37,7 +37,7 @@ export interface CardParams {
 
 export class Card {
   private readonly params: CardParams;
-  private id: number;
+  public readonly id: number; // used to trace the exact card instance - for debugging mostly
   public name: string;
   public cost: number;
   public types: Array<CardType>;
@@ -67,5 +67,13 @@ export class Card {
     for (let i = 0; i < this.params.playEffects?.length; i++) {
       await this.params.playEffects[i].effect(this, player, game);
     }
+  }
+
+  public effectString(): string {
+    const out = this.params.playEffects?.map((e) => e.prompt)?.join(". ");
+    if (!out) {
+      return "";
+    }
+    return out;
   }
 }

@@ -6,19 +6,19 @@ export class EventLog {
   // and O(E) to find all events after some timestamp, where E is number of events after the timestamp
   private events: Array<Event>;
 
+  private eventCounter = 0;
+
   constructor() {
     this.events = [];
   }
 
   public publishEvent(event: Event) {
-    if (!event.timestamp) {
-      event.timestamp = new Date().getTime();
-    }
+    event.eventCounter = this.eventCounter++;
     this.events.push(event); // assuming already ordered by timestamp
     // console.log(event)
   }
 
-  public getEventsAfter(timestamp: number) {
-    return this.events.filter((e) => (e.timestamp ? e.timestamp : 0 > timestamp));
+  public getEventsAfter(counter: number) {
+    return this.events.filter((e) => (e.eventCounter ? e.eventCounter : 0 > counter));
   }
 }

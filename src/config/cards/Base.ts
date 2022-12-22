@@ -582,6 +582,7 @@ const Artisan: CardParams = {
   kingdomCard: true,
   playEffects: [
     {
+      prompt: "Gain a card to your hand costing up to 5",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const input = new ChooseCardFromSupply(
           `Choose a card costing up to 5`,
@@ -593,6 +594,7 @@ const Artisan: CardParams = {
       },
     },
     {
+      prompt: "Put a card from your hand onto your deck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const input = new CardsFromPlayerChoice(
           "Choose a card from your hand to topdeck",
