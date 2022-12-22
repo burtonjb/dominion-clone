@@ -267,14 +267,14 @@ const Swindler: CardParams = {
 
             const applicableCosts = game.supply
               .allPiles()
-              .filter((p) => p.cards.length > 0 && p.cards[0].cost == topCard.cost);
+              .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) == topCard.calculateCost(game));
             if (applicableCosts.length == 0) return; // return early if there's no cards with a valid cost
 
             // FIXME: the active player chooses what card for the attacked player to choose
             const toGain = new ChooseCardFromSupply(
-              `Choose a card costing exactly ${topCard.cost}`,
+              `Choose a card costing exactly ${topCard.calculateCost(game)}`,
               game.supply,
-              (pile) => pile.cards.length > 0 && pile.cards[0].cost == topCard.cost
+              (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) == topCard.calculateCost(game)
             );
 
             const gainPile = await toGain.getChoice();
@@ -353,6 +353,13 @@ const Bridge: CardParams = {
     new GainMoney({ amount: 1 }),
     // TODO add a cost reduction function and a method to calculate cost (for all checks.)
     // the cost reductions are applied on the game (since they're applied everywhere) and clear at end of turn
+    {
+      prompt: "Reduce the cost of all cards buy -1$ until end of turn",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const reduceCostMod = (card: Card) => -1;
+        game.costModifiers.push(reduceCostMod);
+      },
+    },
   ],
 };
 
@@ -409,7 +416,7 @@ const Ironworks: CardParams = {
         const input = new ChooseCardFromSupply(
           "Choose a card to gain costing 4 or less",
           game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 4
+          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4
         );
         const selected = await input.getChoice();
         const gainedCard = game.gainCardFromSupply(selected, activePlayer, false);
@@ -674,9 +681,9 @@ const Replace: CardParams = {
         game.trashCard(selected[0], activePlayer);
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].cost + 2}`,
+          `Choose a card costing up to ${selected[0].calculateCost(game) + 2}`,
           game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= selected[0].cost + 2
+          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= selected[0].calculateCost(game) + 2
         );
         const gainPile = await toGain.getChoice();
         const cardToGain = gainPile.cards[0];
@@ -803,13 +810,13 @@ const Upgrade: CardParams = {
 
         const applicableCosts = game.supply
           .allPiles()
-          .filter((p) => p.cards.length > 0 && p.cards[0].cost == selected[0].cost + 1);
+          .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 1);
         if (applicableCosts.length == 0) return; // return early if there's no cards with a valid cost
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].cost + 1}`,
+          `Choose a card costing up to ${selected[0].calculateCost(game) + 1}`,
           game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].cost == selected[0].cost + 1
+          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 1
         );
         const gainPile = await toGain.getChoice();
         game.gainCardFromSupply(gainPile, activePlayer, false);

@@ -167,7 +167,7 @@ const Workshop: CardParams = {
         const input = new ChooseCardFromSupply(
           "Choose a card to gain costing 4 or less",
           game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 4
+          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4
         );
         const selected = await input.getChoice();
         game.gainCardFromSupply(selected, activePlayer, false);
@@ -318,9 +318,9 @@ const Remodel: CardParams = {
         game.trashCard(selected[0], activePlayer);
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].cost + 2}`,
+          `Choose a card costing up to ${selected[0].calculateCost(game) + 2}`,
           game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= selected[0].cost + 2
+          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= selected[0].calculateCost(game) + 2
         );
         const gainPile = await toGain.getChoice();
         game.gainCardFromSupply(gainPile, activePlayer, false);
@@ -496,14 +496,14 @@ const Mine: CardParams = {
         game.trashCard(selected[0], activePlayer);
 
         const toGain = new ChooseCardFromSupply(
-          `Choose a treasure to gain costing up to ${selected[0].cost + 3}`,
+          `Choose a treasure to gain costing up to ${selected[0].calculateCost(game) + 3}`,
           game.supply,
           (pile: CardPile) => {
             const pileLength = pile.cards.length;
             if (pileLength <= 0) return false; // return early if the pile is empty (so that later statements don't error)
-            const pileCost = pile.cards[0].cost;
+            const pileCost = pile.cards[0].calculateCost(game);
             const pileIsTreasure = pile.cards[0].types.includes(CardType.TREASURE);
-            const isApplicable = pileLength > 0 && pileCost <= selected[0].cost + 3 && pileIsTreasure;
+            const isApplicable = pileLength > 0 && pileCost <= selected[0].calculateCost(game) + 3 && pileIsTreasure;
             return isApplicable;
           }
         );
@@ -587,7 +587,7 @@ const Artisan: CardParams = {
         const input = new ChooseCardFromSupply(
           `Choose a card costing up to 5`,
           game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].cost <= 5
+          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 5
         );
         const pile = await input.getChoice();
         game.gainCardFromSupply(pile, activePlayer, false, CardLocation.HAND);

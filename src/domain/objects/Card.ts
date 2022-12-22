@@ -40,7 +40,7 @@ export class Card {
   private readonly params: CardParams;
   public readonly id: number; // used to trace the exact card instance - for debugging mostly
   public name: string;
-  public cost: number;
+  public baseCost: number;
   public types: Array<CardType>;
   public worth: number;
   public victoryPoints: number;
@@ -49,10 +49,14 @@ export class Card {
     this.params = params;
     this.id = cardNumber++;
     this.name = params.name;
-    this.cost = params.cost;
+    this.baseCost = params.cost;
     this.types = params.types.slice(); // copy of the config
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
+  }
+
+  public calculateCost(game: Game): number {
+    return this.baseCost + game.costModifiers.map((mod) => mod(this)).reduce((prev, cur) => prev + cur, 0);
   }
 
   public calculateVictoryPoints(player: Player): number {

@@ -6,6 +6,7 @@ import * as BasicCards from "../../config/cards/Basic";
 import { CardPile } from "./CardPile";
 import { EventLog } from "../events/EventLog";
 import { GameScreen } from "../../ui/GameScreen";
+import { CostModifier } from "./CardEffect";
 
 export interface GameParams {
   seed: number;
@@ -27,6 +28,8 @@ export class Game {
 
   public trash: Array<Card>;
 
+  public costModifiers: Array<CostModifier>;
+
   public eventLog: EventLog;
 
   public ui?: GameScreen; // hack way to pass the UI layer to the rest of the app.
@@ -41,6 +44,8 @@ export class Game {
     this.activePlayerIndex = this.random.randomInt(0, players.length);
     this.getActivePlayer().turns += 1;
     this.currentPhase = TurnPhase.ACTION;
+
+    this.costModifiers = [];
 
     this.eventLog = new EventLog();
   }
@@ -89,7 +94,7 @@ export class Game {
     const activePlayer = this.getActivePlayer();
     const gainedCard = this.gainCardFromSupply(cardPile, player, true);
     activePlayer.buys -= 1;
-    activePlayer.money -= gainedCard.cost;
+    activePlayer.money -= gainedCard.calculateCost(this);
   }
 
   // TODO: unify this with the below method. Right now I've just hacked it to support the Lurker function
@@ -163,6 +168,8 @@ export class Game {
   public cleanUp() {
     const activePlayer = this.getActivePlayer();
     activePlayer.cleanUp(this);
+
+    this.costModifiers.length = 0; // clear cost modifiers
 
     // advance the active player index, have the next player start their turn
     this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;

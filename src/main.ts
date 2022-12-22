@@ -119,7 +119,7 @@ async function handleBuyPhase(game: Game, gameScreen: GameScreen) {
     gameScreen.renderPrompt(
       `Buy a card from the supply: ${game.supply
         .allPiles()
-        .filter((p) => p.cards.length > 0 && p.cards[0].cost <= activePlayer.money)
+        .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) <= activePlayer.money)
         .map((p) => gameScreen.formatCardName(p.cards[0]))}, or 'end' to end.\n> `
     );
     const input = await question("");
@@ -128,7 +128,7 @@ async function handleBuyPhase(game: Game, gameScreen: GameScreen) {
     const matchingCards = game.supply
       .allPiles()
       .filter((p) => p.cards.length > 0)
-      .filter((p) => p.cards[0].cost <= activePlayer.money)
+      .filter((p) => p.cards[0].calculateCost(game) <= activePlayer.money)
       .filter((p) => p.name.match(inputMatch));
     const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
 

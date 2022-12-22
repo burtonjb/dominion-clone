@@ -89,7 +89,7 @@ export class GameScreen {
 
   formatCard(card: Card, skipEffects = false): string {
     const formattedName = this.formatCardName(card, 14);
-    const formattedCost = `(${card.cost})`;
+    const formattedCost = `(${card.calculateCost(this.game)})`;
     const formattedTypes = `{${card.types}}`;
     if (skipEffects) {
       return `${formattedName} ${formattedCost} ${formattedTypes}`;
