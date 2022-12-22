@@ -605,7 +605,7 @@ const Minion: CardParams = {
               prompt:
                 "Discard your hand and draw 4 cards. Each other player with at least 5 cards in hand discards their hand and draws 4 cards",
               effect: async (card: Card, activePlayer: Player, game: Game) => {
-                const hand = activePlayer.hand;
+                const hand = activePlayer.hand.slice();
                 for (const card of hand) {
                   game.discardCard(card, activePlayer);
                 }
@@ -615,7 +615,7 @@ const Minion: CardParams = {
                 for (const otherPlayer of otherPlayers) {
                   await attack(card, otherPlayer, game, async () => {
                     if (otherPlayer.hand.length >= 5) {
-                      const hand = otherPlayer.hand;
+                      const hand = otherPlayer.hand.slice();
                       for (const card of hand) {
                         game.discardCard(card, activePlayer);
                       }

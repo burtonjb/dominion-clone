@@ -20,6 +20,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
 
   // create the kingdom based on the number of players
   const kingdom = createKingdom(numberOfPlayers, [
+    IntrigueCards.Steward.name,
     IntrigueCards.Mill.name,
     IntrigueCards.MiningVillage.name,
     IntrigueCards.Ironworks.name,
