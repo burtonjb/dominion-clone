@@ -11,12 +11,18 @@ export type Event =
   | GainBuysEvent
   | DrawCardEvent
   | RevealCardsEvent
-  | TrashCardEvent;
+  | TrashCardEvent
+  | TestEvent;
 
 export interface BaseEvent {
   readonly type: string;
-  readonly player: Player; //what player was affected by the event
-  timestamp?: number;
+  readonly player: Player; // what player did the event
+  eventCounter?: number; // will be overridden by the event logger with a value
+}
+
+export interface TestEvent extends BaseEvent {
+  readonly type: "TestEvent";
+  readonly content: string;
 }
 
 export interface PlayCardEvent extends BaseEvent {
@@ -65,4 +71,49 @@ export interface RevealCardsEvent extends BaseEvent {
 export interface TrashCardEvent extends BaseEvent {
   readonly type: "TrashCard";
   readonly card: Card;
+}
+
+export function formatEvent(event: Event, includeDebugInfo = false): string {
+  function formatCard(card: Card): string {
+    if (includeDebugInfo) return `${card.name}(${card.id})`;
+    else return `${card.name}`;
+  }
+  function formatPlayer(player: Player): string {
+    return player.name;
+  }
+
+  const formattedOut = includeDebugInfo ? `${event.eventCounter}: ` : "";
+
+  switch (event.type) {
+    case "TestEvent":
+      return formattedOut + `${event.type} // ${(event as TestEvent).content}`;
+    case "PlayCard":
+      return formattedOut + `${formatPlayer(event.player)} plays ${formatCard((event as PlayCardEvent).card)}`;
+    case "GainMoney":
+      return formattedOut + `${formatPlayer(event.player)} gains ${(event as GainMoneyEvent).amount}$`;
+    case "GainActions":
+      return formattedOut + `${formatPlayer(event.player)} gains ${(event as GainActionsEvent).amount} actions`;
+    case "GainBuys":
+      return formattedOut + `${formatPlayer(event.player)} gains ${(event as GainBuysEvent).amount} buys`;
+    case "GainCard":
+      return (
+        formattedOut +
+        `${formatPlayer(event.player)} gains card ${formatCard((event as GainCardEvent).card)} to ${
+          event.toLocation
+        }. Bought?: ${event.wasBought}`
+      );
+    case "DiscardCard":
+      return formattedOut + `${formatPlayer(event.player)} discards ${formatCard((event as DiscardCardEvent).card)}`;
+    case "DrawCard":
+      return formattedOut + `${formatPlayer(event.player)} draws ${formatCard((event as DrawCardEvent).card)}`;
+    case "RevealCard":
+      return (
+        formattedOut +
+        `${formatPlayer(event.player)} reveals ${(event as RevealCardsEvent).cards.map((c) => formatCard(c))}`
+      );
+    case "TrashCard":
+      return formattedOut + `${formatPlayer(event.player)} trashes ${formatCard((event as TrashCardEvent).card)}`;
+    default:
+      return event["type"]; // should never occur (typescript determines type is "never")
+  }
 }

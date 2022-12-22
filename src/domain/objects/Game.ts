@@ -5,6 +5,7 @@ import { Supply } from "./Supply";
 import * as BasicCards from "../../config/cards/Basic";
 import { CardPile } from "./CardPile";
 import { EventLog } from "../events/EventLog";
+import { GameScreen } from "../../ui/GameScreen";
 
 export interface GameParams {
   seed: number;
@@ -28,6 +29,8 @@ export class Game {
 
   public eventLog: EventLog;
 
+  public ui?: GameScreen; // hack way to pass the UI layer to the rest of the app.
+
   constructor(random: Random, players: Array<Player>, supply: Supply) {
     this.random = random;
     this.players = players;
@@ -40,6 +43,10 @@ export class Game {
     this.currentPhase = TurnPhase.ACTION;
 
     this.eventLog = new EventLog();
+  }
+
+  public setScreen(ui: GameScreen) {
+    this.ui = ui;
   }
 
   // determines if the game is still in progress or is finished
@@ -65,13 +72,13 @@ export class Game {
   }
 
   public async playCard(card: Card, player: Player) {
+    this.eventLog.publishEvent({ type: "PlayCard", player: player, card: card });
     player.removeCard(card);
     player.cardsInPlay.push(card);
     await card.play(player, this);
     for (const effect of player.onPlayCardTriggers) {
       await effect.call(this, card, player, this);
     }
-    this.eventLog.publishEvent({ type: "PlayCard", player: player, card: card });
   }
 
   public revealCards(cards: Array<Card>, player: Player) {

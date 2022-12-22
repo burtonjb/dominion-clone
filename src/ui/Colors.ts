@@ -47,3 +47,11 @@ export class XTermColors {
 const xtermColors = new XTermColors();
 
 export { xtermColors };
+
+export function formatForegroundColor(s: string, color: XTermColor): string {
+  return `\x1b[38;5;${color.colorId}m${s}\x1b[0m`;
+}
+
+export function formatBackgroundColor(s: string, color: XTermColor): string {
+  return `\x1b[48;5;${color.colorId}m${s}\x1b[0m`;
+}
