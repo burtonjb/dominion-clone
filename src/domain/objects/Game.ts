@@ -57,7 +57,7 @@ export class Game {
   // determines if the game is still in progress or is finished
   public isGameFinished(): boolean {
     const isProvincePileEmpty =
-      this.supply.baseCards.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
+      this.supply.basePiles.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
     const areAtLeast3PilesEmpty = this.supply.allPiles().filter((pile) => pile.cards.length == 0).length >= 3;
 
     const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty;

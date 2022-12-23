@@ -3,6 +3,7 @@ import { Random } from "../../util/Random";
 import { Card } from "./Card";
 import { CardEffect } from "./CardEffect";
 import { Game } from "./Game";
+import { HumanPlayerInput, PlayerInput } from "./PlayerInput";
 
 let playerId = 0;
 
@@ -36,7 +37,9 @@ export class Player {
 
   public turns: number;
 
-  constructor(name: string, random: Random, initialCards: Array<Card>) {
+  public playerInput: PlayerInput;
+
+  constructor(name: string, random: Random, initialCards: Array<Card>, playerInput?: PlayerInput) {
     this.random = random;
     this.id = playerId++;
     this.name = name;
@@ -57,6 +60,8 @@ export class Player {
     this.onPlayCardTriggers = [];
 
     this.turns = 0;
+
+    this.playerInput = playerInput ? playerInput : new HumanPlayerInput();
   }
 
   public drawHand() {

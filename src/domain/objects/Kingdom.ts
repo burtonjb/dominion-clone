@@ -8,9 +8,9 @@ export interface KingdomParams {
 }
 
 export class Kingdom {
-  public kingdomCards: Array<CardPile>;
+  public kingdomPiles: Array<CardPile>;
 
   constructor(kingdomCards: Array<CardPile>) {
-    this.kingdomCards = kingdomCards;
+    this.kingdomPiles = kingdomCards;
   }
 }

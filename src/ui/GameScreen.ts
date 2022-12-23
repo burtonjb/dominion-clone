@@ -28,12 +28,12 @@ export class GameScreen {
   renderSupply() {
     this.terminal.putString(0, 0, "======= SUPPLY =======");
 
-    this.game.supply.baseCards.forEach((pile, i) => {
+    this.game.supply.basePiles.forEach((pile, i) => {
       this.terminal.putString(0, 1 + i, this.formatCardPile(pile));
     });
 
-    this.game.supply.kingdom.kingdomCards.forEach((pile, i) => {
-      this.terminal.putString(0, this.game.supply.baseCards.length + 1 + i, this.formatCardPile(pile));
+    this.game.supply.kingdom.kingdomPiles.forEach((pile, i) => {
+      this.terminal.putString(0, this.game.supply.basePiles.length + 1 + i, this.formatCardPile(pile));
     });
   }
 
@@ -128,7 +128,7 @@ export class GameScreen {
     const discardSize = player.discardPile.length;
     const topDiscardCard = player.discardPile.length > 0 ? this.formatCardName(player.discardPile[0]) : "";
     const victoryPoints = `${player.calculateVictoryPoints()}`;
-    const turns = `${player.turns}`
+    const turns = `${player.turns}`;
 
     return `${playerName} actions: ${actions} | buys: ${buys} | money: ${money} | hand: ${handSize} | deck: ${deckSize} | discard: ${discardSize} (${topDiscardCard}) | VP: ${victoryPoints} | turns: ${turns}`;
   }
