@@ -11,9 +11,11 @@ export interface GainMoneyParams {
 export class GainMoney implements BasicCardEffectConfig<GainMoneyParams> {
   public readonly type = "GainMoney";
   public params: GainMoneyParams;
+  public readonly prompt: string;
 
   constructor(params: GainMoneyParams) {
     this.params = params;
+    this.prompt = `Money +${params.amount}`;
   }
 
   async effect(card: Card, player: Player, game: Game) {
@@ -34,9 +36,11 @@ export interface GainActionsParams {
 export class GainActions implements BasicCardEffectConfig<GainActionsParams> {
   public readonly type = "GainActions";
   public params: GainActionsParams;
+  public readonly prompt: string;
 
-  constructor(params: GainMoneyParams) {
+  constructor(params: GainActionsParams) {
     this.params = params;
+    this.prompt = `Actions +${params.amount}`;
   }
 
   async effect(card: Card, player: Player, game: Game) {
@@ -51,9 +55,11 @@ export interface DrawCardsParams {
 export class DrawCards implements BasicCardEffectConfig<DrawCardsParams> {
   public readonly type = "DrawCards";
   public params: DrawCardsParams;
+  public readonly prompt: string;
 
   constructor(params: DrawCardsParams) {
     this.params = params;
+    this.prompt = `Cards +${params.amount}`;
   }
 
   async effect(card: Card, player: Player, game: Game) {
@@ -70,9 +76,11 @@ export interface GainBuysParams {
 export class GainBuys implements BasicCardEffectConfig<GainBuysParams> {
   public readonly type = "GainActions";
   public params: GainBuysParams;
+  public readonly prompt: string;
 
   constructor(params: GainBuysParams) {
     this.params = params;
+    this.prompt = `Buys +${params.amount}`;
   }
 
   async effect(card: Card, player: Player, game: Game) {
@@ -93,9 +101,12 @@ export interface GainCardParams {
 export class GainCard implements BasicCardEffectConfig<GainCardParams> {
   public readonly type = "GainCard";
   public params: GainCardParams;
+  public readonly prompt: string;
 
   constructor(params: GainCardParams) {
     this.params = params;
+    const formattedLocation = params.toLocation ? `to ${params.toLocation}` : "";
+    this.prompt = `Gain ${params.name} ${formattedLocation}`;
   }
 
   async effect(source: Card, player: Player, game: Game) {

@@ -16,6 +16,7 @@ export enum CardType {
 
 export enum DominionExpansion {
   BASE = "Base",
+  INTRIGUE = "Intrigue",
 }
 
 export interface ReactionEffects {
@@ -23,23 +24,23 @@ export interface ReactionEffects {
 }
 
 export interface CardParams {
-  name: string;
-  types: Array<CardType>;
-  cost: number;
-  worth?: number;
-  victoryPoints?: number;
-  expansion: DominionExpansion;
-  kingdomCard: boolean;
-  playEffects?: Array<CardEffectConfig>;
-  reactionEffects?: ReactionEffects;
-  calculateVictoryPoints?: (player: Player) => number;
+  readonly name: string;
+  readonly types: Array<CardType>;
+  readonly cost: number;
+  readonly worth?: number;
+  readonly victoryPoints?: number;
+  readonly expansion: DominionExpansion;
+  readonly kingdomCard: boolean;
+  readonly playEffects?: Array<CardEffectConfig>;
+  readonly reactionEffects?: ReactionEffects;
+  readonly calculateVictoryPoints?: (player: Player) => number;
 }
 
 export class Card {
   private readonly params: CardParams;
   public readonly id: number; // used to trace the exact card instance - for debugging mostly
   public name: string;
-  public cost: number;
+  public baseCost: number;
   public types: Array<CardType>;
   public worth: number;
   public victoryPoints: number;
@@ -48,10 +49,15 @@ export class Card {
     this.params = params;
     this.id = cardNumber++;
     this.name = params.name;
-    this.cost = params.cost;
+    this.baseCost = params.cost;
     this.types = params.types.slice(); // copy of the config
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
+  }
+
+  public calculateCost(game: Game): number {
+    // cost can't be less than 0
+    return Math.max(0, this.baseCost + game.costModifiers.map((mod) => mod(this)).reduce((prev, cur) => prev + cur, 0));
   }
 
   public calculateVictoryPoints(player: Player): number {

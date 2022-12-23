@@ -1,5 +1,6 @@
 import { question } from "../../util/PromiseExtensions";
 import { Card } from "./Card";
+import { CardEffectConfig } from "./CardEffect";
 import { CardPile } from "./CardPile";
 import { Game } from "./Game";
 import { Player } from "./Player";
@@ -109,7 +110,7 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
 }
 
 /*
-
+Used for selecting a card from the supply
 */
 export class ChooseCardFromSupply implements Choice<CardPile> {
   public readonly prompt: string;
@@ -149,6 +150,118 @@ export class ChooseCardFromSupply implements Choice<CardPile> {
       } else {
         console.warn(`Unknown input ${input}`);
       }
+    }
+  }
+}
+
+export interface ChooseEffectChoiceConfig {
+  minChoices?: number;
+  maxChoices?: number;
+}
+
+/*
+Used for when the player is to select an option/effect from a list of effects.
+For example, with pawn, the player will select two different effects. 
+*/
+export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
+  private config: ChooseEffectChoiceConfig;
+
+  constructor(
+    public readonly prompt: string,
+    private player: Player,
+    private options: Array<CardEffectConfig>,
+    config?: ChooseEffectChoiceConfig
+  ) {
+    this.config = config ? config : {};
+  }
+
+  public async getChoice(): Promise<Array<CardEffectConfig>> {
+    const selected: Array<CardEffectConfig> = [];
+    let done = false;
+
+    // if the number of cards is less than the required minimum, just return all the
+    // cards that are available (e.g.) if its trash 1 card from hand, and there's only 1
+    // card, then just return/trash that card
+    if (this.config.minChoices && this.options.length <= this.config.minChoices) {
+      return this.options;
+    }
+
+    while (!done) {
+      const availableOptions = this.options.filter((card) => !selected.includes(card));
+
+      const input = await question(
+        `${this.prompt} (available: ${availableOptions.map((c) => c.prompt)}) (already selected: ${selected.map(
+          (s) => s.prompt
+        )})\n> `
+      );
+      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
+
+      const matchingCards = this.options
+        .filter((card) => !selected.includes(card)) // filter out cards that are already selected
+        .filter((card) => (card.prompt ? card.prompt.match(inputMatch) : false)); // hacky - make sure that prompts are set
+
+      const singleMatch = new Set(matchingCards.map((c) => c.prompt!)).size == 1;
+
+      if (input.length > 0 && singleMatch) {
+        const matchingCard = matchingCards[0];
+        selected.push(matchingCard);
+        if (this.config.maxChoices && selected.length >= this.config.maxChoices) {
+          done = true;
+        }
+      } else if (input.toLowerCase() == "end") {
+        if (this.config.minChoices && selected.length >= this.config.minChoices) {
+          done = true;
+        } else if (!this.config.minChoices) {
+          done = true;
+        } else {
+          console.debug("Not enough cards selected");
+        }
+      } else {
+        console.warn(`Unknown input ${input}`);
+      }
+    }
+    return selected;
+  }
+}
+
+export class StringChoice implements Choice<string> {
+  public readonly prompt: string;
+  public readonly options = "";
+
+  constructor(prompt: string) {
+    this.prompt = prompt;
+  }
+
+  public async getChoice(): Promise<string> {
+    const input = await question(`${this.prompt}\n> `);
+    return input;
+  }
+}
+
+export class IntegerChoice implements Choice<number> {
+  public readonly prompt: string;
+  public readonly options = -1;
+
+  constructor(prompt: string, private defaultValue: number, private minValue?: number, private maxValue?: number) {
+    this.prompt = prompt;
+  }
+
+  public async getChoice(): Promise<number> {
+    const input = await question(`${this.prompt}\n> `);
+    try {
+      const out = Number.parseInt(input.trim());
+      if (this.minValue && out < this.minValue) {
+        return this.minValue;
+      }
+      if (this.maxValue && out > this.maxValue) {
+        return this.maxValue;
+      }
+      if (Number.isNaN(out)) {
+        return this.defaultValue;
+      }
+      return out;
+    } catch {
+      return this.defaultValue;
     }
   }
 }

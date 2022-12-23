@@ -71,6 +71,9 @@ const Curse: CardParams = {
   expansion: DominionExpansion.BASE,
 };
 
-cardConfigRegistry.registerAll(Copper, Silver, Gold, Estate, Duchy, Province, Curse);
+export function register() {
+  cardConfigRegistry.registerAll(Copper, Silver, Gold, Estate, Duchy, Province, Curse);
+}
+register();
 
 export { Copper, Silver, Gold, Estate, Duchy, Province, Curse };

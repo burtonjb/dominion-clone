@@ -3,6 +3,9 @@ import { Game } from "./Game";
 import { Player } from "./Player";
 import * as BaseCard from "../../config/cards/Base";
 
+// function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
+export type CostModifier = (card: Card) => number;
+
 export type CardEffect = (card: Card, activePlayer: Player, game: Game) => Promise<void>;
 
 export interface CardEffectConfig {

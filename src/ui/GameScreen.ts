@@ -89,7 +89,7 @@ export class GameScreen {
 
   formatCard(card: Card, skipEffects = false): string {
     const formattedName = this.formatCardName(card, 14);
-    const formattedCost = `(${card.cost})`;
+    const formattedCost = `(${card.calculateCost(this.game)})`;
     const formattedTypes = `{${card.types}}`;
     if (skipEffects) {
       return `${formattedName} ${formattedCost} ${formattedTypes}`;
@@ -128,8 +128,9 @@ export class GameScreen {
     const discardSize = player.discardPile.length;
     const topDiscardCard = player.discardPile.length > 0 ? this.formatCardName(player.discardPile[0]) : "";
     const victoryPoints = `${player.calculateVictoryPoints()}`;
+    const turns = `${player.turns}`
 
-    return `${playerName} actions: ${actions} | buys: ${buys} | money: ${money} | hand: ${handSize} | deck: ${deckSize} | discard: ${discardSize} (${topDiscardCard}) | VP: ${victoryPoints}`;
+    return `${playerName} actions: ${actions} | buys: ${buys} | money: ${money} | hand: ${handSize} | deck: ${deckSize} | discard: ${discardSize} (${topDiscardCard}) | VP: ${victoryPoints} | turns: ${turns}`;
   }
 
   formatCardList(cards: Array<Card>): string {
