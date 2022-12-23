@@ -525,7 +525,7 @@ const Sentry: CardParams = {
     {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const top2 = activePlayer.topNCards(2);
-        const trashInput = new CardsFromPlayerChoice("Choose card(s) to trash", activePlayer, top2);
+        const trashInput = new CardsFromPlayerChoice("Choose card(s) to trash", activePlayer, top2, {minCards: 0, maxCards: 2});
         const toTrash = await trashInput.getChoice();
         toTrash.forEach((c) => game.trashCard(c, activePlayer));
 

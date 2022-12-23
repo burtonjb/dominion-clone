@@ -351,7 +351,6 @@ const Bridge: CardParams = {
   playEffects: [
     new GainBuys({ amount: 1 }),
     new GainMoney({ amount: 1 }),
-    // TODO add a cost reduction function and a method to calculate cost (for all checks.)
     // the cost reductions are applied on the game (since they're applied everywhere) and clear at end of turn
     {
       prompt: "Reduce the cost of all cards buy -1$ until end of turn",

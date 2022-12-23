@@ -56,7 +56,8 @@ export class Card {
   }
 
   public calculateCost(game: Game): number {
-    return this.baseCost + game.costModifiers.map((mod) => mod(this)).reduce((prev, cur) => prev + cur, 0);
+    // cost can't be less than 0
+    return Math.max(0, this.baseCost + game.costModifiers.map((mod) => mod(this)).reduce((prev, cur) => prev + cur, 0));
   }
 
   public calculateVictoryPoints(player: Player): number {
