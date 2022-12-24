@@ -1,9 +1,10 @@
+import { HumanPlayerInput } from "../../config/input/HumanInput";
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
 import { CardEffect } from "./CardEffect";
 import { Game } from "./Game";
-import { HumanPlayerInput, PlayerInput } from "./PlayerInput";
+import { PlayerInput } from "./PlayerInput";
 
 let playerId = 0;
 

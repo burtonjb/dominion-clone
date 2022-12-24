@@ -6,7 +6,7 @@ export class BaseTerminalScreen {
 
   constructor(stream?: NodeJS.WriteStream) {
     if (stream) {
-      this.outStream = process.stdout;
+      this.outStream = stream;
     } else {
       this.outStream = process.stdout;
     }

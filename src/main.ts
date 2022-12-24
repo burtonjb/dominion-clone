@@ -3,8 +3,9 @@ import { CardType } from "./domain/objects/Card";
 import { Game, TurnPhase } from "./domain/objects/Game";
 import { GameScreen } from "./ui/GameScreen";
 import { BaseTerminalScreen } from "./ui/Terminal";
-import { AiPlayerInput, HumanPlayerInput } from "./domain/objects/PlayerInput";
 import { logger } from "./util/Logger";
+import { BigMoneyAiInput } from "./config/input/BaseAiInput";
+import { HumanPlayerInput } from "./config/input/HumanInput";
 
 process.on("SIGINT", () => {
   // TODO: add some logging on exit
@@ -15,9 +16,9 @@ async function main() {
   const game = createGame(2, new Date().getTime());
   // TODO: better way to set this up
   game.players[0].playerInput = new HumanPlayerInput();
-  game.players[0].name = "human";
-  game.players[1].playerInput = new AiPlayerInput();
-  game.players[1].name = "AI";
+  game.players[0].name = "P1";
+  game.players[1].playerInput = new BigMoneyAiInput();
+  game.players[1].name = "P2";
 
   // log all info for game start (kingdom, seed, cards, starting hands)
   logger.info(`Creating kingdom ${game.supply.allPiles().map((p) => p.name)}`);
