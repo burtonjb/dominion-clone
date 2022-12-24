@@ -12,6 +12,7 @@ import { shuffleArray } from "../../util/ArrayExtensions";
 import * as BasicCards from "../cards/Basic";
 
 // AI that plays big money (poorly)
+// You can extend this class if you want to override some of the behavior
 export class BigMoneyAiInput implements PlayerInput {
   async choosePileFromSupply(
     player: Player,
@@ -26,6 +27,7 @@ export class BigMoneyAiInput implements PlayerInput {
   async booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean> {
     return params.defaultChoice;
   }
+
   async chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>> {
     // if its trashing - choose the most, worst cards from hand (if there's good cards, don't choose them)
     // if its keeping cards - choose the most, best cards from hand

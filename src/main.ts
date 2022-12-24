@@ -6,6 +6,7 @@ import { BaseTerminalScreen } from "./ui/Terminal";
 import { logger } from "./util/Logger";
 import { BigMoneyAiInput } from "./config/input/BaseAiInput";
 import { HumanPlayerInput } from "./config/input/HumanInput";
+import { rl } from "./util/PromiseExtensions";
 
 process.on("SIGINT", () => {
   // TODO: add some logging on exit
@@ -26,7 +27,7 @@ async function main() {
   const showDebugInfoInUi = process.argv.some((arg) => arg.toUpperCase() == "DEBUG");
 
   const gameScreen = new GameScreen(new BaseTerminalScreen(), game, showDebugInfoInUi);
-  game.ui = gameScreen;
+  game.ui = gameScreen; // you can leave this unset and then it won't display anything - and leaving it off will speed up bot v bot gameplay
 
   while (!game.isGameFinished()) {
     game.ui?.render();
@@ -40,8 +41,13 @@ async function main() {
     }
   }
   game.ui?.render();
-  // log all info for game end (winners, player score + cards)
+
   logger.info(`Winners: ${game.calculateWinners().map((p) => p.name)}`);
+  for (const player of game.players) {
+    logger.info(gameScreen.formatPlayerOverview(player));
+    logger.info(`${player.allCards().map((c) => c.name)}`);
+  }
+  rl.close();
 }
 
 async function handleActionPhase(game: Game) {
