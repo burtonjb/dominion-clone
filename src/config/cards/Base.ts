@@ -262,7 +262,7 @@ const Moneylender: CardParams = {
     {
       prompt: "You may trash a copper from your hand for +3$",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const copper = activePlayer.hand.find((c) => (c.name = BasicCards.Copper.name));
+        const copper = activePlayer.hand.find((c) => (c.name == BasicCards.Copper.name));
         if (copper == undefined) return; // just return early if no coppers in hand
 
         const selected = await activePlayer.playerInput.booleanChoice(activePlayer, game, {
