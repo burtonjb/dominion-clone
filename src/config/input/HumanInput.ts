@@ -1,12 +1,23 @@
-import * as BasicCards from "../cards/Basic";
 import { Card, CardType } from "../../domain/objects/Card";
 import { CardPile } from "../../domain/objects/CardPile";
+import { BooleanChoice, CardsFromPlayerChoice } from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
 import { Player } from "../../domain/objects/Player";
-import { PlayerInput } from "../../domain/objects/PlayerInput";
+import { BooleanChoiceParams, ChooseCardsFromListParams, PlayerInput } from "../../domain/objects/PlayerInput";
 import { question } from "../../util/PromiseExtensions";
+import * as BasicCards from "../cards/Basic";
 
 export class HumanPlayerInput implements PlayerInput {
+  async booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean> {
+    const input = new BooleanChoice("Trash a copper from your hand for +3 copper", true);
+    return await input.getChoice();
+  }
+  async chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>> {
+    const input = new CardsFromPlayerChoice(params.prompt, player, params.cardList);
+    const selectedCards = await input.getChoice();
+    return selectedCards;
+  }
+
   async chooseActionToPlay(player: Player, game: Game): Promise<Card | undefined> {
     const gameScreen = game.ui;
     while (true) {

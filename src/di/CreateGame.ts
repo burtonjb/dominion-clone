@@ -1,37 +1,40 @@
 import * as BasicCards from "../config/cards/Basic";
-import * as BaseCards from "../config/cards/Base";
 import * as IntrigueCards from "../config/cards/Intrigue";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
 import { Player } from "../domain/objects/Player";
 import { Supply } from "../domain/objects/Supply";
-import { createNInstances } from "../util/ArrayExtensions";
+import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
+import registerAll from "./RegisterConfig";
 
 export function createGame(numberOfPlayers: number, seed?: number): Game {
   // construct utility classes and "services"
   const random = new Random(seed);
+  registerAll();
 
   // create players and their starting cards
   const players = createPlayers(random, numberOfPlayers);
 
+  const kingdomCardNames = cardConfigRegistry.values().filter((c) => c.kingdomCard);
+  shuffleArray(kingdomCardNames, random);
+  const selectedCards = kingdomCardNames.slice(0, 10);
+  selectedCards.sort((a, b) => {
+    if (a.cost == b.cost) {
+      return a.name < b.name ? -1 : 1;
+    } else {
+      return a.cost < b.cost ? -1 : 1;
+    }
+  });
+
   // create the kingdom based on the number of players
-  const kingdom = createKingdom(numberOfPlayers, [
-    IntrigueCards.Steward.name,
-    IntrigueCards.Mill.name,
-    IntrigueCards.MiningVillage.name,
-    IntrigueCards.ShantyTown.name,
-    IntrigueCards.Bridge.name,
-    IntrigueCards.Conspirator.name,
-    IntrigueCards.Pawn.name,
-    IntrigueCards.Patrol.name,
-    IntrigueCards.Minion.name,
-    IntrigueCards.Replace.name,
-    IntrigueCards.Nobles.name,
-  ]);
+  const kingdom = createKingdom(
+    numberOfPlayers,
+    selectedCards.map((c) => c.name)
+  );
 
   const supply = createSupply(numberOfPlayers, kingdom);
 

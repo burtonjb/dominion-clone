@@ -115,14 +115,16 @@ export class Player {
   // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)
   // this might actually be wrong, since once the card is lost track of (e.g. shuffled into the deck)
   // its no longer tracked. But this method will still track the card...
-  public removeCard(card: Card) {
+  // Returns the list of cards that were deleted
+  public removeCard(card: Card): Array<Card> {
     const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile];
     for (const container of containers) {
       const index = container.findIndex((c) => c == card);
       if (index > -1) {
-        container.splice(index, 1); // remove the card from the container (in place)
+        return container.splice(index, 1); // remove the card from the container (in place)
       }
     }
+    return [];
   }
 
   public transferCard(card: Card, from: Array<Card>, to: Array<Card>, position: CardPosition) {

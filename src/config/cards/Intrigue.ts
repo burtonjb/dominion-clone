@@ -1,10 +1,6 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
-import * as BasicCards from "./Basic";
-import { CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
-import { Card } from "../../domain/objects/Card";
-import { Game } from "../../domain/objects/Game";
-import { DrawCards, GainActions, GainMoney, GainBuys, GainCard } from "../effects/BaseEffects";
+import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { attack } from "../../domain/objects/CardEffect";
 import {
   BooleanChoice,
   CardsFromPlayerChoice,
@@ -13,7 +9,10 @@ import {
   IntegerChoice,
   StringChoice,
 } from "../../domain/objects/Choice";
-import { attack } from "../../domain/objects/CardEffect";
+import { Game } from "../../domain/objects/Game";
+import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
+import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
+import * as BasicCards from "./Basic";
 
 const Courtyard: CardParams = {
   name: "Courtyard",
@@ -420,8 +419,11 @@ const Ironworks: CardParams = {
         const selected = await input.getChoice();
         const gainedCard = game.gainCardFromSupply(selected, activePlayer, false);
 
+        // if card was not gained successfully, return early
+        if (!gainedCard) return;
+
         // Get bonuses based on the type of the card that is gained
-        if (gainedCard.types.includes(CardType.ACTION)) {
+        if (gainedCard && gainedCard.types.includes(CardType.ACTION)) {
           await new GainActions({ amount: 1 }).effect(card, activePlayer, game);
         }
         if (gainedCard.types.includes(CardType.TREASURE)) {

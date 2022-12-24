@@ -94,7 +94,8 @@ export class Game {
     const activePlayer = this.getActivePlayer();
     const gainedCard = this.gainCardFromSupply(cardPile, player, true);
     activePlayer.buys -= 1;
-    activePlayer.money -= gainedCard.calculateCost(this);
+    const spent = gainedCard?.calculateCost(this) ? gainedCard.calculateCost(this) : 0;
+    activePlayer.money -= spent;
   }
 
   // TODO: unify this with the below method. Right now I've just hacked it to support the Lurker function
@@ -109,11 +110,14 @@ export class Game {
     });
   }
 
-  public gainCardFromSupply(cardPile: CardPile, player: Player, wasBought: boolean, toLocation?: CardLocation): Card {
+  public gainCardFromSupply(
+    cardPile: CardPile,
+    player: Player,
+    wasBought: boolean,
+    toLocation?: CardLocation
+  ): Card | undefined {
     const cardToGain = cardPile.cards.shift();
-    if (cardToGain == undefined) {
-      throw new Error("Card not found in pile"); // there UX layer did not validate the inputs properly so throwing.
-    }
+    if (!cardToGain) return undefined; // no cards left in the pile, so return undefined (can happen with like cursers)
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
     } else if (toLocation == CardLocation.TOP_OF_DECK) {

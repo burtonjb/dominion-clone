@@ -2,7 +2,6 @@ import { question } from "../../util/PromiseExtensions";
 import { Card } from "./Card";
 import { CardEffectConfig } from "./CardEffect";
 import { CardPile } from "./CardPile";
-import { Game } from "./Game";
 import { Player } from "./Player";
 import { Supply } from "./Supply";
 

@@ -1,4 +1,4 @@
-import { BasicCardEffectConfig, CardEffect, CardEffectConfig } from "./CardEffect";
+import { CardEffectConfig } from "./CardEffect";
 import { Game } from "./Game";
 import { Player } from "./Player";
 
@@ -76,9 +76,12 @@ export class Card {
   }
 
   public effectString(): string {
-    const out = this.params.playEffects?.map((e) => e.prompt)?.join(". ");
-    if (!out) {
-      return "";
+    let out = "";
+    if (this.victoryPoints) {
+      out += `${this.victoryPoints} VP. `;
+    }
+    if (this.params.playEffects) {
+      out += this.params.playEffects?.map((e) => e.prompt)?.join(". ");
     }
     return out;
   }

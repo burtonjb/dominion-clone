@@ -5,6 +5,7 @@ import { CardPile } from "../../domain/objects/CardPile";
 import { BooleanChoice, CardsFromPlayerChoice, ChooseCardFromSupply } from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
+import { TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 import * as BasicCards from "./Basic";
 
@@ -16,20 +17,18 @@ const Cellar: CardParams = {
   kingdomCard: true,
   playEffects: [
     new GainActions({ amount: 1 }),
-    // active player chooses any cards from hand. For each card, discard it, then draw a card
     {
+      prompt: "Choose any cards to discard from your hand. For each card discarded, draw a new one",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new CardsFromPlayerChoice(
-          "Choose any cards to discard from your hand. For each card discarded, draw a new one",
-          activePlayer,
-          activePlayer.hand
-        );
-        const selectedCards = await input.getChoice();
-
-        selectedCards.forEach((card) => {
-          game.discardCard(card, activePlayer);
-          activePlayer.drawCard();
+        const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose any cards to discard from your hand",
+          cardList: activePlayer.hand,
+          sourceCard: card,
         });
+
+        for (const card of selectedCards) {
+          game.discardCard(card, activePlayer), activePlayer.drawCard();
+        }
       },
     },
   ],
@@ -41,23 +40,7 @@ const Chapel: CardParams = {
   cost: 2,
   expansion: DominionExpansion.BASE,
   kingdomCard: true,
-  playEffects: [
-    {
-      effect: async (card: Card, activePlayer: Player, game: Game) => {
-        // Choose up to 4 cards from hand to trash
-        const input = new CardsFromPlayerChoice(
-          "Choose up to 4 cards to trash from your hand",
-          activePlayer,
-          activePlayer.hand,
-          { maxCards: 4 }
-        );
-        const selectedCards = await input.getChoice();
-        selectedCards.forEach((card) => {
-          game.trashCard(card, activePlayer);
-        });
-      },
-    },
-  ],
+  playEffects: [new TrashCardsFromHand({ minCards: 0, maxCards: 4 })],
 };
 
 const Moat: CardParams = {
@@ -80,22 +63,21 @@ const Harbinger: CardParams = {
     new DrawCards({ amount: 1 }),
     new GainActions({ amount: 1 }),
     {
-      // choose a card from the discard pile. Put it on top of your deck
+      prompt: "You may choose a card from your discard pile to add to the top of your deck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         if (activePlayer.discardPile.length == 0) return; // skip if the player's discard is empty
 
-        const input = new CardsFromPlayerChoice(
-          "Choose a card from your discard pile to add to the top of your deck",
-          activePlayer,
-          activePlayer.discardPile,
-          { maxCards: 1 }
-        );
-        const selectedCards = await input.getChoice();
+        const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "You may choose a card from your discard pile to add to the top of your deck",
+          cardList: activePlayer.discardPile,
+          maxCards: 1,
+          sourceCard: card,
+        });
 
-        selectedCards.forEach((card) => {
+        for (const card of selectedCards) {
           activePlayer.removeCard(card);
           activePlayer.drawPile.unshift(card);
-        });
+        }
       },
     },
   ],
@@ -110,10 +92,12 @@ const Merchant: CardParams = {
     new DrawCards({ amount: 1 }),
     new GainActions({ amount: 1 }),
     {
+      prompt: "The first time you play a silver this turn, gain $1",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const source = card; // hold the merchant
+        const source = card; // create a reference to the merchant incase I need to use it later
         const gainMoneyOnFirstSilver: CardEffect = async (playedCard: Card, player: Player, game: Game) => {
           if (playedCard.name != BasicCards.Silver.name) return;
+          //FIXME: this is slightly different than how merchant actually works, but I'm not going to create a generic "cards played" tracker yet
           if (activePlayer.cardsInPlay.filter((c) => c.name == BasicCards.Silver.name).length > 1) return;
           await new GainMoney({ amount: 1 }).effect(source, activePlayer, game);
         };
@@ -138,9 +122,14 @@ const Vassal: CardParams = {
         if (topCard.length == 0) return; // just return if there's no cards in draw/discard piles
         game.discardCard(topCard[0], activePlayer);
         if (!topCard[0].types.includes(CardType.ACTION)) return; // exit early if the top card is not an action
-        const input = new BooleanChoice(`You may play the action card discarded (${topCard[0].name})`, true);
-        const selected = await input.getChoice();
-        if (selected) {
+
+        const choice = await activePlayer.playerInput.booleanChoice(activePlayer, game, {
+          prompt: `You may play the action card discarded (${topCard[0].name})`,
+          defaultChoice: true,
+          sourceCard: card,
+        });
+
+        if (choice) {
           await game.playCard(topCard[0], activePlayer);
         }
       },
@@ -163,6 +152,7 @@ const Workshop: CardParams = {
   kingdomCard: true,
   playEffects: [
     {
+      prompt: "Gain a card costing up to 4",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const input = new ChooseCardFromSupply(
           "Choose a card to gain costing 4 or less",
@@ -255,7 +245,7 @@ const Moneylender: CardParams = {
   kingdomCard: true,
   playEffects: [
     {
-      // you may trash a copper from your hand for +3 money
+      prompt: "You may trash a copper from your hand for +3$",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const copper = activePlayer.hand.find((c) => (c.name = BasicCards.Copper.name));
         if (copper == undefined) return; // just return early if no coppers in hand
