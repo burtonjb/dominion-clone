@@ -400,7 +400,7 @@ const Diplomat: CardParams = {
       },
     },
   ],
-  // TODO: reaction effect for being attack
+  // TODO: reaction effect for being attacked
 };
 
 const Ironworks: CardParams = {
@@ -616,7 +616,7 @@ const Minion: CardParams = {
                     if (otherPlayer.hand.length >= 5) {
                       const hand = otherPlayer.hand.slice();
                       for (const card of hand) {
-                        game.discardCard(card, activePlayer);
+                        game.discardCard(card, otherPlayer);
                       }
                       await new DrawCards({ amount: 4 }).effect(card, otherPlayer, game);
                     }

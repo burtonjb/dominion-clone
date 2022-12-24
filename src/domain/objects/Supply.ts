@@ -14,8 +14,8 @@ export class Supply {
     return [...this.basePiles, ...this.kingdom.kingdomPiles];
   }
 
-  public pilesWithCards(): Array<CardPile> {
-    return [...this.basePiles, ...this.kingdom.kingdomPiles].filter((pile) => pile.cards.length > 0)
+  public nonEmptyPiles(): Array<CardPile> {
+    return [...this.basePiles, ...this.kingdom.kingdomPiles].filter((pile) => pile.cards.length > 0);
   }
 
   public emptyPiles(): Array<CardPile> {

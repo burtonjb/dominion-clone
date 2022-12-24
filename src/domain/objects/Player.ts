@@ -22,7 +22,7 @@ export enum CardPosition {
 export class Player {
   private random: Random;
   private id: number;
-  public readonly name: string;
+  public name: string;
 
   public hand: Array<Card>;
   public drawPile: Array<Card>;
@@ -69,11 +69,12 @@ export class Player {
     doNTimes(5, () => this.drawCard());
   }
 
-  public drawCard() {
+  public drawCard(): Card | undefined {
     if (this.drawPile.length > 0) {
       // draw a card from your deck
       const topCard = this.drawPile.shift()!;
       this.hand.push(topCard);
+      return topCard;
     } else if (this.drawPile.length == 0 && this.discardPile.length > 0) {
       // shuffle your discard, put it below your deck, and then draw
       shuffleArray(this.discardPile, this.random);
@@ -83,8 +84,10 @@ export class Player {
       }
       const topCard = this.drawPile.shift()!;
       this.hand.push(topCard);
+      return topCard;
     } else {
       // do nothing, no cards left in deck and discardPile
+      return undefined;
     }
   }
 

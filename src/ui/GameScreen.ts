@@ -8,6 +8,8 @@ import { formatForegroundColor, xtermColors } from "./Colors";
 import { BaseTerminalScreen } from "./Terminal";
 import { Event, formatEvent } from "../domain/events/Event";
 
+const EVENT_COLUMN_START = 130;
+
 export class GameScreen {
   private terminal: BaseTerminalScreen;
   private game: Game;
@@ -58,7 +60,7 @@ export class GameScreen {
   }
 
   renderEvents() {
-    const colStart = 130;
+    const colStart = EVENT_COLUMN_START;
     const colEnd = this.terminal.getSize()[0] - 2;
     const maxEvents = this.terminal.getSize()[1] - 6;
     this.terminal.putString(colStart, 0, "|======== EVENTS ========");

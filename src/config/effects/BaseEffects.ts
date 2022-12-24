@@ -64,9 +64,11 @@ export class DrawCards implements BasicCardEffectConfig<DrawCardsParams> {
 
   async effect(card: Card, player: Player, game: Game) {
     doNTimes(this.params.amount, () => {
-      player.drawCard();
+      const drawnCard = player.drawCard();
+      if (drawnCard) {
+        game.eventLog.publishEvent({ type: "DrawCard", player: player, card: drawnCard });
+      } // otherwise no cards left, so don't publish a draw event
     });
-    game.eventLog.publishEvent({ type: "DrawCard", player: player, card: card });
   }
 }
 
