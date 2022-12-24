@@ -1,17 +1,33 @@
 import { Card, CardType } from "../../domain/objects/Card";
 import { CardPile } from "../../domain/objects/CardPile";
-import { BooleanChoice, CardsFromPlayerChoice } from "../../domain/objects/Choice";
+import { BooleanChoice, CardsFromPlayerChoice, ChooseCardFromSupply } from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
 import { Player } from "../../domain/objects/Player";
-import { BooleanChoiceParams, ChooseCardsFromListParams, PlayerInput } from "../../domain/objects/PlayerInput";
+import {
+  BooleanChoiceParams,
+  ChooseCardFromSupplyParams,
+  ChooseCardsFromListParams,
+  PlayerInput,
+} from "../../domain/objects/PlayerInput";
 import { question } from "../../util/PromiseExtensions";
 import * as BasicCards from "../cards/Basic";
 
 export class HumanPlayerInput implements PlayerInput {
+  async choosePileFromSupply(
+    player: Player,
+    game: Game,
+    params: ChooseCardFromSupplyParams
+  ): Promise<CardPile | undefined> {
+    const input = new ChooseCardFromSupply(params.prompt, game.supply, params.filter);
+    const selected = await input.getChoice();
+    return selected;
+  }
+
   async booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean> {
     const input = new BooleanChoice("Trash a copper from your hand for +3 copper", true);
     return await input.getChoice();
   }
+
   async chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>> {
     const input = new CardsFromPlayerChoice(params.prompt, player, params.cardList);
     const selectedCards = await input.getChoice();

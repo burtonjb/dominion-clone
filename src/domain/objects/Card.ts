@@ -29,6 +29,7 @@ export interface CardParams {
   readonly cost: number;
   readonly worth?: number;
   readonly victoryPoints?: number;
+  readonly text?: string;
   readonly expansion: DominionExpansion;
   readonly kingdomCard: boolean;
   readonly playEffects?: Array<CardEffectConfig>;
@@ -71,11 +72,15 @@ export class Card {
   public async play(player: Player, game: Game) {
     if (!this.params.playEffects) return;
     for (let i = 0; i < this.params.playEffects?.length; i++) {
+      game.ui?.render();
       await this.params.playEffects[i].effect(this, player, game);
     }
   }
 
   public effectString(): string {
+    if (this.params.text) {
+      return this.params.text;
+    }
     let out = "";
     if (this.victoryPoints) {
       out += `${this.victoryPoints} VP. `;

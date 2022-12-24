@@ -18,10 +18,17 @@ export interface BooleanChoiceParams {
   sourceCard: Card;
 }
 
+export interface ChooseCardFromSupplyParams {
+  prompt: string;
+  filter?: (pile: CardPile) => boolean;
+  sourceCard: Card;
+}
+
 export interface PlayerInput {
   chooseActionToPlay(player: Player, game: Game): Promise<Card | undefined>;
   chooseTreasureToPlay(player: Player, game: Game): Promise<Array<Card> | undefined>;
   chooseCardToBuy(player: Player, game: Game): Promise<CardPile | undefined>;
   chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>>;
+  choosePileFromSupply(player: Player, game: Game, params: ChooseCardFromSupplyParams): Promise<CardPile | undefined>;
   booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean>;
 }

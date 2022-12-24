@@ -2,11 +2,27 @@ import { Card, CardType } from "../../domain/objects/Card";
 import { CardPile } from "../../domain/objects/CardPile";
 import { Game } from "../../domain/objects/Game";
 import { Player } from "../../domain/objects/Player";
-import { BooleanChoiceParams, ChooseCardsFromListParams, PlayerInput } from "../../domain/objects/PlayerInput";
+import {
+  BooleanChoiceParams,
+  ChooseCardFromSupplyParams,
+  ChooseCardsFromListParams,
+  PlayerInput,
+} from "../../domain/objects/PlayerInput";
+import { shuffleArray } from "../../util/ArrayExtensions";
 import * as BasicCards from "../cards/Basic";
 
 // AI that plays big money (poorly)
 export class BigMoneyAiInput implements PlayerInput {
+  async choosePileFromSupply(
+    player: Player,
+    game: Game,
+    params: ChooseCardFromSupplyParams
+  ): Promise<CardPile | undefined> {
+    const viablePiles = game.supply.nonEmptyPiles().filter((p) => (params.filter ? params.filter(p) : true));
+    shuffleArray(viablePiles, game.random);
+    return viablePiles[0];
+  }
+
   async booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean> {
     return params.defaultChoice;
   }

@@ -20,7 +20,7 @@ export enum TurnPhase {
 }
 
 export class Game {
-  private random: Random;
+  public readonly random: Random;
   public players: Array<Player>;
   public supply: Supply;
   public activePlayerIndex: number;

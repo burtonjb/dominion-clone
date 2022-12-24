@@ -29,30 +29,31 @@ async function main() {
   game.ui = gameScreen;
 
   while (!game.isGameFinished()) {
-    gameScreen.render();
+    game.ui?.render();
 
     if (game.currentPhase == TurnPhase.ACTION) {
-      await handleActionPhase(game, gameScreen);
+      await handleActionPhase(game);
     } else if (game.currentPhase == TurnPhase.BUY) {
-      await handleBuyPhase(game, gameScreen);
+      await handleBuyPhase(game);
     } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
       handleCleanUpPhase(game);
     }
   }
+  game.ui?.render();
   // log all info for game end (winners, player score + cards)
   logger.info(`Winners: ${game.calculateWinners().map((p) => p.name)}`);
 }
 
-async function handleActionPhase(game: Game, gameScreen: GameScreen) {
+async function handleActionPhase(game: Game) {
   const activePlayer = game.getActivePlayer();
 
-  gameScreen.render();
+  game.ui?.render();
 
   let donePlayingActions = !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
   let actionsRemaining = activePlayer.actions > 0;
 
   while (!donePlayingActions && actionsRemaining) {
-    gameScreen.render();
+    game.ui?.render();
     const cardToPlay = await activePlayer.playerInput.chooseActionToPlay(activePlayer, game);
     activePlayer.actions -= 1;
     if (cardToPlay == undefined) break;
@@ -71,14 +72,14 @@ async function handleActionPhase(game: Game, gameScreen: GameScreen) {
 // The buy phase is broken up into two parts:
 // 1. playing treasures
 // 2. and then actually buying cards
-async function handleBuyPhase(game: Game, gameScreen: GameScreen) {
+async function handleBuyPhase(game: Game) {
   const activePlayer = game.getActivePlayer();
 
-  gameScreen.render();
+  game.ui?.render();
 
   let donePlayingTreasures = !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE)); //skip this if there's no treasures
   while (!donePlayingTreasures) {
-    gameScreen.render();
+    game.ui?.render();
     const cardsToPlay = await activePlayer.playerInput.chooseTreasureToPlay(activePlayer, game);
     if (cardsToPlay == undefined || cardsToPlay.length == 0) break;
     for (const cardToPlay of cardsToPlay) {
@@ -93,12 +94,12 @@ async function handleBuyPhase(game: Game, gameScreen: GameScreen) {
       donePlayingTreasures || !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE));
   }
 
-  gameScreen.render();
+  game.ui?.render();
 
   let doneBuying = activePlayer.buys <= 0;
 
   while (!doneBuying) {
-    gameScreen.render();
+    game.ui?.render();
 
     const pileToBuy = await activePlayer.playerInput.chooseCardToBuy(activePlayer, game);
     if (pileToBuy == undefined) break;

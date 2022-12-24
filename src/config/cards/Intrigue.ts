@@ -64,6 +64,9 @@ const Lurker: CardParams = {
                   (pile) => pile.cards.length > 0 && pile.cards[0].types.includes(CardType.ACTION)
                 );
                 const pile = await input.getChoice();
+
+                if (!pile) return;
+
                 game.trashCardFromSupply(pile, activePlayer);
               },
             },
@@ -277,6 +280,8 @@ const Swindler: CardParams = {
             );
 
             const gainPile = await toGain.getChoice();
+            if (!gainPile) return;
+
             game.gainCardFromSupply(gainPile, otherPlayer, false);
           });
         }
@@ -303,8 +308,10 @@ const WishingWell: CardParams = {
         const topCards = player.topNCards(1);
         if (topCards.length == 0) return; // return early if no cards
         const topCard = topCards[0];
+        game.revealCards(topCards, player);
         if (topCard.name.toLowerCase() == named.toLowerCase()) {
-          player.transferCard(topCard, player.drawPile, player.hand, CardPosition.BOTTOM);
+          player.transferCard(topCard, player.drawPile, player.hand, CardPosition.TOP);
+          // TODO: publish event for putting card in hand
         }
       },
     },
@@ -417,6 +424,8 @@ const Ironworks: CardParams = {
           (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4
         );
         const selected = await input.getChoice();
+        if (!selected) return;
+
         const gainedCard = game.gainCardFromSupply(selected, activePlayer, false);
 
         // if card was not gained successfully, return early
@@ -580,6 +589,7 @@ const Duke: CardParams = {
   cost: 5,
   expansion: DominionExpansion.INTRIGUE,
   kingdomCard: true,
+  text: "Worth 1 VP per duchy you have",
   calculateVictoryPoints: (player: Player) => {
     return player.allCards().filter((c) => c.name == BasicCards.Duchy.name).length;
   },
@@ -687,6 +697,8 @@ const Replace: CardParams = {
           (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= selected[0].calculateCost(game) + 2
         );
         const gainPile = await toGain.getChoice();
+        if (!gainPile) return;
+
         const cardToGain = gainPile.cards[0];
         if (cardToGain.types.includes(CardType.ACTION) || cardToGain.types.includes(CardType.TREASURE)) {
           game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.TOP_OF_DECK);
@@ -820,6 +832,8 @@ const Upgrade: CardParams = {
           (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 1
         );
         const gainPile = await toGain.getChoice();
+        if (!gainPile) return;
+
         game.gainCardFromSupply(gainPile, activePlayer, false);
       },
     },
