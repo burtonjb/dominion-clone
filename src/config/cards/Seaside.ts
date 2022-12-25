@@ -1,9 +1,11 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
+import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { DurationEffect, DurationTiming } from "../../domain/objects/CardEffect";
+import { attack, DurationEffect, DurationTiming } from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
-import { CardPosition, Player } from "../../domain/objects/Player";
-import { DrawCards, GainActions, GainBuys, GainMoney } from "../effects/BaseEffects";
+import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
+import { DiscardCardsFromHand } from "../effects/AdvancedEffects";
+import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 
 const Haven: CardParams = {
   name: "Haven",
@@ -208,18 +210,301 @@ const Lookout: CardParams = {
   ],
 };
 
+const Monkey: CardParams = {
+  name: "Monkey",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 3,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    //TODO
+  ],
+};
+
+const SeaChart: CardParams = {
+  name: "Sea Chart",
+  types: [CardType.ACTION],
+  cost: 3,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "Reveal the top card of your deck. If you have a copy in play, put it into your hand",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const topCards = activePlayer.topNCards(1);
+        game.revealCards(topCards, activePlayer);
+        if (topCards.length == 0) return;
+
+        const topCard = topCards[0];
+        if (activePlayer.cardsInPlay.some((c) => c.name == topCard.name)) {
+          activePlayer.transferCard(topCard, activePlayer.drawPile, activePlayer.hand, CardPosition.BOTTOM);
+          game.eventLog.publishEvent({ type: "CardPutInHand", player: activePlayer, card: topCard });
+        }
+      },
+    },
+  ],
+};
+
+const Smugglers: CardParams = {
+  name: "Smugglers",
+  types: [CardType.ACTION],
+  cost: 3,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    //TODO
+  ],
+};
+
+const Warehouse: CardParams = {
+  name: "Warehouse",
+  types: [CardType.ACTION],
+  cost: 3,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 3 }),
+    new GainActions({ amount: 1 }),
+    new DiscardCardsFromHand({ minCards: 3, maxCards: 3 }),
+  ],
+};
+
+const Blockade: CardParams = {
+  name: "Blockade",
+  types: [CardType.ACTION, CardType.ATTACK, CardType.DURATION],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt:
+        "Gain a card costing up to $4, setting it aside. At the start of your next turn, put it into your hand. While it's set aside, when another player gains a copy of it on their turn, they gain a Curse.",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        // TODO: add effect. Needs support for onGain effects
+      },
+    },
+  ],
+};
+
+const Caravan: CardParams = {
+  name: "Caravan",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "At the start of next turn, +1 cards",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DrawCards({ amount: 1 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
+  ],
+};
+
 const Cutpurse: CardParams = {
   name: "Cutpurse",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 4,
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
-  playEffects: [],
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    {
+      prompt: "Each other player discards a copper from hand (or reveals they can't)",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        for (const otherPlayer of game.otherPlayers()) {
+          await attack(card, otherPlayer, game, async () => {
+            const coppers = otherPlayer.hand.filter((c) => c.name == BasicCards.Copper.name);
+
+            if (coppers.length == 0) {
+              // handle no coppers in hand case
+              game.revealCards(otherPlayer.hand, otherPlayer);
+              return;
+            } else {
+              // discard the copper from their hand
+              game.discardCard(coppers[0], otherPlayer);
+            }
+          });
+        }
+      },
+    },
+  ],
+};
+
+const Island: CardParams = {
+  name: "Island",
+  types: [CardType.ACTION, CardType.VICTORY],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  victoryPoints: 2,
+  playEffects: [
+    {
+      prompt: "Put this and another card from your hand onto your island mat",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose a card to put onto your island mat",
+          cardList: activePlayer.hand,
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
+
+        activePlayer.transferCard(card, activePlayer.cardsInPlay, activePlayer.mats.island, CardPosition.BOTTOM);
+        game.eventLog.publishEvent({ type: "CardSetAside", player: activePlayer, card: card });
+
+        if (selectedCards.length == 0) return;
+        const selectedCard = selectedCards[0];
+        activePlayer.transferCard(
+          selectedCard,
+          activePlayer.cardsInPlay,
+          activePlayer.mats.island,
+          CardPosition.BOTTOM
+        );
+        game.eventLog.publishEvent({ type: "CardSetAside", player: activePlayer, card: selectedCard });
+      },
+    },
+  ],
+};
+
+const Sailor: CardParams = {
+  name: "Sailor",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    //TODO:
+  ],
+};
+
+const Salvager: CardParams = {
+  name: "Salvager",
+  types: [CardType.ACTION],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new GainBuys({ amount: 1 }),
+    {
+      prompt: "Trash a card from your hand. +1$ for each $ it costs",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose a card from your hand to trash",
+          cardList: activePlayer.hand,
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
+        if (selected.length == 0) return;
+
+        const toTrash = selected[0];
+        game.trashCard(toTrash, activePlayer);
+        await new GainMoney({ amount: toTrash.calculateCost(game) }).effect(card, activePlayer, game);
+      },
+    },
+  ],
+};
+
+const TidePools: CardParams = {
+  name: "Tide Pools",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 3 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "At the start of your next turn discard 2 cards",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DiscardCardsFromHand({ minCards: 2, maxCards: 2 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
+  ],
+};
+
+const TreasureMap: CardParams = {
+  name: "Treasure Map",
+  types: [CardType.ACTION],
+  cost: 4,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Trash this and a treasure map from your hand. If you do gain 4 Golds onto your deck",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        game.trashCard(card, activePlayer);
+
+        const mapsInHand = activePlayer.hand.filter((c) => c.name == TreasureMap.name);
+        if (mapsInHand.length == 0) return; // just trash this map and return (this is the rules in the FAQ)
+
+        for (let i = 0; i < 4; i++) {
+          await new GainCard({ name: BasicCards.Gold.name, toLocation: CardLocation.TOP_OF_DECK }).effect(
+            card,
+            activePlayer,
+            game
+          );
+        }
+      },
+    },
+  ],
 };
 
 export function register() {
-  cardConfigRegistry.registerAll(Haven, Lighthouse, NativeVillage, Astrolabe, FishingVillage, Lookout);
+  cardConfigRegistry.registerAll(
+    Haven,
+    Lighthouse,
+    NativeVillage,
+    Astrolabe,
+    FishingVillage,
+    Lookout,
+    Monkey,
+    SeaChart,
+    Smugglers,
+    Warehouse,
+    Blockade,
+    Caravan,
+    Cutpurse,
+    Island,
+    Sailor,
+    Salvager,
+    TidePools,
+    TreasureMap
+  );
 }
 register();
 
-export { Haven, Lighthouse, NativeVillage, Astrolabe, FishingVillage, Lookout };
+export {
+  Haven,
+  Lighthouse,
+  NativeVillage,
+  Astrolabe,
+  FishingVillage,
+  Lookout,
+  Monkey,
+  SeaChart,
+  Smugglers,
+  Warehouse,
+  Blockade,
+  Caravan,
+  Cutpurse,
+  Island,
+  Sailor,
+  Salvager,
+  TidePools,
+  TreasureMap,
+};
