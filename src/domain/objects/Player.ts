@@ -1,3 +1,4 @@
+import { throws } from "assert";
 import { HumanPlayerInput } from "../../config/input/HumanInput";
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { logger } from "../../util/Logger";
@@ -32,6 +33,11 @@ export class Player {
   public cardsInPlay: Array<Card>;
   public cardsSetAside: Array<Card>;
 
+  public readonly mats: {
+    island: Array<Card>;
+    nativeVillage: Array<Card>;
+  };
+
   public onPlayCardTriggers: Array<CardEffect>;
 
   public actions: number;
@@ -56,6 +62,11 @@ export class Player {
     this.discardPile = [];
     this.cardsInPlay = [];
     this.cardsSetAside = [];
+
+    this.mats = {
+      nativeVillage: [],
+      island: [],
+    };
 
     this.actions = 1;
     this.buys = 1;
@@ -112,7 +123,15 @@ export class Player {
   }
 
   public allCards(): Array<Card> {
-    return [...this.hand, ...this.drawPile, ...this.discardPile, ...this.cardsInPlay, ...this.cardsSetAside];
+    return [
+      ...this.hand,
+      ...this.drawPile,
+      ...this.discardPile,
+      ...this.cardsInPlay,
+      ...this.cardsSetAside,
+      ...this.mats.nativeVillage,
+      ...this.mats.island,
+    ];
   }
 
   // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)

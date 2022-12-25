@@ -36,7 +36,7 @@ export class HumanPlayerInput implements PlayerInput {
       minChoices: params.minChoices,
       maxChoices: params.maxChoices,
     });
-    return await input.getChoice();
+    return (await input.getChoice()).slice();
   }
   async choosePileFromSupply(
     player: Player,
@@ -59,7 +59,7 @@ export class HumanPlayerInput implements PlayerInput {
       maxCards: params.maxCards,
     });
     const selectedCards = await input.getChoice();
-    return selectedCards;
+    return selectedCards.slice();
   }
 
   async chooseActionToPlay(player: Player, game: Game): Promise<Card | undefined> {

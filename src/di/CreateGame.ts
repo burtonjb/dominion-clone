@@ -1,7 +1,4 @@
 import * as BasicCards from "../config/cards/Basic";
-import * as Base from "../config/cards/Base";
-import * as Intrigue from "../config/cards/Intrigue";
-import * as Seaside from "../config/cards/Seaside";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
@@ -11,7 +8,7 @@ import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
-import registerAll from "./RegisterConfig";
+import registerAll, { SeasideCards } from "./RegisterConfig";
 
 export function createGame(numberOfPlayers: number, seed?: number): Game {
   // construct utility classes and "services"
@@ -36,7 +33,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
   const kingdom = createKingdom(
     numberOfPlayers,
     // selectedCards.map((c) => c.name)
-    ["Haven", "Lighthouse"]
+    [SeasideCards.Lookout.name]
   );
 
   const supply = createSupply(numberOfPlayers, kingdom);
