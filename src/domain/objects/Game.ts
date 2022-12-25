@@ -170,7 +170,29 @@ export class Game {
     this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
   }
 
-  public cleanUp() {
+  public async startTurn(activePlayer: Player) {
+    activePlayer.turns += 1;
+
+    // trigger all the duration effects
+    for (const card of activePlayer.cardsInPlay) {
+      for (const effect of card.durationEffects) {
+        await effect.effect(activePlayer, this);
+      }
+    }
+
+    // clean up the duration effects that have completed
+    for (const card of activePlayer.cardsInPlay) {
+      const toClean = card.durationEffects.filter((e) => !e.hasRemaining);
+      for (const effect of toClean) {
+        const index = card.durationEffects.indexOf(effect);
+        if (index >= 0) {
+          card.durationEffects.splice(index, 1); // remove the effect from the pending duration effects
+        }
+      }
+    }
+  }
+
+  public async cleanUp() {
     const activePlayer = this.getActivePlayer();
     activePlayer.cleanUp(this);
 
@@ -178,7 +200,8 @@ export class Game {
 
     // advance the active player index, have the next player start their turn
     this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
-    this.getActivePlayer().turns += 1;
+
+    await this.startTurn(this.getActivePlayer());
   }
 
   /*

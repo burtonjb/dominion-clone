@@ -1,4 +1,4 @@
-import { CardEffectConfig } from "./CardEffect";
+import { CardEffectConfig, DurationEffect } from "./CardEffect";
 import { Game } from "./Game";
 import { Player } from "./Player";
 
@@ -9,6 +9,7 @@ export enum CardType {
   ACTION = "Action",
   ATTACK = "Attack",
   CURSE = "Curse",
+  DURATION = "Duration",
   REACTION = "Reaction",
   TREASURE = "Treasure",
   VICTORY = "Victory",
@@ -17,6 +18,7 @@ export enum CardType {
 export enum DominionExpansion {
   BASE = "Base",
   INTRIGUE = "Intrigue",
+  SEASIDE = "Seaside",
 }
 
 export interface ReactionEffects {
@@ -46,6 +48,8 @@ export class Card {
   public worth: number;
   public victoryPoints: number;
 
+  public durationEffects: Array<DurationEffect>;
+
   constructor(params: CardParams) {
     this.params = params;
     this.id = cardNumber++;
@@ -54,6 +58,7 @@ export class Card {
     this.types = params.types.slice(); // copy of the config
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
+    this.durationEffects = [];
   }
 
   public calculateCost(game: Game): number {
@@ -75,6 +80,10 @@ export class Card {
       game.ui?.render();
       await this.params.playEffects[i].effect(this, player, game);
     }
+  }
+
+  public shouldCleanUp(): boolean {
+    return this.durationEffects.length == 0;
   }
 
   public effectString(): string {

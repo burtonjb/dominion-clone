@@ -37,7 +37,7 @@ async function main() {
     } else if (game.currentPhase == TurnPhase.BUY) {
       await handleBuyPhase(game);
     } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
-      handleCleanUpPhase(game);
+      await handleCleanUpPhase(game);
     }
   }
   game.ui?.render();
@@ -121,9 +121,9 @@ async function handleBuyPhase(game: Game) {
   game.currentPhase = TurnPhase.CLEAN_UP;
 }
 
-function handleCleanUpPhase(game: Game) {
+async function handleCleanUpPhase(game: Game) {
   game.eventLog.publishEvent({ type: "Cleanup", player: game.getActivePlayer(), turn: game.getActivePlayer().turns });
-  game.cleanUp();
+  await game.cleanUp();
   game.currentPhase = TurnPhase.ACTION;
 }
 

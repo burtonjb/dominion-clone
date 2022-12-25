@@ -1,5 +1,7 @@
 import * as BasicCards from "../config/cards/Basic";
-import * as IntrigueCards from "../config/cards/Intrigue";
+import * as Base from "../config/cards/Base";
+import * as Intrigue from "../config/cards/Intrigue";
+import * as Seaside from "../config/cards/Seaside";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
@@ -33,7 +35,8 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
   // create the kingdom based on the number of players
   const kingdom = createKingdom(
     numberOfPlayers,
-    selectedCards.map((c) => c.name)
+    // selectedCards.map((c) => c.name)
+    ["Haven", "Lighthouse"]
   );
 
   const supply = createSupply(numberOfPlayers, kingdom);

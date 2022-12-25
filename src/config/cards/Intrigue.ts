@@ -164,6 +164,7 @@ const Masquerade: CardParams = {
           const nextPlayer = allPlayersWithNonEmptyHands[(i + 1) % allPlayersWithNonEmptyHands.length];
           currentPlayer.removeCard(currentCard);
           nextPlayer.hand.push(currentCard);
+          game.eventLog.publishEvent({ type: "CardPutInHand", player: nextPlayer, card: currentCard });
         }
       },
     },

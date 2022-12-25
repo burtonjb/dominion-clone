@@ -1,5 +1,6 @@
 import { HumanPlayerInput } from "../../config/input/HumanInput";
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
+import { logger } from "../../util/Logger";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
 import { CardEffect } from "./CardEffect";
@@ -29,6 +30,7 @@ export class Player {
   public drawPile: Array<Card>;
   public discardPile: Array<Card>;
   public cardsInPlay: Array<Card>;
+  public cardsSetAside: Array<Card>;
 
   public onPlayCardTriggers: Array<CardEffect>;
 
@@ -53,6 +55,7 @@ export class Player {
 
     this.discardPile = [];
     this.cardsInPlay = [];
+    this.cardsSetAside = [];
 
     this.actions = 1;
     this.buys = 1;
@@ -109,7 +112,7 @@ export class Player {
   }
 
   public allCards(): Array<Card> {
-    return [...this.hand, ...this.drawPile, ...this.discardPile, ...this.cardsInPlay];
+    return [...this.hand, ...this.drawPile, ...this.discardPile, ...this.cardsInPlay, ...this.cardsSetAside];
   }
 
   // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)
@@ -117,7 +120,7 @@ export class Player {
   // its no longer tracked. But this method will still track the card...
   // Returns the list of cards that were deleted
   public removeCard(card: Card): Array<Card> {
-    const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile];
+    const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile, this.cardsSetAside];
     for (const container of containers) {
       const index = container.findIndex((c) => c == card);
       if (index > -1) {
@@ -130,7 +133,7 @@ export class Player {
   public transferCard(card: Card, from: Array<Card>, to: Array<Card>, position: CardPosition) {
     const cardIndex = from.findIndex((c) => c == card);
     if (cardIndex == -1) {
-      console.warn("Unable to find card in transfercard method");
+      logger.warn("Unable to find card in transfer card method");
       return;
     }
     from.splice(cardIndex, 1);
@@ -158,7 +161,7 @@ export class Player {
   public cleanUp(game: Game) {
     // discard all cards in play
     const cardsInPlay = this.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
-    cardsInPlay.forEach((card) => game.discardCard(card, this));
+    cardsInPlay.filter((c) => c.shouldCleanUp()).forEach((card) => game.discardCard(card, this));
 
     // discard all cards in hand
     const cardsInHand = this.hand.slice();

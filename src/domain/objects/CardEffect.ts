@@ -2,6 +2,7 @@ import { Card } from "./Card";
 import { Game } from "./Game";
 import { Player } from "./Player";
 import * as BaseCards from "../../config/cards/Base";
+import * as SeasideCards from "../../config/cards/Seaside";
 
 // function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
 // They are applied at a game level as they affect other players' cards' costs
@@ -30,5 +31,28 @@ export async function attack(card: Card, target: Player, game: Game, effect: () 
     );
     return;
   }
+  //FIXME: lighthouse is hacked in too as part of attack immunity.
+  if (target.cardsSetAside.map((c) => c.name).includes(SeasideCards.Lighthouse.name)) {
+    return;
+  }
+
   await effect();
+}
+
+export enum DurationTiming {
+  START_OF_TURN = "StartOfTurn",
+}
+
+type DurationFunction = (player: Player, game: Game) => Promise<boolean>;
+
+export class DurationEffect {
+  public hasRemaining: boolean;
+
+  constructor(public readonly timing: DurationTiming, private readonly internalEffect: DurationFunction) {
+    this.hasRemaining = true;
+  }
+
+  public async effect(player: Player, game: Game) {
+    this.hasRemaining = await this.internalEffect(player, game);
+  }
 }
