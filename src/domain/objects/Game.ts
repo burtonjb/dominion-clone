@@ -7,6 +7,7 @@ import { CardPile } from "./CardPile";
 import { EventLog } from "../events/EventLog";
 import { GameScreen } from "../../ui/GameScreen";
 import { CostModifier } from "./CardEffect";
+import { stringify } from "querystring";
 
 export interface GameParams {
   seed: number;
@@ -20,7 +21,7 @@ export enum TurnPhase {
 }
 
 export class Game {
-  private random: Random;
+  public readonly random: Random;
   public players: Array<Player>;
   public supply: Supply;
   public activePlayerIndex: number;
@@ -57,7 +58,7 @@ export class Game {
   // determines if the game is still in progress or is finished
   public isGameFinished(): boolean {
     const isProvincePileEmpty =
-      this.supply.baseCards.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
+      this.supply.basePiles.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
     const areAtLeast3PilesEmpty = this.supply.allPiles().filter((pile) => pile.cards.length == 0).length >= 3;
 
     const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty;
@@ -94,7 +95,8 @@ export class Game {
     const activePlayer = this.getActivePlayer();
     const gainedCard = this.gainCardFromSupply(cardPile, player, true);
     activePlayer.buys -= 1;
-    activePlayer.money -= gainedCard.calculateCost(this);
+    const spent = gainedCard?.calculateCost(this) ? gainedCard.calculateCost(this) : 0;
+    activePlayer.money -= spent;
   }
 
   // TODO: unify this with the below method. Right now I've just hacked it to support the Lurker function
@@ -109,11 +111,14 @@ export class Game {
     });
   }
 
-  public gainCardFromSupply(cardPile: CardPile, player: Player, wasBought: boolean, toLocation?: CardLocation): Card {
+  public gainCardFromSupply(
+    cardPile: CardPile,
+    player: Player,
+    wasBought: boolean,
+    toLocation?: CardLocation
+  ): Card | undefined {
     const cardToGain = cardPile.cards.shift();
-    if (cardToGain == undefined) {
-      throw new Error("Card not found in pile"); // there UX layer did not validate the inputs properly so throwing.
-    }
+    if (!cardToGain) return undefined; // no cards left in the pile, so return undefined (can happen with like cursers)
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
     } else if (toLocation == CardLocation.TOP_OF_DECK) {
@@ -189,6 +194,18 @@ export class Game {
   public otherPlayers(player?: Player): Array<Player> {
     const filterPlayer = player ? player : this.getActivePlayer();
     return this.players.filter((p) => p != filterPlayer);
+  }
+
+  /*
+  Returns 1 of every card in the game. Don't actually use the cards, just use a property
+  */
+  public getAllUniqueCards(): Array<Card> {
+    const nameToCard = new Map<string, Card>();
+    const supplyCards = this.supply.allPiles();
+    supplyCards.forEach((p) => p.cards.forEach((c) => nameToCard.set(c.name, c)));
+    this.players.forEach((p) => p.allCards().forEach((c) => nameToCard.set(c.name, c)));
+
+    return [...nameToCard.values()];
   }
 
   public calculateWinners(): Array<Player> {

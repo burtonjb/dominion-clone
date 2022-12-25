@@ -1,68 +1,76 @@
 import { createGame } from "./di/CreateGame";
 import { CardType } from "./domain/objects/Card";
 import { Game, TurnPhase } from "./domain/objects/Game";
-import * as BasicCards from "./config/cards/Basic";
-import { question } from "./util/PromiseExtensions";
 import { GameScreen } from "./ui/GameScreen";
 import { BaseTerminalScreen } from "./ui/Terminal";
+import { logger } from "./util/Logger";
+import { BigMoneyAiInput } from "./config/input/BaseAiInput";
+import { HumanPlayerInput } from "./config/input/HumanInput";
+import { rl } from "./util/PromiseExtensions";
+
+process.on("SIGINT", () => {
+  // TODO: add some logging on exit
+  process.exit(0);
+});
 
 async function main() {
-  const game = createGame(1, new Date().getTime());
+  const game = createGame(2, new Date().getTime());
+  // TODO: better way to set this up
+  game.players[0].playerInput = new HumanPlayerInput();
+  game.players[0].name = "P1";
+  game.players[1].playerInput = new BigMoneyAiInput();
+  game.players[1].name = "P2";
+
+  // log all info for game start (kingdom, seed, cards, starting hands)
+  logger.info(`Creating kingdom ${game.supply.allPiles().map((p) => p.name)}`);
 
   const showDebugInfoInUi = process.argv.some((arg) => arg.toUpperCase() == "DEBUG");
 
   const gameScreen = new GameScreen(new BaseTerminalScreen(), game, showDebugInfoInUi);
+  game.ui = gameScreen; // you can leave this unset and then it won't display anything - and leaving it off will speed up bot v bot gameplay
+
   while (!game.isGameFinished()) {
-    gameScreen.render();
+    game.ui?.render();
 
     if (game.currentPhase == TurnPhase.ACTION) {
-      await handleActionPhase(game, gameScreen);
+      await handleActionPhase(game);
     } else if (game.currentPhase == TurnPhase.BUY) {
-      await handleBuyPhase(game, gameScreen);
+      await handleBuyPhase(game);
     } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
       handleCleanUpPhase(game);
     }
   }
-  console.dir(game.calculateWinners(), { depth: 3 });
+  game.ui?.render();
+
+  logger.info(`Winners: ${game.calculateWinners().map((p) => p.name)}`);
+  for (const player of game.players) {
+    logger.info(gameScreen.formatPlayerOverview(player));
+    logger.info(`${player.allCards().map((c) => c.name)}`);
+  }
+  rl.close();
 }
 
-async function handleActionPhase(game: Game, gameScreen: GameScreen) {
+async function handleActionPhase(game: Game) {
   const activePlayer = game.getActivePlayer();
 
-  gameScreen.render();
+  game.ui?.render();
 
   let donePlayingActions = !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
   let actionsRemaining = activePlayer.actions > 0;
 
   while (!donePlayingActions && actionsRemaining) {
-    gameScreen.render();
-    gameScreen.renderPrompt(
-      `Play an action from your hand: ${activePlayer.hand
-        .filter((c) => c.types.includes(CardType.ACTION))
-        .map((c) => gameScreen.formatCardName(c))}, or 'end' to end\n> `
-    );
-    const input = await question("");
-
-    const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-    const matchingCards = activePlayer.hand
-      .filter((c) => c.types.includes(CardType.ACTION))
-      .filter((card) => card.name.match(inputMatch));
-    const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
-
-    if (input.length > 0 && singleMatch) {
-      const matchingCard = matchingCards[0];
-      activePlayer.actions -= 1;
-      await game.playCard(matchingCard, activePlayer);
-    } else if (input.toLowerCase() == "end") {
-      donePlayingActions = true;
-    } else {
-      console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+    game.ui?.render();
+    const cardToPlay = await activePlayer.playerInput.chooseActionToPlay(activePlayer, game);
+    activePlayer.actions -= 1;
+    if (cardToPlay == undefined) break;
+    if (!cardToPlay.types.includes(CardType.ACTION)) {
+      logger.error("player input returned a non-action card for playing in the action phase");
+      break;
     }
+    await game.playCard(cardToPlay, activePlayer);
 
-    // End the action playing phase if there's no actions left (to speed up game-play)
     donePlayingActions = donePlayingActions || !activePlayer.hand.some((card) => card.types.includes(CardType.ACTION));
     actionsRemaining = activePlayer.actions > 0;
-    console.log(activePlayer.infoString());
   }
   game.currentPhase = TurnPhase.BUY;
 }
@@ -70,83 +78,51 @@ async function handleActionPhase(game: Game, gameScreen: GameScreen) {
 // The buy phase is broken up into two parts:
 // 1. playing treasures
 // 2. and then actually buying cards
-async function handleBuyPhase(game: Game, gameScreen: GameScreen) {
+async function handleBuyPhase(game: Game) {
   const activePlayer = game.getActivePlayer();
 
-  gameScreen.render();
+  game.ui?.render();
 
   let donePlayingTreasures = !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE)); //skip this if there's no treasures
   while (!donePlayingTreasures) {
-    gameScreen.render();
-    gameScreen.renderPrompt(
-      `Play a treasure from your hand: ${activePlayer.hand
-        .filter((c) => c.types.includes(CardType.TREASURE))
-        .map((c) => gameScreen.formatCardName(c))}, or 'end' to end\n> `
-    );
-    const input = await question("");
-
-    const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-    const matchingCards = activePlayer.hand
-      .filter((c) => c.types.includes(CardType.TREASURE))
-      .filter((card) => card.name.match(inputMatch));
-    const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
-
-    if (input.length > 0 && singleMatch) {
-      const matchingCard = matchingCards[0];
-      await game.playCard(matchingCard, activePlayer);
-    } else if (input.toLowerCase() == "all") {
-      // play all coppers, silvers, golds
-      const m = activePlayer.hand.filter(
-        (c) => c.name == BasicCards.Copper.name || c.name == BasicCards.Silver.name || c.name == BasicCards.Gold.name
-      );
-      for (const c of m) {
-        await game.playCard(c, activePlayer);
+    game.ui?.render();
+    const cardsToPlay = await activePlayer.playerInput.chooseTreasureToPlay(activePlayer, game);
+    if (cardsToPlay == undefined || cardsToPlay.length == 0) break;
+    for (const cardToPlay of cardsToPlay) {
+      if (!cardToPlay.types.includes(CardType.TREASURE)) {
+        logger.error("player input returned a non-treasure card for playing in the buy phase");
+        break;
       }
-    } else if (input.toLowerCase() == "end") {
-      donePlayingTreasures = true;
-    } else {
-      console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+      await game.playCard(cardToPlay, activePlayer);
     }
     // End the treasure playing phase if there's no treasures left (to speed up game-play)
     donePlayingTreasures =
       donePlayingTreasures || !activePlayer.hand.some((card) => card.types.includes(CardType.TREASURE));
   }
 
+  game.ui?.render();
+
   let doneBuying = activePlayer.buys <= 0;
 
   while (!doneBuying) {
-    gameScreen.render();
-    gameScreen.renderPrompt(
-      `Buy a card from the supply: ${game.supply
-        .allPiles()
-        .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) <= activePlayer.money)
-        .map((p) => gameScreen.formatCardName(p.cards[0]))}, or 'end' to end.\n> `
-    );
-    const input = await question("");
+    game.ui?.render();
 
-    const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-    const matchingCards = game.supply
-      .allPiles()
-      .filter((p) => p.cards.length > 0)
-      .filter((p) => p.cards[0].calculateCost(game) <= activePlayer.money)
-      .filter((p) => p.name.match(inputMatch));
-    const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
-
-    if (input.length > 0 && singleMatch) {
-      const matchingCard = matchingCards[0];
-      game.buyCard(matchingCard, activePlayer);
-    } else if (input == "end") {
-      doneBuying = true;
-    } else {
-      console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+    const pileToBuy = await activePlayer.playerInput.chooseCardToBuy(activePlayer, game);
+    if (pileToBuy == undefined) break;
+    if (pileToBuy.cards.length == 0 || pileToBuy.cards[0].calculateCost(game) > activePlayer.money) {
+      logger.error("player input a non-buyable pile");
+      break;
     }
+
+    game.buyCard(pileToBuy, activePlayer);
+
     doneBuying = doneBuying || activePlayer.buys <= 0;
   }
   game.currentPhase = TurnPhase.CLEAN_UP;
 }
 
 function handleCleanUpPhase(game: Game) {
-  console.log("Cleaning up player: " + game.activePlayerIndex);
+  game.eventLog.publishEvent({ type: "Cleanup", player: game.getActivePlayer(), turn: game.getActivePlayer().turns });
   game.cleanUp();
   game.currentPhase = TurnPhase.ACTION;
 }

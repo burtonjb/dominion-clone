@@ -1,4 +1,5 @@
-import { Event } from "./Event";
+import { logger } from "../../util/Logger";
+import { Event, formatEvent } from "./Event";
 
 export class EventLog {
   // A better way to represent this would be with a tree-map, which would be O(lg n) ordered inserts
@@ -14,8 +15,8 @@ export class EventLog {
 
   public publishEvent(event: Event) {
     event.eventCounter = this.eventCounter++;
-    this.events.push(event); // assuming already ordered by timestamp
-    // console.log(event)
+    this.events.push(event);
+    logger.info(formatEvent(event, true));
   }
 
   public getEventsAfter(counter: number) {

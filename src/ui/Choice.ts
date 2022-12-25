@@ -1,10 +1,9 @@
-import { question } from "../../util/PromiseExtensions";
-import { Card } from "./Card";
-import { CardEffectConfig } from "./CardEffect";
-import { CardPile } from "./CardPile";
-import { Game } from "./Game";
-import { Player } from "./Player";
-import { Supply } from "./Supply";
+import { question } from "../util/PromiseExtensions";
+import { Card } from "../domain/objects/Card";
+import { CardEffectConfig } from "../domain/objects/CardEffect";
+import { CardPile } from "../domain/objects/CardPile";
+import { Player } from "../domain/objects/Player";
+import { Supply } from "../domain/objects/Supply";
 
 // Choices
 export interface Choice<T> {
@@ -50,14 +49,14 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
   private player: Player;
   public readonly prompt: string;
   public readonly options: Array<Card>;
-  private config: CardsFromPlayerChoiceConfig;
+  private params: CardsFromPlayerChoiceConfig;
 
-  constructor(prompt: string, player: Player, cardContainer: Array<Card>, config?: CardsFromPlayerChoiceConfig) {
+  constructor(prompt: string, player: Player, cardContainer: Array<Card>, params?: CardsFromPlayerChoiceConfig) {
     this.prompt = prompt;
     this.player = player;
 
     this.options = cardContainer;
-    this.config = config ? config : {};
+    this.params = params ? params : {};
   }
 
   public async getChoice() {
@@ -67,7 +66,7 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
     // if the number of cards is less than the required minimum, just return all the
     // cards that are available (e.g.) if its trash 1 card from hand, and there's only 1
     // card, then just return/trash that card
-    if (this.config.minCards && this.options.length <= this.config.minCards) {
+    if (this.params.minCards && this.options.length <= this.params.minCards) {
       return this.options;
     }
 
@@ -90,19 +89,23 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
       if (input.length > 0 && singleMatch) {
         const matchingCard = matchingCards[0];
         selected.push(matchingCard);
-        if (this.config.maxCards && selected.length >= this.config.maxCards) {
+        if (this.params.maxCards && selected.length >= this.params.maxCards) {
           done = true;
         }
       } else if (input.toLowerCase() == "end") {
-        if (this.config.minCards && selected.length >= this.config.minCards) {
+        if (this.params.minCards && selected.length >= this.params.minCards) {
           done = true;
-        } else if (!this.config.minCards) {
+        } else if (!this.params.minCards) {
           done = true;
         } else {
           console.debug("Not enough cards selected");
         }
       } else {
         console.warn(`Unknown input ${input}`);
+      }
+
+      if (this.params.maxCards && selected.length >= this.params.maxCards) {
+        return selected;
       }
     }
     return selected;
@@ -112,7 +115,7 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
 /*
 Used for selecting a card from the supply
 */
-export class ChooseCardFromSupply implements Choice<CardPile> {
+export class ChooseCardFromSupply implements Choice<CardPile | undefined> {
   public readonly prompt: string;
   private supply: Supply;
   private filter?: (pile: CardPile) => boolean;
@@ -123,7 +126,16 @@ export class ChooseCardFromSupply implements Choice<CardPile> {
     this.filter = filter;
   }
 
-  public async getChoice(): Promise<CardPile> {
+  public async getChoice(): Promise<CardPile | undefined> {
+    const available = this.supply
+      .allPiles()
+      .filter((pile) => pile.cards.length > 0) // filter out non-empty piles
+      .filter((pile) => (this.filter ? this.filter(pile) : true));
+
+    if (available.length == 0) {
+      return undefined;
+    }
+
     // eslint-disable-next-line no-constant-condition
     while (true) {
       const available = this.supply
@@ -243,7 +255,7 @@ export class IntegerChoice implements Choice<number> {
   public readonly options = -1;
 
   constructor(prompt: string, private defaultValue: number, private minValue?: number, private maxValue?: number) {
-    this.prompt = prompt;
+    this.prompt = `${prompt} (between ${minValue} and ${maxValue})`;
   }
 
   public async getChoice(): Promise<number> {

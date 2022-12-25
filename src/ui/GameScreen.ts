@@ -8,6 +8,8 @@ import { formatForegroundColor, xtermColors } from "./Colors";
 import { BaseTerminalScreen } from "./Terminal";
 import { Event, formatEvent } from "../domain/events/Event";
 
+const EVENT_COLUMN_START = 130;
+
 export class GameScreen {
   private terminal: BaseTerminalScreen;
   private game: Game;
@@ -28,12 +30,12 @@ export class GameScreen {
   renderSupply() {
     this.terminal.putString(0, 0, "======= SUPPLY =======");
 
-    this.game.supply.baseCards.forEach((pile, i) => {
+    this.game.supply.basePiles.forEach((pile, i) => {
       this.terminal.putString(0, 1 + i, this.formatCardPile(pile));
     });
 
-    this.game.supply.kingdom.kingdomCards.forEach((pile, i) => {
-      this.terminal.putString(0, this.game.supply.baseCards.length + 1 + i, this.formatCardPile(pile));
+    this.game.supply.kingdom.kingdomPiles.forEach((pile, i) => {
+      this.terminal.putString(0, this.game.supply.basePiles.length + 1 + i, this.formatCardPile(pile));
     });
   }
 
@@ -58,7 +60,7 @@ export class GameScreen {
   }
 
   renderEvents() {
-    const colStart = 130;
+    const colStart = EVENT_COLUMN_START;
     const colEnd = this.terminal.getSize()[0] - 2;
     const maxEvents = this.terminal.getSize()[1] - 6;
     this.terminal.putString(colStart, 0, "|======== EVENTS ========");
@@ -128,7 +130,7 @@ export class GameScreen {
     const discardSize = player.discardPile.length;
     const topDiscardCard = player.discardPile.length > 0 ? this.formatCardName(player.discardPile[0]) : "";
     const victoryPoints = `${player.calculateVictoryPoints()}`;
-    const turns = `${player.turns}`
+    const turns = `${player.turns}`;
 
     return `${playerName} actions: ${actions} | buys: ${buys} | money: ${money} | hand: ${handSize} | deck: ${deckSize} | discard: ${discardSize} (${topDiscardCard}) | VP: ${victoryPoints} | turns: ${turns}`;
   }

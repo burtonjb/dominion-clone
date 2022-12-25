@@ -1,8 +1,10 @@
+import { HumanPlayerInput } from "../../config/input/HumanInput";
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
 import { CardEffect } from "./CardEffect";
 import { Game } from "./Game";
+import { PlayerInput } from "./PlayerInput";
 
 let playerId = 0;
 
@@ -21,7 +23,7 @@ export enum CardPosition {
 export class Player {
   private random: Random;
   private id: number;
-  public readonly name: string;
+  public name: string;
 
   public hand: Array<Card>;
   public drawPile: Array<Card>;
@@ -36,7 +38,9 @@ export class Player {
 
   public turns: number;
 
-  constructor(name: string, random: Random, initialCards: Array<Card>) {
+  public playerInput: PlayerInput;
+
+  constructor(name: string, random: Random, initialCards: Array<Card>, playerInput?: PlayerInput) {
     this.random = random;
     this.id = playerId++;
     this.name = name;
@@ -57,6 +61,8 @@ export class Player {
     this.onPlayCardTriggers = [];
 
     this.turns = 0;
+
+    this.playerInput = playerInput ? playerInput : new HumanPlayerInput();
   }
 
   public drawHand() {
@@ -64,11 +70,12 @@ export class Player {
     doNTimes(5, () => this.drawCard());
   }
 
-  public drawCard() {
+  public drawCard(): Card | undefined {
     if (this.drawPile.length > 0) {
       // draw a card from your deck
       const topCard = this.drawPile.shift()!;
       this.hand.push(topCard);
+      return topCard;
     } else if (this.drawPile.length == 0 && this.discardPile.length > 0) {
       // shuffle your discard, put it below your deck, and then draw
       shuffleArray(this.discardPile, this.random);
@@ -78,8 +85,10 @@ export class Player {
       }
       const topCard = this.drawPile.shift()!;
       this.hand.push(topCard);
+      return topCard;
     } else {
       // do nothing, no cards left in deck and discardPile
+      return undefined;
     }
   }
 
@@ -106,14 +115,16 @@ export class Player {
   // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)
   // this might actually be wrong, since once the card is lost track of (e.g. shuffled into the deck)
   // its no longer tracked. But this method will still track the card...
-  public removeCard(card: Card) {
+  // Returns the list of cards that were deleted
+  public removeCard(card: Card): Array<Card> {
     const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile];
     for (const container of containers) {
       const index = container.findIndex((c) => c == card);
       if (index > -1) {
-        container.splice(index, 1); // remove the card from the container (in place)
+        return container.splice(index, 1); // remove the card from the container (in place)
       }
     }
+    return [];
   }
 
   public transferCard(card: Card, from: Array<Card>, to: Array<Card>, position: CardPosition) {

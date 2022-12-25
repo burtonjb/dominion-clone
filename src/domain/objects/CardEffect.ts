@@ -1,15 +1,17 @@
 import { Card } from "./Card";
 import { Game } from "./Game";
 import { Player } from "./Player";
-import * as BaseCard from "../../config/cards/Base";
+import * as BaseCards from "../../config/cards/Base";
 
 // function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
+// They are applied at a game level as they affect other players' cards' costs
+// and are cleared at the end of the turn
 export type CostModifier = (card: Card) => number;
 
 export type CardEffect = (card: Card, activePlayer: Player, game: Game) => Promise<void>;
 
 export interface CardEffectConfig {
-  prompt?: string;
+  prompt: string;
   effect: CardEffect;
 }
 
@@ -21,6 +23,12 @@ export interface BasicCardEffectConfig<T> extends CardEffectConfig {
 export async function attack(card: Card, target: Player, game: Game, effect: () => Promise<void>) {
   // The effect will just use values from its containing closure (kinda hack, but easier to write)
   //FIXME: eventually change this to hack/check for moat, but instead use a reaction (but I don't really like moat, so I'm not going to try too hard)
-  if (target.hand.map((c) => c.name).includes(BaseCard.Moat.name)) return;
+  if (target.hand.map((c) => c.name).includes(BaseCards.Moat.name)) {
+    game.revealCards(
+      target.hand.filter((c) => c.name == BaseCards.Moat.name),
+      target
+    );
+    return;
+  }
   await effect();
 }

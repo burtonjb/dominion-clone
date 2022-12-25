@@ -1,4 +1,4 @@
-import { BasicCardEffectConfig, CardEffect, CardEffectConfig } from "./CardEffect";
+import { CardEffectConfig } from "./CardEffect";
 import { Game } from "./Game";
 import { Player } from "./Player";
 
@@ -29,6 +29,7 @@ export interface CardParams {
   readonly cost: number;
   readonly worth?: number;
   readonly victoryPoints?: number;
+  readonly text?: string;
   readonly expansion: DominionExpansion;
   readonly kingdomCard: boolean;
   readonly playEffects?: Array<CardEffectConfig>;
@@ -71,14 +72,21 @@ export class Card {
   public async play(player: Player, game: Game) {
     if (!this.params.playEffects) return;
     for (let i = 0; i < this.params.playEffects?.length; i++) {
+      game.ui?.render();
       await this.params.playEffects[i].effect(this, player, game);
     }
   }
 
   public effectString(): string {
-    const out = this.params.playEffects?.map((e) => e.prompt)?.join(". ");
-    if (!out) {
-      return "";
+    if (this.params.text) {
+      return this.params.text;
+    }
+    let out = "";
+    if (this.victoryPoints) {
+      out += `${this.victoryPoints} VP. `;
+    }
+    if (this.params.playEffects) {
+      out += this.params.playEffects?.map((e) => e.prompt)?.join(". ");
     }
     return out;
   }

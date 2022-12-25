@@ -10,3 +10,5 @@ export const question = (prompt: string) =>
       resolve(input);
     })
   );
+
+export { rl };

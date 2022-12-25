@@ -64,9 +64,11 @@ export class DrawCards implements BasicCardEffectConfig<DrawCardsParams> {
 
   async effect(card: Card, player: Player, game: Game) {
     doNTimes(this.params.amount, () => {
-      player.drawCard();
+      const drawnCard = player.drawCard();
+      if (drawnCard) {
+        game.eventLog.publishEvent({ type: "DrawCard", player: player, card: drawnCard });
+      } // otherwise no cards left, so don't publish a draw event
     });
-    game.eventLog.publishEvent({ type: "DrawCard", player: player, card: card });
   }
 }
 
@@ -106,7 +108,7 @@ export class GainCard implements BasicCardEffectConfig<GainCardParams> {
   constructor(params: GainCardParams) {
     this.params = params;
     const formattedLocation = params.toLocation ? `to ${params.toLocation}` : "";
-    this.prompt = `Gain ${params.name} ${formattedLocation}`;
+    this.prompt = `Gain a ${params.name} ${formattedLocation}`;
   }
 
   async effect(source: Card, player: Player, game: Game) {
