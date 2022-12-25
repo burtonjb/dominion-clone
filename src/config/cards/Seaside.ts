@@ -464,6 +464,167 @@ const TreasureMap: CardParams = {
   ],
 };
 
+const Bazaar: CardParams = {
+  name: "Bazaar",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 2 }), new GainMoney({ amount: 1 })],
+};
+
+const Corsair: CardParams = {
+  name: "Corsair",
+  types: [CardType.ACTION, CardType.ATTACK, CardType.DURATION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    // TODO
+  ],
+};
+
+const MerchantShip: CardParams = {
+  name: "Merchant Ship",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    {
+      prompt: "At the start of next turn, +2$",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
+  ],
+};
+
+const Outpost: CardParams = {
+  name: "Outpost",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    // TODO
+  ],
+};
+
+const Pirate: CardParams = {
+  name: "Pirate",
+  types: [CardType.ACTION, CardType.DURATION, CardType.REACTION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    // TODO
+  ],
+};
+
+const SeaWitch: CardParams = {
+  name: "Sea Witch",
+  types: [CardType.ACTION, CardType.ATTACK, CardType.DURATION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    {
+      prompt: "Each other player gains a curse",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+          });
+        }
+      },
+    },
+    {
+      prompt: "At the start of your next turn +2 cards then discard 2 cards",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DrawCards({ amount: 2 }).effect(card, activePlayer, game);
+          await new DiscardCardsFromHand({ minCards: 2, maxCards: 2 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
+  ],
+};
+
+const Tactician: CardParams = {
+  name: "Tactician",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt:
+        "If you have at least 1 card in hand: discard your hand and at the start of next turn +5 Cards, +1 Action, +1 Buy",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        if (activePlayer.hand.length == 0) {
+          return; // return early if no cards
+        }
+
+        for (const card of activePlayer.hand.slice()) {
+          game.discardCard(card, activePlayer);
+        }
+
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DrawCards({ amount: 5 }).effect(card, activePlayer, game);
+          await new GainActions({ amount: 1 }).effect(card, activePlayer, game);
+          await new GainBuys({ amount: 1 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
+  ],
+};
+
+const Treasury: CardParams = {
+  name: "Treasury",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    // TODO
+  ],
+};
+
+const Wharf: CardParams = {
+  name: "Wharf",
+  types: [CardType.ACTION, CardType.DURATION],
+  cost: 5,
+  expansion: DominionExpansion.SEASIDE,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    new GainBuys({ amount: 1 }),
+    {
+      prompt: "At the start of your next turn: +2 cards, +1 buy",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DrawCards({ amount: 2 }).effect(card, activePlayer, game);
+          await new GainBuys({ amount: 1 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
+  ],
+};
+
 export function register() {
   cardConfigRegistry.registerAll(
     Haven,
@@ -483,7 +644,16 @@ export function register() {
     Sailor,
     Salvager,
     TidePools,
-    TreasureMap
+    TreasureMap,
+    Bazaar,
+    Corsair,
+    MerchantShip,
+    Outpost,
+    Pirate,
+    SeaWitch,
+    Tactician,
+    Treasury,
+    Wharf
   );
 }
 register();
@@ -507,4 +677,13 @@ export {
   Salvager,
   TidePools,
   TreasureMap,
+  Bazaar,
+  Corsair,
+  MerchantShip,
+  Outpost,
+  Pirate,
+  SeaWitch,
+  Tactician,
+  Treasury,
+  Wharf,
 };
