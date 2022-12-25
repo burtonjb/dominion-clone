@@ -459,6 +459,7 @@ const TreasureMap: CardParams = {
             game
           );
         }
+        game.trashCard(mapsInHand[0], activePlayer);
       },
     },
   ],
