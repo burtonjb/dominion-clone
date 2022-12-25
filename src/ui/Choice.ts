@@ -1,9 +1,9 @@
-import { question } from "../../util/PromiseExtensions";
-import { Card } from "./Card";
-import { CardEffectConfig } from "./CardEffect";
-import { CardPile } from "./CardPile";
-import { Player } from "./Player";
-import { Supply } from "./Supply";
+import { question } from "../util/PromiseExtensions";
+import { Card } from "../domain/objects/Card";
+import { CardEffectConfig } from "../domain/objects/CardEffect";
+import { CardPile } from "../domain/objects/CardPile";
+import { Player } from "../domain/objects/Player";
+import { Supply } from "../domain/objects/Supply";
 
 // Choices
 export interface Choice<T> {
@@ -255,7 +255,7 @@ export class IntegerChoice implements Choice<number> {
   public readonly options = -1;
 
   constructor(prompt: string, private defaultValue: number, private minValue?: number, private maxValue?: number) {
-    this.prompt = prompt;
+    this.prompt = `${prompt} (between ${minValue} and ${maxValue})`;
   }
 
   public async getChoice(): Promise<number> {

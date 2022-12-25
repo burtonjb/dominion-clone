@@ -121,7 +121,7 @@ const Vassal: CardParams = {
         game.discardCard(topCard[0], activePlayer);
         if (!topCard[0].types.includes(CardType.ACTION)) return; // exit early if the top card is not an action
 
-        const choice = await activePlayer.playerInput.booleanChoice(activePlayer, game, {
+        const choice = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
           prompt: `You may play the action card discarded (${topCard[0].name})`,
           defaultChoice: true,
           sourceCard: card,
@@ -263,7 +263,7 @@ const Moneylender: CardParams = {
         const copper = activePlayer.hand.find((c) => c.name == BasicCards.Copper.name);
         if (copper == undefined) return; // just return early if no coppers in hand
 
-        const selected = await activePlayer.playerInput.booleanChoice(activePlayer, game, {
+        const selected = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
           prompt: "Trash a copper from hand for +3$?",
           defaultChoice: true,
           sourceCard: card,
@@ -389,13 +389,17 @@ const Bandit: CardParams = {
   playEffects: [
     new GainCard({ name: BasicCards.Gold.name }),
     {
+      prompt:
+        " Each other player reveals the top 2 cards of their deck, trashes a revealed Treasure other than Copper, and discards the rest",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const otherPlayers = game.otherPlayers();
         for (const otherPlayer of otherPlayers) {
           attack(card, otherPlayer, game, async () => {
             const top2 = otherPlayer.topNCards(2);
             game.revealCards(top2, otherPlayer);
-            const treasures = top2.filter((c) => c.name != BasicCards.Copper.name);
+            const treasures = top2
+              .filter((c) => c.types.includes(CardType.TREASURE))
+              .filter((c) => c.name != BasicCards.Copper.name);
             const other = top2.filter((c) => !top2.includes(c));
             if (treasures.length > 0) {
               const selected = await otherPlayer.playerInput.chooseCardsFromList(otherPlayer, game, {
@@ -475,7 +479,7 @@ const Library: CardParams = {
           if (!topCard[0].types.includes(CardType.ACTION)) {
             activePlayer.drawCard();
           } else {
-            const choice = await activePlayer.playerInput.booleanChoice(activePlayer, game, {
+            const choice = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
               prompt: `Put action: ${topCard[0].name} into hand?`,
               defaultChoice: true,
               sourceCard: card,
@@ -595,7 +599,7 @@ const Sentry: CardParams = {
 
         if (afterDiscard.length == 2) {
           // only provide the swap prompt if both cards are left
-          const shouldSwap = await activePlayer.playerInput.booleanChoice(activePlayer, game, {
+          const shouldSwap = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
             prompt: "Swap the top two cards?",
             defaultChoice: false,
             sourceCard: card,

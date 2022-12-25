@@ -1,11 +1,14 @@
 import { Card, CardType } from "../../domain/objects/Card";
+import { CardEffectConfig } from "../../domain/objects/CardEffect";
 import { CardPile } from "../../domain/objects/CardPile";
 import { Game } from "../../domain/objects/Game";
 import { Player } from "../../domain/objects/Player";
 import {
-  BooleanChoiceParams,
+  ChooseBooleanParams,
   ChooseCardFromSupplyParams,
   ChooseCardsFromListParams,
+  ChooseEffectFromListParams,
+  ChooseIntegerParams,
   PlayerInput,
 } from "../../domain/objects/PlayerInput";
 import { shuffleArray } from "../../util/ArrayExtensions";
@@ -14,6 +17,18 @@ import * as BasicCards from "../cards/Basic";
 // AI that plays big money (poorly)
 // You can extend this class if you want to override some of the behavior
 export class BigMoneyAiInput implements PlayerInput {
+  async chooseInteger(player: Player, game: Game, params: ChooseIntegerParams): Promise<number> {
+    return params.defaultValue;
+  }
+
+  async chooseEffectFromList(
+    player: Player,
+    game: Game,
+    params: ChooseEffectFromListParams
+  ): Promise<CardEffectConfig[]> {
+    return params.choices.slice(0, params.minChoices);
+  }
+
   async choosePileFromSupply(
     player: Player,
     game: Game,
@@ -24,7 +39,7 @@ export class BigMoneyAiInput implements PlayerInput {
     return viablePiles[0];
   }
 
-  async booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean> {
+  async chooseBoolean(player: Player, game: Game, params: ChooseBooleanParams): Promise<boolean> {
     return params.defaultChoice;
   }
 
@@ -35,7 +50,7 @@ export class BigMoneyAiInput implements PlayerInput {
     // if its something else - pick the smallest, worst cards from hand
 
     // just return 0 to n cards from the card list.
-    return params.cardList.slice(0, params.maxCards);
+    return params.cardList.slice(0, params.minCards);
   }
 
   // chooses a random (the first) action from the AI's hand to play. Should work with basic terminal draw + BM strats

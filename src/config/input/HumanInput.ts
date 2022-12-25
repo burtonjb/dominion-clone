@@ -1,18 +1,43 @@
 import { Card, CardType } from "../../domain/objects/Card";
 import { CardPile } from "../../domain/objects/CardPile";
-import { BooleanChoice, CardsFromPlayerChoice, ChooseCardFromSupply } from "../../domain/objects/Choice";
+import {
+  BooleanChoice,
+  CardsFromPlayerChoice,
+  ChooseCardFromSupply,
+  ChooseEffectChoice,
+  IntegerChoice,
+} from "../../ui/Choice";
 import { Game } from "../../domain/objects/Game";
 import { Player } from "../../domain/objects/Player";
 import {
-  BooleanChoiceParams,
+  ChooseBooleanParams,
   ChooseCardFromSupplyParams,
   ChooseCardsFromListParams,
+  ChooseEffectFromListParams,
+  ChooseIntegerParams,
   PlayerInput,
 } from "../../domain/objects/PlayerInput";
 import { question } from "../../util/PromiseExtensions";
 import * as BasicCards from "../cards/Basic";
+import { CardEffectConfig } from "../../domain/objects/CardEffect";
 
 export class HumanPlayerInput implements PlayerInput {
+  async chooseInteger(player: Player, game: Game, params: ChooseIntegerParams): Promise<number> {
+    const input = new IntegerChoice(params.prompt, params.defaultValue, params.minValue, params.maxValue);
+    return await input.getChoice();
+  }
+
+  async chooseEffectFromList(
+    player: Player,
+    game: Game,
+    params: ChooseEffectFromListParams
+  ): Promise<CardEffectConfig[]> {
+    const input = new ChooseEffectChoice(params.prompt, player, params.choices, {
+      minChoices: params.minChoices,
+      maxChoices: params.maxChoices,
+    });
+    return await input.getChoice();
+  }
   async choosePileFromSupply(
     player: Player,
     game: Game,
@@ -23,13 +48,16 @@ export class HumanPlayerInput implements PlayerInput {
     return selected;
   }
 
-  async booleanChoice(player: Player, game: Game, params: BooleanChoiceParams): Promise<boolean> {
-    const input = new BooleanChoice("Trash a copper from your hand for +3 copper", true);
+  async chooseBoolean(player: Player, game: Game, params: ChooseBooleanParams): Promise<boolean> {
+    const input = new BooleanChoice(params.prompt, params.defaultChoice);
     return await input.getChoice();
   }
 
   async chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>> {
-    const input = new CardsFromPlayerChoice(params.prompt, player, params.cardList);
+    const input = new CardsFromPlayerChoice(params.prompt, player, params.cardList, {
+      minCards: params.minCards,
+      maxCards: params.maxCards,
+    });
     const selectedCards = await input.getChoice();
     return selectedCards;
   }

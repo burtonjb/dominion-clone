@@ -7,6 +7,7 @@ import { CardPile } from "./CardPile";
 import { EventLog } from "../events/EventLog";
 import { GameScreen } from "../../ui/GameScreen";
 import { CostModifier } from "./CardEffect";
+import { stringify } from "querystring";
 
 export interface GameParams {
   seed: number;
@@ -193,6 +194,18 @@ export class Game {
   public otherPlayers(player?: Player): Array<Player> {
     const filterPlayer = player ? player : this.getActivePlayer();
     return this.players.filter((p) => p != filterPlayer);
+  }
+
+  /*
+  Returns 1 of every card in the game. Don't actually use the cards, just use a property
+  */
+  public getAllUniqueCards(): Array<Card> {
+    const nameToCard = new Map<string, Card>();
+    const supplyCards = this.supply.allPiles();
+    supplyCards.forEach((p) => p.cards.forEach((c) => nameToCard.set(c.name, c)));
+    this.players.forEach((p) => p.allCards().forEach((c) => nameToCard.set(c.name, c)));
+
+    return [...nameToCard.values()];
   }
 
   public calculateWinners(): Array<Player> {

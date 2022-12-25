@@ -1,18 +1,11 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack } from "../../domain/objects/CardEffect";
-import {
-  BooleanChoice,
-  CardsFromPlayerChoice,
-  ChooseCardFromSupply,
-  ChooseEffectChoice,
-  IntegerChoice,
-  StringChoice,
-} from "../../domain/objects/Choice";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 import * as BasicCards from "./Basic";
+import { TrashCardsFromHand } from "../effects/AdvancedEffects";
 
 const Courtyard: CardParams = {
   name: "Courtyard",
@@ -25,14 +18,16 @@ const Courtyard: CardParams = {
     {
       prompt: "Choose a card from your hand to topdeck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new CardsFromPlayerChoice(
-          "Choose a card from your hand to topdeck",
-          activePlayer,
-          activePlayer.hand,
-          { minCards: 1, maxCards: 1 }
-        );
-        const selected = await input.getChoice();
+        const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose a card from your hand to topdeck",
+          cardList: activePlayer.hand,
+          minCards: 1,
+          maxCards: 1,
+          sourceCard: card,
+        });
+
         if (selected.length > 0) {
+          // You could get in the 0-length case if you have no other cards in hand and no cards in deck (through really dumb trashing?)
           activePlayer.transferCard(selected[0], activePlayer.hand, activePlayer.drawPile, CardPosition.TOP);
         }
       },
@@ -51,19 +46,19 @@ const Lurker: CardParams = {
     {
       prompt: "Choose 1: trash an action from the supply or gain an action from the trash",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseEffectChoice(
-          "Choose 1",
-          activePlayer,
-          [
+        const selected = await activePlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+          prompt: "Choose 1",
+          minChoices: 1,
+          maxChoices: 1,
+          choices: [
             {
               prompt: "Trash an action from the supply",
               effect: async (card: Card, activePlayer: Player, game: Game) => {
-                const input = new ChooseCardFromSupply(
-                  `Trash an action from the supply`,
-                  game.supply,
-                  (pile) => pile.cards.length > 0 && pile.cards[0].types.includes(CardType.ACTION)
-                );
-                const pile = await input.getChoice();
+                const pile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+                  prompt: `Trash an action from the supply`,
+                  filter: (pile) => pile.cards.length > 0 && pile.cards[0].types.includes(CardType.ACTION),
+                  sourceCard: card,
+                });
 
                 if (!pile) return;
 
@@ -71,17 +66,19 @@ const Lurker: CardParams = {
               },
             },
             {
-              prompt: "Gain an action from the trash",
+              prompt:
+                "Gain an action from the trash. [Available ${game.trash.filter((c) => c.types.includes(CardType.ACTION)).map(c => c.name)}]",
               effect: async (card: Card, activePlayer: Player, game: Game) => {
-                const input = new CardsFromPlayerChoice(
-                  `Gain an action from the trash`,
-                  activePlayer,
-                  game.trash.filter((c) => c.types.includes(CardType.ACTION)),
-                  { minCards: 1, maxCards: 1 }
-                );
-                const selected = await input.getChoice();
+                const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+                  prompt: `Gain an action from the trash.`,
+                  cardList: game.trash.filter((c) => c.types.includes(CardType.ACTION)),
+                  sourceCard: card,
+                  minCards: 1,
+                  maxCards: 1,
+                });
+
                 if (selected.length > 0) {
-                  // remove the card from the supply
+                  // remove the card from the supply and have the player gain it
                   const index = game.trash.indexOf(selected[0]);
                   game.trash.splice(index, 1);
                   game.gainCard(selected[0], activePlayer);
@@ -89,10 +86,9 @@ const Lurker: CardParams = {
               },
             },
           ],
-          { minChoices: 1, maxChoices: 1 }
-        );
+          sourceCard: card,
+        });
 
-        const selected = await input.getChoice();
         if (selected.length > 0) {
           await selected[0].effect(card, activePlayer, game);
         }
@@ -111,19 +107,19 @@ const Pawn: CardParams = {
     {
       prompt: "Choose 2: +1 card, +1 action, +1 money, +1 buy",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseEffectChoice(
-          "Choose 2",
-          activePlayer,
-          [
+        const selected = await activePlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+          prompt: "Choose 2",
+          choices: [
             new GainActions({ amount: 1 }),
             new GainMoney({ amount: 1 }),
             new DrawCards({ amount: 1 }),
             new GainBuys({ amount: 1 }),
           ],
-          { minChoices: 2, maxChoices: 2 }
-        );
+          minChoices: 2,
+          maxChoices: 2,
+          sourceCard: card,
+        });
 
-        const selected = await input.getChoice();
         for (const choice of selected) {
           await choice.effect(card, activePlayer, game);
         }
@@ -146,14 +142,20 @@ const Masquerade: CardParams = {
         const allPlayersWithNonEmptyHands = game.players.filter((p) => p.hand.length > 0);
         if (allPlayersWithNonEmptyHands.length <= 1) return; // return early if no cards will be passed
 
-        const selectedCards = await Promise.all(
-          allPlayersWithNonEmptyHands.map((player) =>
-            new CardsFromPlayerChoice("Select 1 card to pass to the next player", player, player.hand, {
-              minCards: 1,
-              maxCards: 1,
-            }).getChoice()
-          )
+        const promises = allPlayersWithNonEmptyHands.map((p) =>
+          p.playerInput.chooseCardsFromList(p, game, {
+            prompt: "Select 1 card to pass to the next player",
+            cardList: p.hand,
+            sourceCard: thisCard,
+            minCards: 1,
+            maxCards: 1,
+          })
         );
+
+        const selectedCards: Array<Array<Card>> = [];
+        for (let i = 0; i < promises.length; i++) {
+          selectedCards[i] = await promises[i];
+        }
 
         // each player removes their selected card from their hand and then the next player is giving that card (does not trigger "gain" effects)
         for (let i = 0; i < allPlayersWithNonEmptyHands.length; i++) {
@@ -165,20 +167,7 @@ const Masquerade: CardParams = {
         }
       },
     },
-    {
-      prompt: "You may trash a card from your hand",
-      effect: async (thisCard: Card, activePlayer: Player, game: Game) => {
-        // TODO: pull this out into an "advanced effect" - trash cards from hand
-        const input = new CardsFromPlayerChoice("Trash up to 1 card from your hand", activePlayer, activePlayer.hand, {
-          minCards: 0,
-          maxCards: 1,
-        });
-        const selectedCards = await input.getChoice();
-        selectedCards.forEach((card) => {
-          game.trashCard(card, activePlayer);
-        });
-      },
-    },
+    new TrashCardsFromHand({ minCards: 0, maxCards: 1 }),
   ],
 };
 
@@ -212,32 +201,18 @@ const Steward: CardParams = {
     {
       prompt: "Choose 1: +2 cards, or +2 money, or trash 2 cards from your hand",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseEffectChoice(
-          "Choose 1",
-          activePlayer,
-          [
+        const selected = await activePlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+          prompt: "Choose 1",
+          choices: [
             new DrawCards({ amount: 2 }),
             new GainMoney({ amount: 2 }),
-            {
-              prompt: "Trash two cards from your hand",
-              effect: async (card: Card, activePlayer: Player, game: Game) => {
-                const input = new CardsFromPlayerChoice(
-                  "Trash two cards from your hand",
-                  activePlayer,
-                  activePlayer.hand,
-                  { minCards: 2, maxCards: 2 }
-                );
-                const selectedCards = await input.getChoice();
-                selectedCards.forEach((card) => {
-                  game.trashCard(card, activePlayer);
-                });
-              },
-            },
+            new TrashCardsFromHand({ minCards: 2, maxCards: 2 }),
           ],
-          { minChoices: 1, maxChoices: 1 }
-        );
+          sourceCard: card,
+          minChoices: 1,
+          maxChoices: 1,
+        });
 
-        const selected = await input.getChoice();
         if (selected.length > 0) {
           await selected[0].effect(card, activePlayer, game);
         }
@@ -272,14 +247,15 @@ const Swindler: CardParams = {
               .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) == topCard.calculateCost(game));
             if (applicableCosts.length == 0) return; // return early if there's no cards with a valid cost
 
-            // FIXME: the active player chooses what card for the attacked player to choose
-            const toGain = new ChooseCardFromSupply(
-              `Choose a card costing exactly ${topCard.calculateCost(game)}`,
-              game.supply,
-              (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) == topCard.calculateCost(game)
-            );
+            const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+              prompt: `Swindled! Choose a card costing exactly ${topCard.calculateCost(game)} for ${
+                otherPlayer.name
+              } to gain`,
+              sourceCard: card,
+              filter: (pile) =>
+                pile.cards.length > 0 && pile.cards[0].calculateCost(game) == topCard.calculateCost(game),
+            });
 
-            const gainPile = await toGain.getChoice();
             if (!gainPile) return;
 
             game.gainCardFromSupply(gainPile, otherPlayer, false);
@@ -301,16 +277,24 @@ const WishingWell: CardParams = {
     new GainActions({ amount: 1 }),
     {
       prompt: "Name a card and then reveal the top card. If you named it, put it into your hand",
-      effect: async (card: Card, player: Player, game: Game) => {
-        const input = new StringChoice("Name the top card of your deck");
-        const named = await input.getChoice();
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const input = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Name the top card of your deck",
+          cardList: game.getAllUniqueCards(),
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
+        if (input.length == 0) return;
+        const named = input[0].name;
 
-        const topCards = player.topNCards(1);
+        const topCards = activePlayer.topNCards(1);
         if (topCards.length == 0) return; // return early if no cards
+
         const topCard = topCards[0];
-        game.revealCards(topCards, player);
+        game.revealCards(topCards, activePlayer);
         if (topCard.name.toLowerCase() == named.toLowerCase()) {
-          player.transferCard(topCard, player.drawPile, player.hand, CardPosition.TOP);
+          activePlayer.transferCard(topCard, activePlayer.drawPile, activePlayer.hand, CardPosition.TOP);
           // TODO: publish event for putting card in hand
         }
       },
@@ -329,14 +313,19 @@ const Baron: CardParams = {
     {
       prompt: "You may discard an Estate. If you do +4 money otherwise gain an estate",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        // hand case when no estate in hand
+        // handle case when no estate in hand - just gain an estate
         if (activePlayer.hand.filter((c) => c.name == BasicCards.Estate.name).length < 1) {
           await new GainCard({ name: BasicCards.Estate.name }).effect(card, activePlayer, game);
           return;
         }
-        // otherwise allow the player to discard or not
-        const input = new BooleanChoice(`Discard an estate for +4 $? Otherwise gain an estate`, true);
-        const selected = await input.getChoice();
+
+        // otherwise allow the player to discard or not (assume +4$ is the better choice)
+        const selected = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
+          defaultChoice: true,
+          sourceCard: card,
+          prompt: "`Discard an estate for +4 $? Otherwise gain an estate`",
+        });
+
         if (selected) {
           await new GainMoney({ amount: 4 }).effect(card, activePlayer, game);
           game.discardCard(activePlayer.hand.find((c) => c.name == BasicCards.Estate.name)!, activePlayer);
@@ -357,7 +346,6 @@ const Bridge: CardParams = {
   playEffects: [
     new GainBuys({ amount: 1 }),
     new GainMoney({ amount: 1 }),
-    // the cost reductions are applied on the game (since they're applied everywhere) and clear at end of turn
     {
       prompt: "Reduce the cost of all cards buy -1$ until end of turn",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
@@ -377,6 +365,7 @@ const Conspirator: CardParams = {
   playEffects: [
     new GainMoney({ amount: 2 }),
     {
+      prompt: "If you have 3 or more Actions this turn (counting this), +1 Card and +1 Action.",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         // This is a little different than how it works in actual dominion - this counts the number of cards in play,
         // but in real dominion it counts the number of actions played. This only affects Throne Room I think
@@ -417,13 +406,13 @@ const Ironworks: CardParams = {
   kingdomCard: true,
   playEffects: [
     {
+      prompt: "Gain a card costing up to $4. If its an: (action: +1 action), (treasure: +1$), (victory: +1 card)",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseCardFromSupply(
-          "Choose a card to gain costing 4 or less",
-          game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4
-        );
-        const selected = await input.getChoice();
+        const selected = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: "Choose a card to gain costing 4 or less",
+          sourceCard: card,
+          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4,
+        });
         if (!selected) return;
 
         const gainedCard = game.gainCardFromSupply(selected, activePlayer, false);
@@ -459,20 +448,25 @@ const Mill: CardParams = {
     {
       prompt: "You may discard two cards for +2 money",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new BooleanChoice("Discard two cards for +2 money?", false);
-        const selected = await input.getChoice();
-        if (selected) {
-          const cardInput = new CardsFromPlayerChoice(
-            "Discard two cards from your hand",
-            activePlayer,
-            activePlayer.hand,
-            { minCards: 2, maxCards: 2 }
-          );
-          const selectedCards = await cardInput.getChoice();
+        const selected = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
+          defaultChoice: false,
+          sourceCard: card,
+          prompt: "Discard two cards for +2 money?",
+        });
 
-          selectedCards.forEach((card) => {
-            game.discardCard(card, activePlayer);
+        if (selected) {
+          const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+            prompt: "Discard two cards from your hand",
+            cardList: activePlayer.hand,
+            sourceCard: card,
+            minCards: 2,
+            maxCards: 2,
           });
+
+          for (const card of selectedCards) {
+            game.discardCard(card, activePlayer);
+          }
+
           if (selectedCards.length >= 2) {
             await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
           }
@@ -494,8 +488,12 @@ const MiningVillage: CardParams = {
     {
       prompt: "You may trash this for +2 money",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new BooleanChoice("Trash this for +2 money?", false);
-        const selected = await input.getChoice();
+        const selected = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
+          prompt: "Trash this for +2 money?",
+          defaultChoice: false,
+          sourceCard: card,
+        });
+
         if (selected) {
           game.trashCard(card, activePlayer);
           await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
@@ -517,23 +515,22 @@ const SecretPassage: CardParams = {
     {
       prompt: "Take a card from your hand an place it anywhere in your deck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const cardInput = new CardsFromPlayerChoice(
-          "Select a card from your hand to place into your deck",
-          activePlayer,
-          activePlayer.hand,
-          { minCards: 1, maxCards: 1 }
-        );
-        const selectedCards = await cardInput.getChoice();
+        const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Select a card from your hand to place into your deck",
+          cardList: activePlayer.hand,
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
         if (selectedCards.length <= 0) return;
         const selectedCard = selectedCards[0];
 
-        const posInput = new IntegerChoice(
-          "Choose the place to put the card in your draw pile",
-          0,
-          0,
-          activePlayer.drawPile.length - 1
-        );
-        const pos = await posInput.getChoice();
+        const pos = await activePlayer.playerInput.chooseInteger(activePlayer, game, {
+          prompt: "Choose the place to put the card into your draw pile",
+          defaultValue: 0,
+          minValue: 0,
+          maxValue: activePlayer.drawPile.length - 1,
+        });
 
         activePlayer.removeCard(selectedCard);
         activePlayer.drawPile.splice(pos, 0, selectedCard); // insert into draw pile at pos (splice is kind of a dumb function, but it seems to work)
@@ -552,28 +549,31 @@ const Courtier: CardParams = {
     {
       prompt: "Reveal a card from your hand. For each type it has choose 1: +1 Action, +1 Buy, +3 money, gain a gold",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const cardInput = new CardsFromPlayerChoice("Reveal a card from your hand", activePlayer, activePlayer.hand, {
+        const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Reveal a card from your hand to choose 1 effect per type on the revealed card",
+          cardList: activePlayer.hand,
+          sourceCard: card,
           minCards: 1,
           maxCards: 1,
         });
-        const selectedCards = await cardInput.getChoice();
         game.revealCards(selectedCards, activePlayer);
 
         if (selectedCards.length > 0) {
           const selectedCard = selectedCards[0];
-          const input = new ChooseEffectChoice(
-            `Choose ${selectedCard.types.length} effects (all must be different)`,
-            activePlayer,
-            [
+          const choices = selectedCard.types.length;
+          const selected = await activePlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+            prompt: `Choose ${choices} effects (all must be different)`,
+            choices: [
               new GainActions({ amount: 1 }),
               new GainBuys({ amount: 1 }),
               new GainMoney({ amount: 3 }),
               new GainCard({ name: BasicCards.Gold.name }),
             ],
-            { minChoices: selectedCard.types.length, maxChoices: selectedCard.types.length }
-          );
+            sourceCard: card,
+            minChoices: choices,
+            maxChoices: choices,
+          });
 
-          const selected = await input.getChoice();
           for (const choice of selected) {
             await choice.effect(card, activePlayer, game);
           }
@@ -607,10 +607,9 @@ const Minion: CardParams = {
       prompt:
         "Choose 1: +2 money, or discard your hand and draw 4 cards and each other player with at least 5 cards in hand discards their hand and draws 4 cards",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseEffectChoice(
-          `Choose 1: `,
-          activePlayer,
-          [
+        const selected = await activePlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+          prompt: "Choose 1",
+          choices: [
             new GainMoney({ amount: 2 }),
             {
               prompt:
@@ -637,10 +636,11 @@ const Minion: CardParams = {
               },
             },
           ],
-          { minChoices: 1, maxChoices: 1 }
-        );
+          sourceCard: card,
+          minChoices: 1,
+          maxChoices: 1,
+        });
 
-        const selected = await input.getChoice();
         for (const choice of selected) {
           await choice.effect(card, activePlayer, game);
         }
@@ -658,7 +658,7 @@ const Patrol: CardParams = {
   playEffects: [
     new DrawCards({ amount: 3 }),
     {
-      // FIXME: the effect of putting the remaining cards back in any order will probably not be fixed
+      // This is slightly different than how it actually works - I don't have a prompt for re-ordering the revealed cards
       prompt: "Reveal the top 4 cards of your deck. Put the Victory cards and Curses into your hand.",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const top4 = activePlayer.topNCards(4);
@@ -680,23 +680,26 @@ const Replace: CardParams = {
   kingdomCard: true,
   playEffects: [
     {
+      prompt:
+        "Trash a card from your hand. Gain a card costing up to $2 more than it. If the gained card is an Action or Treasure, put it onto your deck; if it's a Victory card, each other player gains a Curse.",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new CardsFromPlayerChoice(
-          "Choose a card from your hand to trash",
-          activePlayer,
-          activePlayer.hand,
-          { minCards: 1, maxCards: 1 }
-        );
-        const selected = await input.getChoice();
+        const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Trash a card from your hand",
+          cardList: activePlayer.hand,
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
+        if (selected.length == 0) return;
+        const selectedCard = selected[0];
+        game.trashCard(selectedCard, activePlayer);
 
-        game.trashCard(selected[0], activePlayer);
-
-        const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].calculateCost(game) + 2}`,
-          game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= selected[0].calculateCost(game) + 2
-        );
-        const gainPile = await toGain.getChoice();
+        const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: `Choose a card costing up to ${selectedCard.calculateCost(game) + 2}`,
+          filter: (pile) =>
+            pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= selectedCard.calculateCost(game) + 2,
+          sourceCard: card,
+        });
         if (!gainPile) return;
 
         const cardToGain = gainPile.cards[0];
@@ -732,36 +735,32 @@ const Torturer: CardParams = {
         const otherPlayers = game.otherPlayers();
         for (const otherPlayer of otherPlayers) {
           await attack(card, otherPlayer, game, async () => {
-            const input = new ChooseEffectChoice(
-              "Choose 1",
-              activePlayer,
-              [
+            const selected = await otherPlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+              prompt: "Choose 1",
+              choices: [
                 {
                   prompt: "Discard two cards from your hand",
                   effect: async (c: Card, p: Player, g: Game) => {
-                    const input = new CardsFromPlayerChoice(
-                      "Discard two cards from your hand",
-                      otherPlayer,
-                      otherPlayer.hand,
-                      { minCards: 2, maxCards: 2 }
-                    );
-                    const selectedCards = await input.getChoice();
-                    selectedCards.forEach((card) => {
-                      game.discardCard(card, activePlayer);
+                    const selectedCards = await otherPlayer.playerInput.chooseCardsFromList(otherPlayer, game, {
+                      prompt: "Discard two cards from your hand",
+                      cardList: otherPlayer.hand,
+                      sourceCard: card,
+                      minCards: 2,
+                      maxCards: 2,
                     });
-                  },
-                },
-                {
-                  prompt: "Gain a curse to your hand",
-                  effect: async (c: Card, p: Player, g: Game) => {
-                    game.gainCardByName(BasicCards.Curse.name, otherPlayer, false, CardLocation.HAND);
-                  },
-                },
-              ],
-              { minChoices: 1, maxChoices: 1 }
-            );
 
-            const selected = await input.getChoice();
+                    for (const card of selectedCards) {
+                      game.discardCard(card, otherPlayer);
+                    }
+                  },
+                },
+                new GainCard({ name: BasicCards.Curse.name, toLocation: CardLocation.HAND }),
+              ],
+              sourceCard: card,
+              minChoices: 1,
+              maxChoices: 1,
+            });
+
             for (const effect of selected) {
               await effect.effect(card, otherPlayer, game);
             }
@@ -782,14 +781,18 @@ const TradingPost: CardParams = {
     {
       prompt: "Trash 2 cards from your hand to gain a silver to your hand",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new CardsFromPlayerChoice("Trash 2 cards from your hand", activePlayer, activePlayer.hand, {
+        const selectedCards = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Trash 2 cards from your hand",
+          cardList: activePlayer.hand,
+          sourceCard: card,
           minCards: 2,
           maxCards: 2,
         });
-        const selectedCards = await input.getChoice();
-        selectedCards.forEach((card) => {
+
+        for (const card of selectedCards) {
           game.trashCard(card, activePlayer);
-        });
+        }
+
         if (selectedCards.length == 2) {
           game.gainCardByName(BasicCards.Silver.name, activePlayer, false, CardLocation.HAND);
         }
@@ -810,13 +813,13 @@ const Upgrade: CardParams = {
     {
       prompt: "Trash a card from your hand. Gain a card costing exactly $1 more than it",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new CardsFromPlayerChoice(
-          "Choose a card from your hand to trash",
-          activePlayer,
-          activePlayer.hand,
-          { minCards: 1, maxCards: 1 }
-        );
-        const selected = await input.getChoice();
+        const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose a card from your hand to trash",
+          sourceCard: card,
+          cardList: activePlayer.hand,
+          minCards: 1,
+          maxCards: 1,
+        });
         if (selected.length == 0) return; // return early if no cards picked
 
         game.trashCard(selected[0], activePlayer);
@@ -826,12 +829,12 @@ const Upgrade: CardParams = {
           .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 1);
         if (applicableCosts.length == 0) return; // return early if there's no cards with a valid cost
 
-        const toGain = new ChooseCardFromSupply(
-          `Choose a card costing up to ${selected[0].calculateCost(game) + 1}`,
-          game.supply,
-          (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 1
-        );
-        const gainPile = await toGain.getChoice();
+        const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: `Choose a card costing exactly ${selected[0].calculateCost(game) + 1}$ to gain`,
+          filter: (pile) =>
+            pile.cards.length > 0 && pile.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 1,
+          sourceCard: card,
+        });
         if (!gainPile) return;
 
         game.gainCardFromSupply(gainPile, activePlayer, false);
@@ -862,14 +865,14 @@ const Nobles: CardParams = {
     {
       prompt: "Choose 1: +3 cards, or +2 actions",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const input = new ChooseEffectChoice(
-          "Choose 1",
-          activePlayer,
-          [new DrawCards({ amount: 3 }), new GainActions({ amount: 2 })],
-          { minChoices: 1, maxChoices: 1 }
-        );
+        const selected = await activePlayer.playerInput.chooseEffectFromList(activePlayer, game, {
+          prompt: "Choose 1",
+          choices: [new DrawCards({ amount: 3 }), new GainActions({ amount: 2 })],
+          sourceCard: card,
+          minChoices: 1,
+          maxChoices: 1,
+        });
 
-        const selected = await input.getChoice();
         if (selected.length > 0) {
           await selected[0].effect(card, activePlayer, game);
         }

@@ -4,12 +4,14 @@ import { Player } from "./Player";
 import * as BaseCards from "../../config/cards/Base";
 
 // function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
+// They are applied at a game level as they affect other players' cards' costs
+// and are cleared at the end of the turn
 export type CostModifier = (card: Card) => number;
 
 export type CardEffect = (card: Card, activePlayer: Player, game: Game) => Promise<void>;
 
 export interface CardEffectConfig {
-  prompt?: string;
+  prompt: string;
   effect: CardEffect;
 }
 
