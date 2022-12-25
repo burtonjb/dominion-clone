@@ -26,7 +26,9 @@ export class BigMoneyAiInput implements PlayerInput {
     game: Game,
     params: ChooseEffectFromListParams
   ): Promise<CardEffectConfig[]> {
-    return params.choices.slice(0, params.minChoices);
+    if (params.minChoices) return params.choices.slice(0, params.minChoices);
+    else if (params.maxChoices) return params.choices.slice(0, params.maxChoices);
+    else return params.choices;
   }
 
   async choosePileFromSupply(
@@ -44,13 +46,9 @@ export class BigMoneyAiInput implements PlayerInput {
   }
 
   async chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>> {
-    // if its trashing - choose the most, worst cards from hand (if there's good cards, don't choose them)
-    // if its keeping cards - choose the most, best cards from hand
-    // if its something - pick the smallest, best card from hand
-    // if its something else - pick the smallest, worst cards from hand
-
-    // just return 0 to n cards from the card list.
-    return params.cardList.slice(0, params.minCards);
+    if (params.minCards) return params.cardList.slice(0, params.minCards);
+    else if (params.maxCards) return params.cardList.slice(0, params.maxCards);
+    else return params.cardList;
   }
 
   // chooses a random (the first) action from the AI's hand to play. Should work with basic terminal draw + BM strats

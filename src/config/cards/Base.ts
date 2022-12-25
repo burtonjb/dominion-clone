@@ -92,7 +92,7 @@ const Merchant: CardParams = {
     {
       prompt: "The first time you play a silver this turn, gain $1",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const source = card; // create a reference to the merchant incase I need to use it later
+        const source = card; // create a reference to the merchant as I use it later
         const gainMoneyOnFirstSilver: CardEffect = async (playedCard: Card, player: Player, game: Game) => {
           if (playedCard.name != BasicCards.Silver.name) return;
           //FIXME: this is slightly different than how merchant actually works, but I'm not going to create a generic "cards played" tracker yet
@@ -414,7 +414,9 @@ const Bandit: CardParams = {
 
               game.trashCard(selected[0], otherPlayer);
             }
-            other.forEach((c) => game.discardCard(c, otherPlayer));
+            for (const card of other) {
+              game.discardCard(card, otherPlayer);
+            }
           });
         }
       },

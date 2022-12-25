@@ -27,7 +27,7 @@ const Courtyard: CardParams = {
         });
 
         if (selected.length > 0) {
-          // You could get in the 0-length case if you have no other cards in hand and no cards in deck (through really dumb trashing?)
+          // You could get in the 0-length case if you have no other cards in hand and no cards in deck (through really silly trashing)
           activePlayer.transferCard(selected[0], activePlayer.hand, activePlayer.drawPile, CardPosition.TOP);
         }
       },

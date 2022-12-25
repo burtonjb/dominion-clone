@@ -4,6 +4,7 @@
 * Easy way to configure games - ui for game/kingdom config?
 
 ## Out of scope (for now)
+* unit tests (I should, but I'm supposed to wrap this up)
 * client/server architecture
 * persistence layer with sqlite to store results
 
