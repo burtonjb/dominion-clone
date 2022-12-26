@@ -1,8 +1,9 @@
 import { Card } from "./Card";
 import { Game } from "./Game";
-import { Player } from "./Player";
+import { CardLocation, Player } from "./Player";
 import * as BaseCards from "../../config/cards/Base";
 import * as SeasideCards from "../../config/cards/Seaside";
+import { CardPile } from "./CardPile";
 
 // function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
 // They are applied at a game level as they affect other players' cards' costs
@@ -54,5 +55,22 @@ export class DurationEffect {
 
   public async effect(player: Player, game: Game) {
     this.hasRemaining = await this.internalEffect(player, game);
+  }
+}
+
+export type OnGainCardEffect = (
+  gainedCard: Card,
+  gainer: Player,
+  game: Game,
+  wasBought: boolean,
+  toLocation?: CardLocation
+) => Promise<void>;
+
+export class OnGainCardTrigger {
+  // TODO: eventually add a "managed" property that will have these effects clean up during clean up or start of turn, but right now all duration will manage the lifecycle of their own effects
+  constructor(private internalEffect: OnGainCardEffect) {}
+
+  async effect(card: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) {
+    await this.internalEffect(card, gainer, game, wasBought, toLocation);
   }
 }

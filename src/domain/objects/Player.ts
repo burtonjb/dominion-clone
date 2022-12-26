@@ -4,7 +4,7 @@ import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { logger } from "../../util/Logger";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
-import { CardEffect } from "./CardEffect";
+import { CardEffect, OnGainCardTrigger } from "./CardEffect";
 import { Game } from "./Game";
 import { PlayerInput } from "./PlayerInput";
 
@@ -15,6 +15,7 @@ export enum CardLocation {
   HAND = "Hand",
   DISCARD = "Discard",
   IN_PLAY = "InPlay",
+  SET_ASIDE = "SetAside",
 }
 
 export enum CardPosition {
@@ -39,6 +40,9 @@ export class Player {
   };
 
   public onPlayCardTriggers: Array<CardEffect>;
+  public onGainCardTriggers: Array<OnGainCardTrigger>;
+
+  public cardsGainedLastTurn: Array<Card>;
 
   public actions: number;
   public buys: number;
@@ -73,6 +77,9 @@ export class Player {
     this.money = 0;
 
     this.onPlayCardTriggers = [];
+    this.onGainCardTriggers = [];
+
+    this.cardsGainedLastTurn = [];
 
     this.turns = 0;
 
@@ -175,6 +182,11 @@ export class Player {
     } | deck: ${this.drawPile.length} | discard: ${this.discardPile.length} | VP: ${this.calculateVictoryPoints()}
     hand: ${this.hand.map((c) => c.name)}
     inPlay: ${this.cardsInPlay.map((c) => c.name)}`;
+  }
+
+  public startTurn() {
+    this.turns += 1;
+    this.cardsGainedLastTurn = [];
   }
 
   public cleanUp(game: Game) {

@@ -81,7 +81,7 @@ const Lurker: CardParams = {
                   // remove the card from the supply and have the player gain it
                   const index = game.trash.indexOf(selected[0]);
                   game.trash.splice(index, 1);
-                  game.gainCard(selected[0], activePlayer);
+                  await game.gainCard(selected[0], activePlayer, false, CardLocation.DISCARD);
                 }
               },
             },
@@ -259,7 +259,7 @@ const Swindler: CardParams = {
 
             if (!gainPile) return;
 
-            game.gainCardFromSupply(gainPile, otherPlayer, false);
+            await game.gainCardFromSupply(gainPile, otherPlayer, false);
           });
         }
       },
@@ -416,7 +416,7 @@ const Ironworks: CardParams = {
         });
         if (!selected) return;
 
-        const gainedCard = game.gainCardFromSupply(selected, activePlayer, false);
+        const gainedCard = await await game.gainCardFromSupply(selected, activePlayer, false);
 
         // if card was not gained successfully, return early
         if (!gainedCard) return;
@@ -705,15 +705,15 @@ const Replace: CardParams = {
 
         const cardToGain = gainPile.cards[0];
         if (cardToGain.types.includes(CardType.ACTION) || cardToGain.types.includes(CardType.TREASURE)) {
-          game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.TOP_OF_DECK);
+          await game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.TOP_OF_DECK);
         } else {
-          game.gainCardFromSupply(gainPile, activePlayer, false);
+          await game.gainCardFromSupply(gainPile, activePlayer, false);
         }
         if (cardToGain.types.includes(CardType.VICTORY)) {
           const otherPlayers = game.otherPlayers();
           for (const otherPlayer of otherPlayers) {
             await attack(card, otherPlayer, game, async () => {
-              game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+              await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
             });
           }
         }
@@ -795,7 +795,7 @@ const TradingPost: CardParams = {
         }
 
         if (selectedCards.length == 2) {
-          game.gainCardByName(BasicCards.Silver.name, activePlayer, false, CardLocation.HAND);
+          await game.gainCardByName(BasicCards.Silver.name, activePlayer, false, CardLocation.HAND);
         }
       },
     },
@@ -838,7 +838,7 @@ const Upgrade: CardParams = {
         });
         if (!gainPile) return;
 
-        game.gainCardFromSupply(gainPile, activePlayer, false);
+        await game.gainCardFromSupply(gainPile, activePlayer, false);
       },
     },
   ],

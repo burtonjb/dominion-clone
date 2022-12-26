@@ -8,7 +8,7 @@ import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
-import registerAll, { SeasideCards } from "./RegisterConfig";
+import registerAll, { BaseCards, SeasideCards } from "./RegisterConfig";
 
 export function createGame(numberOfPlayers: number, seed?: number): Game {
   // construct utility classes and "services"
@@ -34,22 +34,14 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
     numberOfPlayers,
     // selectedCards.map((c) => c.name)
     [
-      SeasideCards.NativeVillage.name,
-      SeasideCards.FishingVillage.name,
+      BaseCards.Village.name,
+      BaseCards.Chapel.name,
+      BaseCards.Laboratory.name,
       SeasideCards.Astrolabe.name,
-      SeasideCards.Lookout.name,
-      SeasideCards.SeaChart.name,
-      SeasideCards.Warehouse.name,
-      SeasideCards.Caravan.name,
-      SeasideCards.Cutpurse.name,
-      SeasideCards.Island.name,
-      SeasideCards.Salvager.name,
-      SeasideCards.TidePools.name,
-      SeasideCards.TreasureMap.name,
-      SeasideCards.MerchantShip.name,
-      SeasideCards.SeaWitch.name,
-      SeasideCards.Tactician.name,
-      SeasideCards.Wharf.name,
+      SeasideCards.Monkey.name,
+      SeasideCards.Smugglers.name,
+      SeasideCards.Blockade.name,
+      SeasideCards.Sailor.name,
     ]
   );
 

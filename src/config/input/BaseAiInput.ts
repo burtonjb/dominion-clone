@@ -62,10 +62,15 @@ export class BigMoneyAiInput implements PlayerInput {
   }
 
   async chooseCardToBuy(player: Player, game: Game): Promise<CardPile | undefined> {
-    if (player.money >= 8) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Province.name);
-    else if (player.money >= 6) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Gold.name);
-    else if (player.money >= 5) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Duchy.name);
-    else if (player.money >= 3) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Silver.name);
-    else return undefined;
+    return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Copper.name);
+
+    // Temporarily testing blockade
+
+    // if (player.money >= 8) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Province.name);
+    // else if (player.money >= 6) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Gold.name);
+    // else if (player.money >= 5) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Duchy.name);
+    // else if (player.money >= 3) return game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Silver.name);
+
+    // else return undefined;
   }
 }

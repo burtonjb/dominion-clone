@@ -114,7 +114,7 @@ async function handleBuyPhase(game: Game) {
       break;
     }
 
-    game.buyCard(pileToBuy, activePlayer);
+    await game.buyCard(pileToBuy, activePlayer);
 
     doneBuying = doneBuying || activePlayer.buys <= 0;
   }

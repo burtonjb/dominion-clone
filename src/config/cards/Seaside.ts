@@ -1,10 +1,10 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { attack, DurationEffect, DurationTiming } from "../../domain/objects/CardEffect";
+import { attack, DurationEffect, DurationTiming, OnGainCardTrigger } from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
-import { DiscardCardsFromHand } from "../effects/AdvancedEffects";
+import { DiscardCardsFromHand, TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 
 const Haven: CardParams = {
@@ -217,7 +217,30 @@ const Monkey: CardParams = {
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
   playEffects: [
-    //TODO
+    {
+      prompt:
+        "Until your next turn, whenever the player on your right gains a card, +1 card. At the start of your next turn, +1 cards",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const onGainEffect = new OnGainCardTrigger(async () => {
+          await new DrawCards({ amount: 1 }).effect(card, activePlayer, game);
+        });
+        const rightPlayer = game.rightPlayer(activePlayer);
+        rightPlayer.onGainCardTriggers.push(onGainEffect);
+
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DrawCards({ amount: 1 }).effect(card, activePlayer, game);
+
+          // remove the on gain effect from the right player when the duration triggers
+          const index = rightPlayer.onGainCardTriggers.indexOf(onGainEffect);
+          if (index >= 0) {
+            rightPlayer.onGainCardTriggers.splice(index, 1);
+          }
+
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
   ],
 };
 
@@ -254,7 +277,25 @@ const Smugglers: CardParams = {
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
   playEffects: [
-    //TODO
+    {
+      prompt: "Gain a copy of a card costing up to 6 that the player on your right gained last turn",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const rightPlayer = game.rightPlayer(activePlayer);
+        const gainedLastTurn = rightPlayer.cardsGainedLastTurn.map((c) => c.name);
+
+        const toGain = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: "Choose a card to gain costing up to 6 that RP gained last turn",
+          filter: (pile) =>
+            pile.cards.length > 0 &&
+            gainedLastTurn.includes(pile.cards[0].name) &&
+            pile.cards[0].calculateCost(game) <= 6,
+          sourceCard: card,
+        });
+        if (!toGain) return;
+
+        await game.gainCardFromSupply(toGain, activePlayer, false, CardLocation.DISCARD);
+      },
+    },
   ],
 };
 
@@ -282,7 +323,57 @@ const Blockade: CardParams = {
       prompt:
         "Gain a card costing up to $4, setting it aside. At the start of your next turn, put it into your hand. While it's set aside, when another player gains a copy of it on their turn, they gain a Curse.",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        // TODO: add effect. Needs support for onGain effects
+        const toGain = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: "Choose a card to gain costing up to 4",
+          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4,
+          sourceCard: card,
+        });
+        if (!toGain) return;
+        const blockadeGainedCard = await game.gainCardFromSupply(toGain, activePlayer, false, CardLocation.SET_ASIDE);
+        if (!blockadeGainedCard) return;
+
+        const onGainAttacks: Array<[Player, OnGainCardTrigger]> = [];
+        for (const otherPlayer of game.otherPlayers()) {
+          await attack(card, otherPlayer, game, async () => {
+            const onGainAttack = new OnGainCardTrigger(
+              async (
+                otherGainedCard: Card,
+                gainer: Player,
+                game: Game,
+                wasBought: boolean,
+                toLocation?: CardLocation
+              ) => {
+                if (otherGainedCard.name == blockadeGainedCard?.name && gainer == game.getActivePlayer()) {
+                  await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+                }
+              }
+            );
+            otherPlayer.onGainCardTriggers.push(onGainAttack);
+            onGainAttacks.push([otherPlayer, onGainAttack]);
+          });
+        }
+
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          // put the card into the active player's hand
+          activePlayer.transferCard(
+            blockadeGainedCard,
+            activePlayer.cardsSetAside,
+            activePlayer.hand,
+            CardPosition.TOP
+          );
+          game.eventLog.publishEvent({ type: "CardPutInHand", player: activePlayer, card: blockadeGainedCard });
+
+          // clean up the on gain effects on the other players
+          for (const [player, gainEffect] of onGainAttacks) {
+            // remove the on gain effect from the right player when the duration triggers
+            const index = player.onGainCardTriggers.indexOf(gainEffect);
+            if (index >= 0) {
+              player.onGainCardTriggers.splice(index, 1);
+            }
+          }
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
       },
     },
   ],
@@ -383,7 +474,49 @@ const Sailor: CardParams = {
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
   playEffects: [
-    //TODO:
+    new GainActions({ amount: 1 }),
+    {
+      prompt:
+        "Once this turn, you may play a duration card that you gain. At the start of your next turn +2$ and you may trash a card from your hand",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        // add the effect to be able to play duration effects
+        let hasAlreadyTriggered = false;
+        const onGainTrigger = new OnGainCardTrigger(
+          async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+            if (hasAlreadyTriggered) return; // return early if this has already fired
+            if (!gainedCard.types.includes(CardType.DURATION)) return; // return early if non-duration gained
+            if (gainer.cardsInPlay.indexOf(gainedCard) >= 0) return; // return early if the gained card is already in play (e.g. played by another pirate)
+
+            const shouldPlay = await gainer.playerInput.chooseBoolean(gainer, game, {
+              prompt: `Play the gained ${gainedCard.name}`,
+              defaultChoice: true,
+              sourceCard: card,
+            });
+
+            if (shouldPlay) {
+              game.playCard(gainedCard, gainer);
+              hasAlreadyTriggered = true;
+            }
+          }
+        );
+        activePlayer.onGainCardTriggers.push(onGainTrigger);
+
+        // set up duration effect to gain money, clean up the on gain effect, and trash a card
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
+
+          // clean up the on gain effect
+          const index = activePlayer.onGainCardTriggers.indexOf(onGainTrigger);
+          if (index >= 0) {
+            activePlayer.onGainCardTriggers.splice(index, 1);
+          }
+
+          await new TrashCardsFromHand({ minCards: 0, maxCards: 1 }).effect(card, activePlayer, game);
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
   ],
 };
 
@@ -542,7 +675,7 @@ const SeaWitch: CardParams = {
         const otherPlayers = game.otherPlayers();
         for (const otherPlayer of otherPlayers) {
           await attack(card, otherPlayer, game, async () => {
-            game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+            await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
           });
         }
       },

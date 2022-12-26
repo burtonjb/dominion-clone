@@ -162,7 +162,7 @@ const Workshop: CardParams = {
 
         if (!selected) return; // return early in cases like there's no piles costing 4 or less (unlikely, but could happen)
 
-        game.gainCardFromSupply(selected, activePlayer, false);
+        await game.gainCardFromSupply(selected, activePlayer, false);
       },
     },
   ],
@@ -339,7 +339,7 @@ const Remodel: CardParams = {
 
         if (!gainPile) return; // return early if no options
 
-        game.gainCardFromSupply(gainPile, activePlayer, false);
+        await game.gainCardFromSupply(gainPile, activePlayer, false);
       },
     },
   ],
@@ -551,7 +551,7 @@ const Mine: CardParams = {
 
         if (!gainPile) return; // return early if no choices
 
-        game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.HAND);
+        await game.gainCardFromSupply(gainPile, activePlayer, false, CardLocation.HAND);
       },
     },
   ],
@@ -633,7 +633,7 @@ const Witch: CardParams = {
         const otherPlayers = game.otherPlayers();
         for (const otherPlayer of otherPlayers) {
           await attack(card, otherPlayer, game, async () => {
-            game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+            await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
           });
         }
       },
@@ -659,7 +659,7 @@ const Artisan: CardParams = {
 
         if (!pile) return;
 
-        game.gainCardFromSupply(pile, activePlayer, false, CardLocation.HAND);
+        await game.gainCardFromSupply(pile, activePlayer, false, CardLocation.HAND);
       },
     },
     {
