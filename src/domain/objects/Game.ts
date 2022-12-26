@@ -83,7 +83,7 @@ export class Game {
     player.cardsInPlay.push(card);
     await card.play(player, this);
     for (const effect of player.onPlayCardTriggers) {
-      await effect.call(this, card, player, this);
+      await effect.effect(card, player, this);
     }
   }
 

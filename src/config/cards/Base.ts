@@ -1,6 +1,6 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { attack, CardEffect } from "../../domain/objects/CardEffect";
+import { attack, OnPlayCardTrigger } from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { TrashCardsFromHand } from "../effects/AdvancedEffects";
@@ -93,12 +93,15 @@ const Merchant: CardParams = {
       prompt: "The first time you play a silver this turn, gain $1",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const source = card; // create a reference to the merchant as I use it later
-        const gainMoneyOnFirstSilver: CardEffect = async (playedCard: Card, player: Player, game: Game) => {
-          if (playedCard.name != BasicCards.Silver.name) return;
-          //FIXME: this is slightly different than how merchant actually works, but I'm not going to create a generic "cards played" tracker yet
-          if (activePlayer.cardsInPlay.filter((c) => c.name == BasicCards.Silver.name).length > 1) return;
-          await new GainMoney({ amount: 1 }).effect(source, activePlayer, game);
-        };
+        const gainMoneyOnFirstSilver = new OnPlayCardTrigger(
+          true,
+          async (playedCard: Card, player: Player, game: Game) => {
+            if (playedCard.name != BasicCards.Silver.name) return;
+            //FIXME: this is slightly different than how merchant actually works, but I'm not going to create a generic "cards played" tracker yet
+            if (activePlayer.cardsInPlay.filter((c) => c.name == BasicCards.Silver.name).length > 1) return;
+            await new GainMoney({ amount: 1 }).effect(source, activePlayer, game);
+          }
+        );
         activePlayer.onPlayCardTriggers.push(gainMoneyOnFirstSilver);
       },
     },

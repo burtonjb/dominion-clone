@@ -4,7 +4,7 @@ import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { logger } from "../../util/Logger";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
-import { CardEffect, OnGainCardTrigger } from "./CardEffect";
+import { CardEffect, OnGainCardTrigger, OnPlayCardTrigger } from "./CardEffect";
 import { Game } from "./Game";
 import { PlayerInput } from "./PlayerInput";
 
@@ -39,7 +39,7 @@ export class Player {
     nativeVillage: Array<Card>;
   };
 
-  public onPlayCardTriggers: Array<CardEffect>;
+  public onPlayCardTriggers: Array<OnPlayCardTrigger>;
   public onGainCardTriggers: Array<OnGainCardTrigger>;
 
   public cardsGainedLastTurn: Array<Card>;
@@ -207,6 +207,6 @@ export class Player {
     this.actions = 1;
 
     // clean up the onPlay effects
-    this.onPlayCardTriggers.length = 0;
+    this.onPlayCardTriggers = this.onPlayCardTriggers.filter((t) => !t.cleanAtEndOfTurn);
   }
 }

@@ -74,3 +74,10 @@ export class OnGainCardTrigger {
     await this.internalEffect(card, gainer, game, wasBought, toLocation);
   }
 }
+
+export class OnPlayCardTrigger {
+  constructor(public readonly cleanAtEndOfTurn: boolean, private internalEffect: CardEffect) {}
+  async effect(card: Card, player: Player, game: Game) {
+    await this.internalEffect(card, player, game);
+  }
+}

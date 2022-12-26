@@ -34,6 +34,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
     numberOfPlayers,
     // selectedCards.map((c) => c.name)
     [
+      BaseCards.Merchant.name,
       BaseCards.Village.name,
       BaseCards.Chapel.name,
       BaseCards.Laboratory.name,
@@ -42,6 +43,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
       SeasideCards.Smugglers.name,
       SeasideCards.Blockade.name,
       SeasideCards.Sailor.name,
+      SeasideCards.Corsair.name,
     ]
   );
 

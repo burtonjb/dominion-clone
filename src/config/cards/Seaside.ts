@@ -1,7 +1,14 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
-import { attack, DurationEffect, DurationTiming, OnGainCardTrigger } from "../../domain/objects/CardEffect";
+import {
+  attack,
+  CardEffect,
+  DurationEffect,
+  DurationTiming,
+  OnGainCardTrigger,
+  OnPlayCardTrigger,
+} from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { DiscardCardsFromHand, TrashCardsFromHand } from "../effects/AdvancedEffects";
@@ -614,7 +621,47 @@ const Corsair: CardParams = {
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
   playEffects: [
-    // TODO
+    new GainMoney({ amount: 2 }),
+    {
+      prompt:
+        "At the start of your next turn, +2$. Until then each other player trashes the first gold or silver they play each turn",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        // FIXME: this is slightly wrong - its effect isn't supposed to stack (I think this won't, but it will try to trash the treasure multiple times)
+        // and is supposed to trigger each turn the other player plays silver/gold (this will affect outpost games, but won't have a major effect)
+        const onPlayAttacks: Array<[Player, OnPlayCardTrigger]> = [];
+        for (const otherPlayer of game.otherPlayers()) {
+          await attack(card, otherPlayer, game, async () => {
+            let hasAlreadyTriggered = false;
+            const onPlayEffect = new OnPlayCardTrigger(false, async (card, player, game) => {
+              if (hasAlreadyTriggered) return; // return early if the effect has already fired
+              if (card.name == BasicCards.Silver.name || card.name == BasicCards.Gold.name) {
+                game.trashCard(card, otherPlayer);
+                hasAlreadyTriggered = true;
+              }
+            });
+
+            otherPlayer.onPlayCardTriggers.push(onPlayEffect);
+            onPlayAttacks.push([otherPlayer, onPlayEffect]);
+          });
+        }
+
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          await new DrawCards({ amount: 1 }).effect(card, p, g);
+
+          // clean up the on gain effects on the other players
+          for (const [player, playEffect] of onPlayAttacks) {
+            // remove the on gain effect from the right player when the duration triggers
+            const index = player.onPlayCardTriggers.indexOf(playEffect);
+            if (index >= 0) {
+              player.onGainCardTriggers.splice(index, 1);
+            }
+          }
+          return false;
+        });
+
+        card.durationEffects.push(durationEffect);
+      },
+    },
   ],
 };
 
