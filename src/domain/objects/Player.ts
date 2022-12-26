@@ -1,10 +1,9 @@
-import { throws } from "assert";
 import { HumanPlayerInput } from "../../config/input/HumanInput";
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
 import { logger } from "../../util/Logger";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
-import { CardEffect, OnGainCardTrigger, OnPlayCardTrigger } from "./CardEffect";
+import { OnGainCardTrigger, OnPlayCardTrigger } from "./CardEffect";
 import { Game } from "./Game";
 import { PlayerInput } from "./PlayerInput";
 
@@ -34,10 +33,19 @@ export class Player {
   public cardsInPlay: Array<Card>;
   public cardsSetAside: Array<Card>;
 
+  // Specific "mats" that each player owns
   public readonly mats: {
     island: Array<Card>;
     nativeVillage: Array<Card>;
   };
+
+  // Specific flags that are set for each player
+  public readonly cardFlags: {
+    outpost: boolean;
+  };
+
+  // flag to see if the player took an extra turn
+  public extraTurn: boolean;
 
   public onPlayCardTriggers: Array<OnPlayCardTrigger>;
   public onGainCardTriggers: Array<OnGainCardTrigger>;
@@ -71,6 +79,12 @@ export class Player {
       nativeVillage: [],
       island: [],
     };
+
+    this.cardFlags = {
+      outpost: false,
+    };
+
+    this.extraTurn = false;
 
     this.actions = 1;
     this.buys = 1;
@@ -189,7 +203,12 @@ export class Player {
     this.cardsGainedLastTurn = [];
   }
 
-  public cleanUp(game: Game) {
+  public async cleanUp(game: Game) {
+    // Trigger any on clean up effects
+    for (const card of this.cardsInPlay.slice()) {
+      await card.onCleanUp(game);
+    }
+
     // discard all cards in play
     const cardsInPlay = this.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
     cardsInPlay.filter((c) => c.shouldCleanUp()).forEach((card) => game.discardCard(card, this));
@@ -198,8 +217,16 @@ export class Player {
     const cardsInHand = this.hand.slice();
     cardsInHand.forEach((card) => game.discardCard(card, this));
 
-    // draw a new hand of 5 cards
-    doNTimes(5, () => this.drawCard());
+    if (this.cardFlags.outpost) {
+      // outpost draws 3 cards at the start of the next turn. Set the extra turn flag so outpost can't be repeatedly played
+      doNTimes(3, () => this.drawCard());
+      this.extraTurn = true;
+      game.eventLog.publishEvent({ type: "TakesAnExtraTurn", player: this });
+    } else {
+      // At the start of turn, draw 5 cards (usual case)
+      doNTimes(5, () => this.drawCard());
+      this.extraTurn = false;
+    }
 
     // reset buys/actions/money
     this.buys = 1;

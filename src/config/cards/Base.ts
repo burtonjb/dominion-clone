@@ -365,6 +365,7 @@ const ThroneRoom: CardParams = {
   kingdomCard: true,
   playEffects: [
     {
+      //FIXME: throne room should remain in play if it "thrones" a duration card
       prompt: "You may play an action card from your hand twice",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {

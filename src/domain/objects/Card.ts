@@ -1,6 +1,7 @@
 import { CardEffectConfig, DurationEffect } from "./CardEffect";
 import { Game } from "./Game";
 import { Player } from "./Player";
+import { GainParams, ReactionEffectsCardParams } from "./Reaction";
 
 // internal counter for tracking cards' uniqueness (for debugging if required)
 let cardNumber = 0;
@@ -21,10 +22,6 @@ export enum DominionExpansion {
   SEASIDE = "Seaside",
 }
 
-export interface ReactionEffects {
-  onOtherPlayEffect?: Array<CardEffectConfig>;
-}
-
 export interface CardParams {
   readonly name: string;
   readonly types: Array<CardType>;
@@ -35,8 +32,9 @@ export interface CardParams {
   readonly expansion: DominionExpansion;
   readonly kingdomCard: boolean;
   readonly playEffects?: Array<CardEffectConfig>;
-  readonly reactionEffects?: ReactionEffects;
+  readonly reactionEffects?: ReactionEffectsCardParams;
   readonly calculateVictoryPoints?: (player: Player) => number;
+  readonly onCleanupEffects?: Array<CardEffectConfig>;
 }
 
 export class Card {
@@ -79,6 +77,24 @@ export class Card {
     for (let i = 0; i < this.params.playEffects?.length; i++) {
       game.ui?.render();
       await this.params.playEffects[i].effect(this, player, game);
+    }
+  }
+
+  public async onGainReaction(game: Game, owningPlayer: Player, gainParams: GainParams) {
+    if (!this.params.reactionEffects || !this.params.reactionEffects.onGainCardEffects) return;
+    for (let i = 0; i < this.params.reactionEffects.onGainCardEffects.length; i++) {
+      game.ui?.render();
+      await this.params.reactionEffects.onGainCardEffects[i](owningPlayer, this, game, gainParams);
+    }
+  }
+
+  public async onCleanUp(game: Game) {
+    const activePlayer = game.getActivePlayer();
+
+    if (!this.params.onCleanupEffects) return;
+    for (let i = 0; i < this.params.onCleanupEffects?.length; i++) {
+      game.ui?.render();
+      await this.params.onCleanupEffects[i].effect(this, activePlayer, game);
     }
   }
 

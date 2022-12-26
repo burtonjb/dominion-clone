@@ -15,7 +15,8 @@ export type Event =
   | CleanUpEvent
   | TestEvent
   | CardSetAside
-  | CardPutInHand;
+  | CardPutInHand
+  | ExtraTurn;
 
 export interface BaseEvent {
   readonly type: string;
@@ -91,6 +92,10 @@ export interface CardPutInHand extends BaseEvent {
   readonly card: Card;
 }
 
+export interface ExtraTurn extends BaseEvent {
+  readonly type: "TakesAnExtraTurn";
+}
+
 export function formatEvent(event: Event, includeDebugInfo = false): string {
   function formatCard(card: Card): string {
     if (includeDebugInfo) return `${card.name}(${card.id})`;
@@ -137,6 +142,8 @@ export function formatEvent(event: Event, includeDebugInfo = false): string {
       return formattedOut + `${formatPlayer(event.player)} sets aside ${formatCard(event.card)}`;
     case "CardPutInHand":
       return formattedOut + `${formatPlayer(event.player)} puts ${formatCard(event.card)} in hand`;
+    case "TakesAnExtraTurn":
+      return formattedOut + `${formatPlayer(event.player)} takes an extra turn`;
     default:
       return event["type"]; // should never occur (typescript determines type is "never")
   }

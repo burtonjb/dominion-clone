@@ -151,6 +151,16 @@ export class Game {
     for (const trigger of player.onGainCardTriggers.slice()) {
       await trigger.effect(cardToGain, player, this, wasBought, toLocation);
     }
+
+    for (const otherPlayer of this.players) {
+      for (const card of otherPlayer.hand.slice()) {
+        await card.onGainReaction(this, otherPlayer, {
+          gainedCard: cardToGain,
+          gainedPlayer: player,
+          wasBought: wasBought,
+        });
+      }
+    }
   }
 
   public discardCard(card: Card, player: Player) {
@@ -176,8 +186,9 @@ export class Game {
   public async startTurn(activePlayer: Player) {
     activePlayer.startTurn();
 
+    this.ui?.render();
     // trigger all the duration effects
-    for (const card of activePlayer.cardsInPlay) {
+    for (const card of activePlayer.cardsInPlay.slice()) {
       for (const effect of card.durationEffects) {
         await effect.effect(activePlayer, this);
       }
@@ -197,12 +208,16 @@ export class Game {
 
   public async cleanUp() {
     const activePlayer = this.getActivePlayer();
-    activePlayer.cleanUp(this);
+    await activePlayer.cleanUp(this);
 
     this.costModifiers.length = 0; // clear cost modifiers
 
     // advance the active player index, have the next player start their turn
-    this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
+    if (!activePlayer.cardFlags.outpost) {
+      // outpost will have the player take the next turn
+      // FIXME: this isn't done very well - should eventually be refactored into something more generic
+      this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
+    }
 
     await this.startTurn(this.getActivePlayer());
   }

@@ -44,6 +44,9 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
       SeasideCards.Blockade.name,
       SeasideCards.Sailor.name,
       SeasideCards.Corsair.name,
+      SeasideCards.Outpost.name,
+      SeasideCards.Pirate.name,
+      SeasideCards.Treasury.name,
     ]
   );
 

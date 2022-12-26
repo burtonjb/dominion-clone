@@ -11,6 +11,7 @@ import {
 } from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
+import { GainParams } from "../../domain/objects/Reaction";
 import { DiscardCardsFromHand, TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 
@@ -693,7 +694,21 @@ const Outpost: CardParams = {
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
   playEffects: [
-    // TODO
+    {
+      prompt:
+        "If this is the first time you've played outpost this turn and the previous turn wasn't yours, take an extra turn after this one but only draw 3 cards for your next hand",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        if (activePlayer.cardsInPlay.filter((c) => c.name == Outpost.name).length > 1) return; // return early if an outpost has already been played (this is slightly different than it should be)
+        if (activePlayer.cardFlags.outpost || activePlayer.extraTurn) return; // return if the "outpost" flag has already been set
+        activePlayer.cardFlags.outpost = true;
+
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          activePlayer.cardFlags.outpost = false;
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
   ],
 };
 
@@ -704,8 +719,45 @@ const Pirate: CardParams = {
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
   playEffects: [
-    // TODO
+    {
+      prompt: "At the start of your next turn gain a treasure costing up to 6$",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {
+          const selected = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+            prompt: "Choose a treasure to gain costing 6 or less to your hand",
+            filter: (pile) =>
+              pile.cards.length > 0 &&
+              pile.cards[0].types.includes(CardType.TREASURE) &&
+              pile.cards[0].calculateCost(game) <= 6,
+            sourceCard: card,
+          });
+
+          if (!selected) return false; // return early in cases like there's no piles costing 4 or less (unlikely, but could happen)
+
+          await game.gainCardFromSupply(selected, activePlayer, false, CardLocation.HAND);
+
+          return false;
+        });
+        card.durationEffects.push(durationEffect);
+      },
+    },
   ],
+  reactionEffects: {
+    onGainCardEffects: [
+      async (owningPlayer: Player, cardWithEffect: Card, game: Game, gainParams: GainParams) => {
+        if (!gainParams.gainedCard.types.includes(CardType.TREASURE)) return; // skip this effect if the gained card is not a treasure
+
+        const selected = await owningPlayer.playerInput.chooseBoolean(owningPlayer, game, {
+          prompt: "Play pirate?",
+          defaultChoice: true,
+          sourceCard: cardWithEffect,
+        });
+        if (!selected) return;
+
+        await game.playCard(cardWithEffect, owningPlayer);
+      },
+    ],
+  },
 };
 
 const SeaWitch: CardParams = {
@@ -778,8 +830,25 @@ const Treasury: CardParams = {
   cost: 5,
   expansion: DominionExpansion.SEASIDE,
   kingdomCard: true,
-  playEffects: [
-    // TODO
+  playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 1 }), new GainMoney({ amount: 1 })],
+  onCleanupEffects: [
+    {
+      prompt:
+        "At the end of the turn, if you didn't gain a victory card in your buy phase, you may put this onto your deck",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        // FIXME: this is slightly different - it should filter only gained during the buy phase
+        if (activePlayer.cardsGainedLastTurn.filter((c) => c.types.includes(CardType.VICTORY)).length > 0) return;
+
+        const shouldTopDeck = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
+          defaultChoice: true,
+          prompt: "Should put Treasury onto your deck?",
+          sourceCard: card,
+        });
+        if (shouldTopDeck) {
+          activePlayer.transferCard(card, activePlayer.cardsInPlay, activePlayer.drawPile, CardPosition.TOP);
+        }
+      },
+    },
   ],
 };
 
