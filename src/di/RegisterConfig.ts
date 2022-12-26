@@ -8,6 +8,10 @@ import { register as registerBasic } from "../config/cards/Basic";
 import { register as registerIntrigue } from "../config/cards/Intrigue";
 import { register as registerSeaside } from "../config/cards/Seaside";
 
+import { register as registerBaseKingdom } from "../config/kingdom/Base";
+import { register as registerIntrigueKingdom } from "../config/kingdom/Intrigue";
+import { register as registerSeasideKingdom } from "../config/kingdom/Seaside";
+
 function registerCards() {
   registerBasic();
   registerBase();
@@ -16,11 +20,14 @@ function registerCards() {
 }
 
 function registerKingdoms() {
-  throw new Error("TODO!");
+  registerBaseKingdom();
+  registerIntrigueKingdom();
+  registerSeasideKingdom();
 }
 
 function registerAll() {
   registerCards();
+  registerKingdoms();
 }
 
 export default registerAll;

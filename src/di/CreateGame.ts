@@ -32,22 +32,7 @@ export function createGame(numberOfPlayers: number, seed?: number): Game {
   // create the kingdom based on the number of players
   const kingdom = createKingdom(
     numberOfPlayers,
-    // selectedCards.map((c) => c.name)
-    [
-      BaseCards.Merchant.name,
-      BaseCards.Village.name,
-      BaseCards.Chapel.name,
-      BaseCards.Laboratory.name,
-      SeasideCards.Astrolabe.name,
-      SeasideCards.Monkey.name,
-      SeasideCards.Smugglers.name,
-      SeasideCards.Blockade.name,
-      SeasideCards.Sailor.name,
-      SeasideCards.Corsair.name,
-      SeasideCards.Outpost.name,
-      SeasideCards.Pirate.name,
-      SeasideCards.Treasury.name,
-    ]
+    selectedCards.map((c) => c.name)
   );
 
   const supply = createSupply(numberOfPlayers, kingdom);
