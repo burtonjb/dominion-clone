@@ -60,8 +60,10 @@ export class Game {
     const isProvincePileEmpty =
       this.supply.basePiles.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
     const areAtLeast3PilesEmpty = this.supply.allPiles().filter((pile) => pile.cards.length == 0).length >= 3;
+    const isColonyPileEmpty =
+      this.supply.basePiles.find((pile) => pile.name === BasicCards.Colony.name)?.cards.length == 0;
 
-    const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty;
+    const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty || isColonyPileEmpty;
     if (gameFinished) {
       console.warn("Provinces empty? " + isProvincePileEmpty);
 
@@ -72,6 +74,8 @@ export class Game {
             .filter((pile) => pile.cards.length == 0)
             .map((p) => p.name)
       );
+
+      console.warn("Colonies empty? " + isColonyPileEmpty);
     }
 
     return gameFinished;

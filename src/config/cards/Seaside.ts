@@ -3,7 +3,6 @@ import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 import {
   attack,
-  CardEffect,
   DurationEffect,
   DurationTiming,
   OnGainCardTrigger,
@@ -463,12 +462,7 @@ const Island: CardParams = {
 
         if (selectedCards.length == 0) return;
         const selectedCard = selectedCards[0];
-        activePlayer.transferCard(
-          selectedCard,
-          activePlayer.cardsInPlay,
-          activePlayer.mats.island,
-          CardPosition.BOTTOM
-        );
+        activePlayer.transferCard(selectedCard, activePlayer.hand, activePlayer.mats.island, CardPosition.BOTTOM);
         game.eventLog.publishEvent({ type: "CardSetAside", player: activePlayer, card: selectedCard });
       },
     },

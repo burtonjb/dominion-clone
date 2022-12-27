@@ -71,9 +71,28 @@ const Curse: CardParams = {
   expansion: DominionExpansion.BASE,
 };
 
+const Platinum: CardParams = {
+  name: "Platinum",
+  types: [CardType.TREASURE],
+  cost: 9,
+  worth: 5,
+  kingdomCard: false,
+  expansion: DominionExpansion.PROSPERITY,
+  playEffects: [new GainMoney({ amount: 5 })],
+};
+
+const Colony: CardParams = {
+  name: "Colony",
+  types: [CardType.VICTORY],
+  cost: 11,
+  kingdomCard: false,
+  victoryPoints: 10,
+  expansion: DominionExpansion.PROSPERITY,
+};
+
 export function register() {
-  cardConfigRegistry.registerAll(Copper, Silver, Gold, Estate, Duchy, Province, Curse);
+  cardConfigRegistry.registerAll(Copper, Silver, Gold, Estate, Duchy, Province, Curse, Platinum, Colony);
 }
 register();
 
-export { Copper, Silver, Gold, Estate, Duchy, Province, Curse };
+export { Copper, Silver, Gold, Estate, Duchy, Province, Curse, Platinum, Colony };

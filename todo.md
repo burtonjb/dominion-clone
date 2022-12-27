@@ -2,6 +2,7 @@
 * Add other expansions
   - add seaside/prosperity/hinterlands
 * Easy way to configure games - ui for game/kingdom config?
+* Update the prompts so there's some flavor in them (e.g. pirate's input prompt should say avast or arrg, masquerade should reference 'Fidelio' (either from Robot Chicken or Eyes Wide Shut))
 
 ## Out of scope (for now)
 * unit tests (I should, but I'm supposed to wrap this up)
@@ -11,7 +12,7 @@
 ## Bugs
 * score calculation might be buggy (write UT/check if its duplicate counting)
 * Some prompts move around the UI (some are at the bottom of the page, som seem to move upwards, though this might be because I've scrolled down)
-* cardselection 
+* card selection 
   - should support cancel/clear to clear the UI
 * add game ends after max number of turns (not in the real rules, but useful when doing AI testing)
 * go through and test all the added cards

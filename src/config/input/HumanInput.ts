@@ -111,9 +111,13 @@ export class HumanPlayerInput implements PlayerInput {
         const matchingCard = matchingCards[0];
         return [matchingCard];
       } else if (input.toLowerCase() == "all") {
-        // play all coppers, silvers, golds
+        // play all coppers, silvers, golds, or plats
         const m = player.hand.filter(
-          (c) => c.name == BasicCards.Copper.name || c.name == BasicCards.Silver.name || c.name == BasicCards.Gold.name
+          (c) =>
+            c.name == BasicCards.Copper.name ||
+            c.name == BasicCards.Silver.name ||
+            c.name == BasicCards.Gold.name ||
+            c.name == BasicCards.Platinum.name
         );
         return m;
       } else if (input.toLowerCase() == "end") {
