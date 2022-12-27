@@ -83,7 +83,7 @@ export class Game {
     player.cardsInPlay.push(card);
     await card.play(player, this);
     for (const effect of player.onPlayCardTriggers) {
-      await effect.call(this, card, player, this);
+      await effect.effect(card, player, this);
     }
   }
 
@@ -91,41 +91,53 @@ export class Game {
     this.eventLog.publishEvent({ type: "RevealCard", cards: cards, player: player });
   }
 
-  public buyCard(cardPile: CardPile, player: Player) {
+  async buyCard(cardPile: CardPile, player: Player) {
     const activePlayer = this.getActivePlayer();
-    const gainedCard = this.gainCardFromSupply(cardPile, player, true);
+    const gainedCard = await this.gainCardFromSupply(cardPile, player, true);
     activePlayer.buys -= 1;
     const spent = gainedCard?.calculateCost(this) ? gainedCard.calculateCost(this) : 0;
     activePlayer.money -= spent;
   }
 
-  // TODO: unify this with the below method. Right now I've just hacked it to support the Lurker function
-  public gainCard(card: Card, player: Player) {
-    player.discardPile.unshift(card);
-    this.eventLog.publishEvent({
-      type: "GainCard",
-      player: player,
-      card: card,
-      wasBought: false,
-      toLocation: undefined,
-    });
+  async gainCardByName(
+    cardName: string,
+    player: Player,
+    wasBought: boolean,
+    toLocation?: CardLocation
+  ): Promise<Card | undefined> {
+    const pile = this.supply.allPiles().find((pile) => pile.name == cardName);
+    if (pile != undefined) {
+      return await this.gainCardFromSupply(pile, player, wasBought, toLocation);
+    } else {
+      return undefined;
+    }
   }
 
-  public gainCardFromSupply(
+  async gainCardFromSupply(
     cardPile: CardPile,
     player: Player,
     wasBought: boolean,
     toLocation?: CardLocation
-  ): Card | undefined {
+  ): Promise<Card | undefined> {
     const cardToGain = cardPile.cards.shift();
     if (!cardToGain) return undefined; // no cards left in the pile, so return undefined (can happen with like cursers)
+
+    await this.gainCard(cardToGain, player, wasBought, toLocation);
+
+    return cardToGain;
+  }
+
+  async gainCard(cardToGain: Card, player: Player, wasBought: boolean, toLocation?: CardLocation) {
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
     } else if (toLocation == CardLocation.TOP_OF_DECK) {
       player.drawPile.unshift(cardToGain);
     } else if (toLocation == CardLocation.HAND) {
       player.hand.unshift(cardToGain);
+    } else if (toLocation == CardLocation.SET_ASIDE) {
+      player.cardsSetAside.unshift(cardToGain);
     }
+
     this.eventLog.publishEvent({
       type: "GainCard",
       player: player,
@@ -133,20 +145,21 @@ export class Game {
       wasBought: wasBought,
       toLocation: toLocation,
     });
-    return cardToGain;
-  }
 
-  public gainCardByName(
-    cardName: string,
-    player: Player,
-    wasBought: boolean,
-    toLocation?: CardLocation
-  ): Card | undefined {
-    const pile = this.supply.allPiles().find((pile) => pile.name == cardName);
-    if (pile != undefined) {
-      return this.gainCardFromSupply(pile, player, wasBought, toLocation);
-    } else {
-      return undefined;
+    player.cardsGainedLastTurn.push(cardToGain);
+
+    for (const trigger of player.onGainCardTriggers.slice()) {
+      await trigger.effect(cardToGain, player, this, wasBought, toLocation);
+    }
+
+    for (const otherPlayer of this.players) {
+      for (const card of otherPlayer.hand.slice()) {
+        await card.onGainReaction(this, otherPlayer, {
+          gainedCard: cardToGain,
+          gainedPlayer: player,
+          wasBought: wasBought,
+        });
+      }
     }
   }
 
@@ -170,15 +183,43 @@ export class Game {
     this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
   }
 
-  public cleanUp() {
+  public async startTurn(activePlayer: Player) {
+    activePlayer.startTurn();
+
+    this.ui?.render();
+    // trigger all the duration effects
+    for (const card of activePlayer.cardsInPlay.slice()) {
+      for (const effect of card.durationEffects) {
+        await effect.effect(activePlayer, this);
+      }
+    }
+
+    // clean up the duration effects that have completed
+    for (const card of activePlayer.cardsInPlay) {
+      const toClean = card.durationEffects.filter((e) => !e.hasRemaining);
+      for (const effect of toClean) {
+        const index = card.durationEffects.indexOf(effect);
+        if (index >= 0) {
+          card.durationEffects.splice(index, 1); // remove the effect from the pending duration effects
+        }
+      }
+    }
+  }
+
+  public async cleanUp() {
     const activePlayer = this.getActivePlayer();
-    activePlayer.cleanUp(this);
+    await activePlayer.cleanUp(this);
 
     this.costModifiers.length = 0; // clear cost modifiers
 
     // advance the active player index, have the next player start their turn
-    this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
-    this.getActivePlayer().turns += 1;
+    if (!activePlayer.cardFlags.outpost) {
+      // outpost will have the player take the next turn
+      // FIXME: this isn't done very well - should eventually be refactored into something more generic
+      this.activePlayerIndex = (this.activePlayerIndex + 1) % this.players.length;
+    }
+
+    await this.startTurn(this.getActivePlayer());
   }
 
   /*
@@ -194,6 +235,20 @@ export class Game {
   public otherPlayers(player?: Player): Array<Player> {
     const filterPlayer = player ? player : this.getActivePlayer();
     return this.players.filter((p) => p != filterPlayer);
+  }
+
+  public leftPlayer(player?: Player): Player {
+    if (!player) player = this.getActivePlayer();
+    const index = this.players.indexOf(player);
+    const leftPlayer = this.players[(index + 1) % this.players.length];
+    return leftPlayer;
+  }
+
+  public rightPlayer(player?: Player): Player {
+    if (!player) player = this.getActivePlayer();
+    const index = this.players.indexOf(player);
+    const rightPlayer = this.players[(index - 1 + this.players.length) % this.players.length];
+    return rightPlayer;
   }
 
   /*

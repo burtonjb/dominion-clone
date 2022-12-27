@@ -106,6 +106,9 @@ const Deconstruction: KingdomParams = {
   ],
 };
 
-kingdomConfigRegistry.registerAll(VictoryDance, ThePlotThickens, BestWishes, Underlings, GrandScheme, Deconstruction);
+export function register() {
+  kingdomConfigRegistry.registerAll(VictoryDance, ThePlotThickens, BestWishes, Underlings, GrandScheme, Deconstruction);
+}
+register();
 
 export { VictoryDance, ThePlotThickens, BestWishes, Underlings, GrandScheme, Deconstruction };

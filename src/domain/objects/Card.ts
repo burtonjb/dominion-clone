@@ -1,6 +1,7 @@
-import { CardEffectConfig } from "./CardEffect";
+import { CardEffectConfig, DurationEffect } from "./CardEffect";
 import { Game } from "./Game";
 import { Player } from "./Player";
+import { GainParams, ReactionEffectsCardParams } from "./Reaction";
 
 // internal counter for tracking cards' uniqueness (for debugging if required)
 let cardNumber = 0;
@@ -9,6 +10,7 @@ export enum CardType {
   ACTION = "Action",
   ATTACK = "Attack",
   CURSE = "Curse",
+  DURATION = "Duration",
   REACTION = "Reaction",
   TREASURE = "Treasure",
   VICTORY = "Victory",
@@ -17,10 +19,7 @@ export enum CardType {
 export enum DominionExpansion {
   BASE = "Base",
   INTRIGUE = "Intrigue",
-}
-
-export interface ReactionEffects {
-  onOtherPlayEffect?: Array<CardEffectConfig>;
+  SEASIDE = "Seaside",
 }
 
 export interface CardParams {
@@ -33,8 +32,9 @@ export interface CardParams {
   readonly expansion: DominionExpansion;
   readonly kingdomCard: boolean;
   readonly playEffects?: Array<CardEffectConfig>;
-  readonly reactionEffects?: ReactionEffects;
+  readonly reactionEffects?: ReactionEffectsCardParams;
   readonly calculateVictoryPoints?: (player: Player) => number;
+  readonly onCleanupEffects?: Array<CardEffectConfig>;
 }
 
 export class Card {
@@ -46,6 +46,8 @@ export class Card {
   public worth: number;
   public victoryPoints: number;
 
+  public durationEffects: Array<DurationEffect>;
+
   constructor(params: CardParams) {
     this.params = params;
     this.id = cardNumber++;
@@ -54,6 +56,7 @@ export class Card {
     this.types = params.types.slice(); // copy of the config
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
+    this.durationEffects = [];
   }
 
   public calculateCost(game: Game): number {
@@ -75,6 +78,28 @@ export class Card {
       game.ui?.render();
       await this.params.playEffects[i].effect(this, player, game);
     }
+  }
+
+  public async onGainReaction(game: Game, owningPlayer: Player, gainParams: GainParams) {
+    if (!this.params.reactionEffects || !this.params.reactionEffects.onGainCardEffects) return;
+    for (let i = 0; i < this.params.reactionEffects.onGainCardEffects.length; i++) {
+      game.ui?.render();
+      await this.params.reactionEffects.onGainCardEffects[i](owningPlayer, this, game, gainParams);
+    }
+  }
+
+  public async onCleanUp(game: Game) {
+    const activePlayer = game.getActivePlayer();
+
+    if (!this.params.onCleanupEffects) return;
+    for (let i = 0; i < this.params.onCleanupEffects?.length; i++) {
+      game.ui?.render();
+      await this.params.onCleanupEffects[i].effect(this, activePlayer, game);
+    }
+  }
+
+  public shouldCleanUp(): boolean {
+    return this.durationEffects.length == 0;
   }
 
   public effectString(): string {

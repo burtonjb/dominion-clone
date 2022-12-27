@@ -112,6 +112,6 @@ export class GainCard implements BasicCardEffectConfig<GainCardParams> {
   }
 
   async effect(source: Card, player: Player, game: Game) {
-    game.gainCardByName(this.params.name, player, false, this.params.toLocation);
+    await game.gainCardByName(this.params.name, player, false, this.params.toLocation);
   }
 }

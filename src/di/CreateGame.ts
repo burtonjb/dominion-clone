@@ -1,5 +1,4 @@
 import * as BasicCards from "../config/cards/Basic";
-import * as IntrigueCards from "../config/cards/Intrigue";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
@@ -9,7 +8,7 @@ import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
-import registerAll from "./RegisterConfig";
+import registerAll, { BaseCards, SeasideCards } from "./RegisterConfig";
 
 export function createGame(numberOfPlayers: number, seed?: number): Game {
   // construct utility classes and "services"

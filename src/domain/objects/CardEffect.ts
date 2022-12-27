@@ -1,7 +1,9 @@
 import { Card } from "./Card";
 import { Game } from "./Game";
-import { Player } from "./Player";
+import { CardLocation, Player } from "./Player";
 import * as BaseCards from "../../config/cards/Base";
+import * as SeasideCards from "../../config/cards/Seaside";
+import { CardPile } from "./CardPile";
 
 // function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
 // They are applied at a game level as they affect other players' cards' costs
@@ -30,5 +32,52 @@ export async function attack(card: Card, target: Player, game: Game, effect: () 
     );
     return;
   }
+  //FIXME: lighthouse is hacked in too as part of attack immunity.
+  if (target.cardsSetAside.map((c) => c.name).includes(SeasideCards.Lighthouse.name)) {
+    return;
+  }
+
   await effect();
+}
+
+export enum DurationTiming {
+  START_OF_TURN = "StartOfTurn",
+}
+
+type DurationFunction = (player: Player, game: Game) => Promise<boolean>;
+
+export class DurationEffect {
+  public hasRemaining: boolean;
+
+  constructor(public readonly timing: DurationTiming, private readonly internalEffect: DurationFunction) {
+    this.hasRemaining = true;
+  }
+
+  public async effect(player: Player, game: Game) {
+    this.hasRemaining = await this.internalEffect(player, game);
+  }
+}
+
+export type OnGainCardEffect = (
+  gainedCard: Card,
+  gainer: Player,
+  game: Game,
+  wasBought: boolean,
+  toLocation?: CardLocation
+) => Promise<void>;
+
+export class OnGainCardTrigger {
+  // TODO: eventually add a "managed" property that will have these effects clean up during clean up or start of turn, but right now all duration will manage the lifecycle of their own effects
+  constructor(private internalEffect: OnGainCardEffect) {}
+
+  async effect(card: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) {
+    await this.internalEffect(card, gainer, game, wasBought, toLocation);
+  }
+}
+
+export class OnPlayCardTrigger {
+  constructor(public readonly cleanAtEndOfTurn: boolean, private internalEffect: CardEffect) {}
+  async effect(card: Card, player: Player, game: Game) {
+    await this.internalEffect(card, player, game);
+  }
 }

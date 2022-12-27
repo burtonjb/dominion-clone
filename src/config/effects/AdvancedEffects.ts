@@ -34,3 +34,32 @@ export class TrashCardsFromHand implements BasicCardEffectConfig<TrashCardsFromH
     }
   }
 }
+
+export interface DiscardCardsFromHandParams {
+  minCards?: number;
+  maxCards?: number;
+}
+export class DiscardCardsFromHand implements BasicCardEffectConfig<TrashCardsFromHandParams> {
+  public readonly type = "DiscardCardsFromHand";
+  public params: TrashCardsFromHandParams;
+  public readonly prompt: string;
+
+  constructor(params: TrashCardsFromHandParams) {
+    this.params = params;
+    this.prompt = `Discard between ${params.minCards} and ${params.maxCards} from hand`;
+  }
+
+  async effect(card: Card, player: Player, game: Game) {
+    const chosenCards = await player.playerInput.chooseCardsFromList(player, game, {
+      prompt: this.prompt,
+      minCards: this.params.minCards,
+      maxCards: this.params.maxCards,
+      cardList: player.hand,
+      sourceCard: card,
+    });
+
+    for (const card of chosenCards) {
+      game.discardCard(card, player);
+    }
+  }
+}

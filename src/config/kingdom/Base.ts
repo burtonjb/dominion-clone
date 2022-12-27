@@ -103,6 +103,9 @@ const SilverAndGold: KingdomParams = {
   ],
 };
 
-kingdomConfigRegistry.registerAll(FirstGame, SizeDistortion, DeckTop, SleightOfHand, Improvements, SilverAndGold);
+export function register() {
+  kingdomConfigRegistry.registerAll(FirstGame, SizeDistortion, DeckTop, SleightOfHand, Improvements, SilverAndGold);
+}
+register();
 
 export { FirstGame, SizeDistortion, DeckTop, SleightOfHand, Improvements, SilverAndGold };

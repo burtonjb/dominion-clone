@@ -2,7 +2,7 @@ import readline from "node:readline";
 import { stdin as input, stdout as output } from "node:process";
 const rl = readline.createInterface({ input, output });
 
-// TODO: fix this, figure out what's wrong with promisify and use that instead
+// FIXME: question shouldn't take in a prompt anymore - its being handled by the game screen
 export const question = (prompt: string) =>
   new Promise<string>((resolve) =>
     rl.question(prompt, (input) => {

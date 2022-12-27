@@ -4,7 +4,7 @@ import { Card, CardType } from "../domain/objects/Card";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Player } from "../domain/objects/Player";
-import { formatForegroundColor, xtermColors } from "./Colors";
+import { formatBackgroundColor, formatForegroundColor, xtermColors } from "./Colors";
 import { BaseTerminalScreen } from "./Terminal";
 import { Event, formatEvent } from "../domain/events/Event";
 
@@ -102,14 +102,29 @@ export class GameScreen {
 
   formatCardName(card: Card, forcedLength?: number): string {
     let formattedName = card.name;
+    let lengthDiff = 0;
     if (this.includeDebugInfo) {
       formattedName += `(${card.id})`;
     }
     if (forcedLength) {
-      formattedName = formattedName.padEnd(forcedLength, " ").slice(0, forcedLength);
+      lengthDiff = forcedLength - card.name.length;
+      // trim the name if its too long
+      if (lengthDiff < 0) formattedName = formattedName.slice(0, forcedLength);
     }
-    if (card.types.includes(CardType.CURSE)) {
+
+    if (card.types.includes(CardType.VICTORY) && card.types.includes(CardType.TREASURE)) {
+      formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Green")!);
+      formattedName = formatBackgroundColor(formattedName, xtermColors.getByName("Yellow2")!);
+    } else if (card.types.includes(CardType.REACTION) && card.types.includes(CardType.DURATION)) {
+      formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Blue1")!);
+      formattedName = formatBackgroundColor(formattedName, xtermColors.getByName("Orange1")!);
+    } else if (card.types.includes(CardType.TREASURE) && card.types.includes(CardType.DURATION)) {
+      formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Yellow2")!);
+      formattedName = formatBackgroundColor(formattedName, xtermColors.getByName("Orange1")!);
+    } else if (card.types.includes(CardType.CURSE)) {
       formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Purple")!);
+    } else if (card.types.includes(CardType.DURATION)) {
+      formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Orange1")!);
     } else if (card.types.includes(CardType.TREASURE)) {
       formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Yellow2")!);
     } else if (card.types.includes(CardType.VICTORY)) {
@@ -117,6 +132,10 @@ export class GameScreen {
     } else if (card.types.includes(CardType.REACTION)) {
       formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Blue1")!);
     }
+    if (lengthDiff > 0) {
+      formattedName = formattedName + " ".repeat(lengthDiff);
+    }
+
     return formattedName;
   }
 

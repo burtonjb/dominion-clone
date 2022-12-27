@@ -28,7 +28,7 @@ export class BigMoneyAiInput implements PlayerInput {
   ): Promise<CardEffectConfig[]> {
     if (params.minChoices) return params.choices.slice(0, params.minChoices);
     else if (params.maxChoices) return params.choices.slice(0, params.maxChoices);
-    else return params.choices;
+    else return params.choices.slice();
   }
 
   async choosePileFromSupply(

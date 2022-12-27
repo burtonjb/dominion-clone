@@ -1,8 +1,9 @@
 import { HumanPlayerInput } from "../../config/input/HumanInput";
 import { doNTimes, shuffleArray } from "../../util/ArrayExtensions";
+import { logger } from "../../util/Logger";
 import { Random } from "../../util/Random";
 import { Card } from "./Card";
-import { CardEffect } from "./CardEffect";
+import { OnGainCardTrigger, OnPlayCardTrigger } from "./CardEffect";
 import { Game } from "./Game";
 import { PlayerInput } from "./PlayerInput";
 
@@ -13,6 +14,7 @@ export enum CardLocation {
   HAND = "Hand",
   DISCARD = "Discard",
   IN_PLAY = "InPlay",
+  SET_ASIDE = "SetAside",
 }
 
 export enum CardPosition {
@@ -29,8 +31,26 @@ export class Player {
   public drawPile: Array<Card>;
   public discardPile: Array<Card>;
   public cardsInPlay: Array<Card>;
+  public cardsSetAside: Array<Card>;
 
-  public onPlayCardTriggers: Array<CardEffect>;
+  // Specific "mats" that each player owns
+  public readonly mats: {
+    island: Array<Card>;
+    nativeVillage: Array<Card>;
+  };
+
+  // Specific flags that are set for each player
+  public readonly cardFlags: {
+    outpost: boolean;
+  };
+
+  // flag to see if the player took an extra turn
+  public extraTurn: boolean;
+
+  public onPlayCardTriggers: Array<OnPlayCardTrigger>;
+  public onGainCardTriggers: Array<OnGainCardTrigger>;
+
+  public cardsGainedLastTurn: Array<Card>;
 
   public actions: number;
   public buys: number;
@@ -53,12 +73,27 @@ export class Player {
 
     this.discardPile = [];
     this.cardsInPlay = [];
+    this.cardsSetAside = [];
+
+    this.mats = {
+      nativeVillage: [],
+      island: [],
+    };
+
+    this.cardFlags = {
+      outpost: false,
+    };
+
+    this.extraTurn = false;
 
     this.actions = 1;
     this.buys = 1;
     this.money = 0;
 
     this.onPlayCardTriggers = [];
+    this.onGainCardTriggers = [];
+
+    this.cardsGainedLastTurn = [];
 
     this.turns = 0;
 
@@ -109,7 +144,15 @@ export class Player {
   }
 
   public allCards(): Array<Card> {
-    return [...this.hand, ...this.drawPile, ...this.discardPile, ...this.cardsInPlay];
+    return [
+      ...this.hand,
+      ...this.drawPile,
+      ...this.discardPile,
+      ...this.cardsInPlay,
+      ...this.cardsSetAside,
+      ...this.mats.nativeVillage,
+      ...this.mats.island,
+    ];
   }
 
   // removes a card from whatever location its currently in (e.g. hand, deck, inPlay)
@@ -117,7 +160,7 @@ export class Player {
   // its no longer tracked. But this method will still track the card...
   // Returns the list of cards that were deleted
   public removeCard(card: Card): Array<Card> {
-    const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile];
+    const containers = [this.hand, this.drawPile, this.cardsInPlay, this.discardPile, this.cardsSetAside];
     for (const container of containers) {
       const index = container.findIndex((c) => c == card);
       if (index > -1) {
@@ -130,7 +173,7 @@ export class Player {
   public transferCard(card: Card, from: Array<Card>, to: Array<Card>, position: CardPosition) {
     const cardIndex = from.findIndex((c) => c == card);
     if (cardIndex == -1) {
-      console.warn("Unable to find card in transfercard method");
+      logger.warn("Unable to find card in transfer card method");
       return;
     }
     from.splice(cardIndex, 1);
@@ -155,17 +198,35 @@ export class Player {
     inPlay: ${this.cardsInPlay.map((c) => c.name)}`;
   }
 
-  public cleanUp(game: Game) {
+  public startTurn() {
+    this.turns += 1;
+    this.cardsGainedLastTurn = [];
+  }
+
+  public async cleanUp(game: Game) {
+    // Trigger any on clean up effects
+    for (const card of this.cardsInPlay.slice()) {
+      await card.onCleanUp(game);
+    }
+
     // discard all cards in play
     const cardsInPlay = this.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
-    cardsInPlay.forEach((card) => game.discardCard(card, this));
+    cardsInPlay.filter((c) => c.shouldCleanUp()).forEach((card) => game.discardCard(card, this));
 
     // discard all cards in hand
     const cardsInHand = this.hand.slice();
     cardsInHand.forEach((card) => game.discardCard(card, this));
 
-    // draw a new hand of 5 cards
-    doNTimes(5, () => this.drawCard());
+    if (this.cardFlags.outpost) {
+      // outpost draws 3 cards at the start of the next turn. Set the extra turn flag so outpost can't be repeatedly played
+      doNTimes(3, () => this.drawCard());
+      this.extraTurn = true;
+      game.eventLog.publishEvent({ type: "TakesAnExtraTurn", player: this });
+    } else {
+      // At the start of turn, draw 5 cards (usual case)
+      doNTimes(5, () => this.drawCard());
+      this.extraTurn = false;
+    }
 
     // reset buys/actions/money
     this.buys = 1;
@@ -173,6 +234,6 @@ export class Player {
     this.actions = 1;
 
     // clean up the onPlay effects
-    this.onPlayCardTriggers.length = 0;
+    this.onPlayCardTriggers = this.onPlayCardTriggers.filter((t) => !t.cleanAtEndOfTurn);
   }
 }
