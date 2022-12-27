@@ -302,16 +302,171 @@ const WorkersVillage: CardParams = {
   cost: 4,
   expansion: DominionExpansion.PROSPERITY,
   kingdomCard: true,
+  playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 2 }), new GainBuys({ amount: 1 })],
+};
+
+const Charlatan: CardParams = {
+  name: "Charlatan",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 3 }),
+    // TODO: add in other effects (including start of game effects)
+  ],
+};
+
+const City: CardParams = {
+  name: "City",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
   playEffects: [
     new DrawCards({ amount: 1 }),
-    new GainActions({amount: 2}),
-    new GainBuys({amount: 1})
-  ]
-}
+    new GainActions({ amount: 2 }),
+    {
+      prompt: "If there are one or more empty Supply piles, +1 Card. If there are two or more, +1 Buy and +$1.",
+      effect: async (card: Card, player: Player, game: Game) => {
+        if (game.supply.emptyPiles().length >= 1) {
+          await new DrawCards({ amount: 1 }).effect(card, player, game);
+        }
+        if (game.supply.emptyPiles().length >= 2) {
+          await new GainBuys({ amount: 1 }).effect(card, player, game);
+          await new GainMoney({ amount: 1 }).effect(card, player, game);
+        }
+      },
+    },
+  ],
+};
+
+const Collection: CardParams = {
+  name: "Collection",
+  types: [CardType.TREASURE],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    new GainBuys({ amount: 1 }),
+    {
+      prompt: "This turn when you gain an action, +1VP",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const onGain = new OnGainCardTrigger(
+          true,
+          async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+            if (gainedCard.types.includes(CardType.ACTION)) {
+              await new GainVictoryTokens({ amount: 1 }).effect(card, player, game);
+            }
+          }
+        );
+        player.onGainCardTriggers.push(onGain);
+      },
+    },
+  ],
+};
+
+const CrystalBall: CardParams = {
+  name: "Crystal Ball",
+  types: [CardType.TREASURE],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 1 }),
+    {
+      prompt:
+        "Look at the top card of your deck. You may trash it, discard it or if its an action or treasure - play it",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const topCard = player.topNCards(1);
+        if (topCard.length == 0) return; // return early if no cards
+        const effect = await player.playerInput.chooseEffectFromList(player, game, {
+          prompt: `Card is ${topCard[0].name}. Choose 1`,
+          choices: [
+            {
+              prompt: "Trash card",
+              effect: async (card: Card, player: Player, game: Game) => game.trashCard(topCard[0], player),
+            },
+            {
+              prompt: "Discard card",
+              effect: async (card: Card, player: Player, game: Game) => game.discardCard(topCard[0], player),
+            },
+            {
+              prompt: "Play card",
+              effect: async (card: Card, player: Player, game: Game) => {
+                if (topCard[0].types.includes(CardType.ACTION) || topCard[0].types.includes(CardType.TREASURE)) {
+                  await game.playCard(topCard[0], player);
+                }
+              },
+            },
+          ],
+          sourceCard: card,
+          minChoices: 0,
+          maxChoices: 1,
+        });
+        if (effect.length == 0) return;
+
+        await effect[0].effect(card, player, game);
+      },
+    },
+  ],
+};
+
+const Magnate: CardParams = {
+  name: "Magnate",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Reveal your hand. +1 card for each treasure revealed",
+      effect: async (card: Card, player: Player, game: Game) => {
+        game.revealCards(player.hand, player);
+        await new DrawCards({ amount: player.hand.filter((c) => c.types.includes(CardType.TREASURE)).length }).effect(
+          card,
+          player,
+          game
+        );
+      },
+    },
+  ],
+};
 
 export function register() {
-  cardConfigRegistry.registerAll(Anvil, Watchtower, Bishop, Clerk, Investment, Monument, Quarry, Tiara, WorkersVillage);
+  cardConfigRegistry.registerAll(
+    Anvil,
+    Watchtower,
+    Bishop,
+    Clerk,
+    Investment,
+    Monument,
+    Quarry,
+    Tiara,
+    WorkersVillage,
+    Charlatan,
+    City,
+    Collection,
+    CrystalBall,
+    Magnate
+  );
 }
 register();
 
-export { Anvil, Watchtower, Bishop, Clerk, Investment, Monument, Quarry, Tiara, WorkersVillage };
+export {
+  Anvil,
+  Watchtower,
+  Bishop,
+  Clerk,
+  Investment,
+  Monument,
+  Quarry,
+  Tiara,
+  WorkersVillage,
+  Charlatan,
+  City,
+  Collection,
+  CrystalBall,
+  Magnate,
+};
