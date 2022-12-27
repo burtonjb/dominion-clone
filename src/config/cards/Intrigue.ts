@@ -417,7 +417,7 @@ const Ironworks: CardParams = {
         });
         if (!selected) return;
 
-        const gainedCard = await await game.gainCardFromSupply(selected, activePlayer, false);
+        const gainedCard = await game.gainCardFromSupply(selected, activePlayer, false);
 
         // if card was not gained successfully, return early
         if (!gainedCard) return;

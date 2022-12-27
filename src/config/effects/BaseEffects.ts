@@ -131,6 +131,6 @@ export class GainVictoryTokens implements BasicCardEffectConfig<GainVictoryToken
 
   async effect(source: Card, player: Player, game: Game) {
     player.victoryTokens += this.params.amount;
-    game.eventLog.publishEvent({ type: "GainVictoryTokens", amount: 1, player: player, card: source });
+    game.eventLog.publishEvent({ type: "GainVictoryTokens", amount: this.params.amount, player: player, card: source });
   }
 }

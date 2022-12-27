@@ -1,5 +1,5 @@
 import { Card } from "./Card";
-import { OnGainCardTrigger, OnPlayCardTrigger } from "./CardEffect";
+import { CardEffectConfig, OnGainCardTrigger, OnPlayCardTrigger } from "./CardEffect";
 import { Game } from "./Game";
 import { CardLocation, Player } from "./Player";
 
@@ -18,7 +18,7 @@ but I'm going to implement them so that they're the same as Dominion.
 Though the reactions from Menagerie and onwards (including Pirate from Seaside 2nd) seem more consistent!
 */
 export interface ReactionEffectsCardParams {
-  onStartTurnEffects?: Array<void>; // TODO
+  onStartTurnEffects?: Array<CardEffectConfig>; // TODO
 
   // triggered both on when the person having the card plays the card and when others play the card.
   // filter internally if its only on when others play the card

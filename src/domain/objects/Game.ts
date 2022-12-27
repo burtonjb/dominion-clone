@@ -191,11 +191,16 @@ export class Game {
     activePlayer.startTurn();
 
     this.ui?.render();
+
     // trigger all the duration effects
+    // FIXME: the order can actually be chosen by the active player, but I haven't implemented that
     for (const card of activePlayer.cardsInPlay.slice()) {
       for (const effect of card.durationEffects) {
         await effect.effect(activePlayer, this);
       }
+    }
+    for (const card of activePlayer.hand.slice()) {
+      await card.onStartTurnReaction(activePlayer, this);
     }
 
     // clean up the duration effects that have completed

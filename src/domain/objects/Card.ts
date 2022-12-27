@@ -89,6 +89,14 @@ export class Card {
     }
   }
 
+  public async onStartTurnReaction(activePlayer: Player, game: Game) {
+    if (!this.params.reactionEffects || !this.params.reactionEffects.onStartTurnEffects) return;
+    for (let i = 0; i < this.params.reactionEffects.onStartTurnEffects.length; i++) {
+      game.ui?.render();
+      await this.params.reactionEffects.onStartTurnEffects[i].effect(this, activePlayer, game);
+    }
+  }
+
   public async onCleanUp(game: Game) {
     const activePlayer = game.getActivePlayer();
 

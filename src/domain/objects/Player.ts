@@ -240,5 +240,6 @@ export class Player {
 
     // clean up the onPlay effects
     this.onPlayCardTriggers = this.onPlayCardTriggers.filter((t) => !t.cleanAtEndOfTurn);
+    this.onGainCardTriggers = this.onGainCardTriggers.filter((t) => !t.cleanAtEndOfTurn);
   }
 }

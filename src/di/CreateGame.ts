@@ -1,4 +1,5 @@
 import * as BasicCards from "../config/cards/Basic";
+import { DominionExpansion } from "../domain/objects/Card";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
@@ -18,9 +19,10 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
   // create players and their starting cards
   const players = createPlayers(random, numberOfPlayers);
 
-  const kingdomCardNames = cardConfigRegistry.values().filter((c) => c.kingdomCard);
-  shuffleArray(kingdomCardNames, random);
-  const selectedCards = kingdomCardNames.slice(0, 10);
+  const kingdomCards = cardConfigRegistry.values().filter((c) => c.kingdomCard);
+  const pCards = kingdomCards.filter((c) => c.expansion == DominionExpansion.PROSPERITY);
+  shuffleArray(kingdomCards, random);
+  const selectedCards = kingdomCards.slice(0, 10);
   selectedCards.sort((a, b) => {
     if (a.cost == b.cost) {
       return a.name < b.name ? -1 : 1;
@@ -32,8 +34,8 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
   // create the kingdom based on the number of players
   const kingdom = createKingdom(
     numberOfPlayers,
+    pCards.map((c) => c.name)
     // selectedCards.map((c) => c.name)
-    [ProsperityCards.Anvil.name, ProsperityCards.Watchtower.name, ProsperityCards.Bishop.name]
   );
 
   if (!usePlatAndColony) usePlatAndColony = false; // FIXME: update this to be N/10 chance, where N = # of prosperity cards in the kingdom
