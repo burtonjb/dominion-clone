@@ -5,6 +5,7 @@ export interface KingdomParams {
   readonly name: string;
   readonly expansions: Array<DominionExpansion>;
   readonly cards: Array<string>;
+  readonly usePlatinumAndColony?: boolean;
 }
 
 export class Kingdom {

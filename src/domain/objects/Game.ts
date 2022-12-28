@@ -132,6 +132,7 @@ export class Game {
   }
 
   async gainCard(cardToGain: Card, player: Player, wasBought: boolean, toLocation?: CardLocation) {
+    // put the card in the correct location
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
     } else if (toLocation == CardLocation.TOP_OF_DECK) {
@@ -151,6 +152,15 @@ export class Game {
     });
 
     player.cardsGainedLastTurn.push(cardToGain);
+
+    // fire all onGain triggers (on the card, put on the player or via reactions own by players)
+
+    await cardToGain.onGainCard(this, {
+      gainedCard: cardToGain,
+      gainedPlayer: player,
+      wasBought: wasBought,
+      toLocation: toLocation,
+    });
 
     for (const trigger of player.onGainCardTriggers.slice()) {
       await trigger.effect(cardToGain, player, this, wasBought, toLocation);

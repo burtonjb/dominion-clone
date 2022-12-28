@@ -109,7 +109,11 @@ async function handleBuyPhase(game: Game) {
 
     const pileToBuy = await activePlayer.playerInput.chooseCardToBuy(activePlayer, game);
     if (pileToBuy == undefined) break;
-    if (pileToBuy.cards.length == 0 || pileToBuy.cards[0].calculateCost(game) > activePlayer.money) {
+    if (
+      pileToBuy.cards.length == 0 ||
+      pileToBuy.cards[0].calculateCost(game) > activePlayer.money ||
+      !pileToBuy.cards[0].canBuy(activePlayer, game)
+    ) {
       logger.error("player input a non-buyable pile");
       break;
     }

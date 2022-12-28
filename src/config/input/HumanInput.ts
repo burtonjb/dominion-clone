@@ -132,20 +132,21 @@ export class HumanPlayerInput implements PlayerInput {
     const gameScreen = game.ui;
     while (true) {
       gameScreen?.render();
+      const applicablePiles = game.supply
+        .allPiles()
+        .filter((p) => p.cards.length > 0)
+        .filter((p) => p.cards[0].calculateCost(game) <= player.money)
+        .filter((p) => player.money && p.cards[0].canBuy(player, game));
+
       gameScreen?.renderPrompt(
-        `Buy a card from the supply: ${game.supply
-          .allPiles()
-          .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) <= player.money)
-          .map((p) => gameScreen.formatCardName(p.cards[0]))}, or 'end' to end.\n> `
+        `Buy a card from the supply: ${applicablePiles.map((p) =>
+          gameScreen.formatCardName(p.cards[0])
+        )}, or 'end' to end.\n> `
       );
       const input = await question("");
 
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-      const matchingPiles = game.supply
-        .allPiles()
-        .filter((p) => p.cards.length > 0)
-        .filter((p) => p.cards[0].calculateCost(game) <= player.money)
-        .filter((p) => p.name.match(inputMatch));
+      const matchingPiles = applicablePiles.filter((p) => p.name.match(inputMatch));
       const singleMatch = new Set(matchingPiles.map((c) => c.name)).size == 1;
 
       if (input.length > 0 && singleMatch) {

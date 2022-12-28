@@ -20,7 +20,6 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
   const players = createPlayers(random, numberOfPlayers);
 
   const kingdomCards = cardConfigRegistry.values().filter((c) => c.kingdomCard);
-  const pCards = kingdomCards.filter((c) => c.expansion == DominionExpansion.PROSPERITY);
   shuffleArray(kingdomCards, random);
   const selectedCards = kingdomCards.slice(0, 10);
   selectedCards.sort((a, b) => {
@@ -34,8 +33,7 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
   // create the kingdom based on the number of players
   const kingdom = createKingdom(
     numberOfPlayers,
-    pCards.map((c) => c.name)
-    // selectedCards.map((c) => c.name)
+    selectedCards.map((c) => c.name)
   );
 
   if (!usePlatAndColony) usePlatAndColony = false; // FIXME: update this to be N/10 chance, where N = # of prosperity cards in the kingdom

@@ -1,11 +1,12 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
+import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack, OnGainCardTrigger } from "../../domain/objects/CardEffect";
-import { Game } from "../../domain/objects/Game";
+import { Game, TurnPhase } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { GainParams } from "../../domain/objects/Reaction";
 import { DrawToHandsize, TrashCardsFromHand } from "../effects/AdvancedEffects";
-import { DrawCards, GainActions, GainBuys, GainMoney, GainVictoryTokens } from "../effects/BaseEffects";
+import { DrawCards, GainActions, GainBuys, GainCard, GainMoney, GainVictoryTokens } from "../effects/BaseEffects";
 
 const Anvil: CardParams = {
   name: "Anvil",
@@ -313,8 +314,19 @@ const Charlatan: CardParams = {
   kingdomCard: true,
   playEffects: [
     new GainMoney({ amount: 3 }),
-    // TODO: add in other effects (including start of game effects)
+    {
+      prompt: "Each other player gains a curse",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+          });
+        }
+      },
+    },
   ],
+  // TODO: add in the start-of-game effect
 };
 
 const City: CardParams = {
@@ -434,6 +446,335 @@ const Magnate: CardParams = {
   ],
 };
 
+const Mint: CardParams = {
+  name: "Mint",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "You may reveal a treasure from your hand to gain a copy of it",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const treasure = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Choose a treasure from your hand",
+          minCards: 0,
+          maxCards: 1,
+          cardList: player.hand.filter((c) => c.types.includes(CardType.TREASURE)),
+          sourceCard: card,
+        });
+        if (treasure.length == 0) return;
+
+        game.revealCards(treasure, player);
+
+        await game.gainCardByName(treasure[0].name, player, false, CardLocation.DISCARD);
+      },
+    },
+  ],
+  onGainEffects: [
+    {
+      prompt: "When you gain this, trash all non-duration treasures you have in play",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        const toTrash = gainer.cardsInPlay.filter(
+          (c) => c.types.includes(CardType.TREASURE) && !c.types.includes(CardType.DURATION)
+        );
+        for (const card of toTrash) {
+          game.trashCard(card, gainer);
+        }
+      },
+    },
+  ],
+};
+
+const Rabble: CardParams = {
+  name: "Rabble",
+  types: [CardType.ACTION, CardType.ATTACK],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 3 }),
+    {
+      prompt:
+        "Each other player reveals the top 3 cards of their deck and discards Actions & Treasures and puts the rest back on top",
+      effect: async (card: Card, player: Player, game: Game) => {
+        for (const otherPlayer of game.otherPlayers()) {
+          //FIXME: the cards are supposed to be put back in the order they choose, but I'm going to leave that out for now
+          // Its probably not too impactful since Rabble's attack is not that strong anyways
+          await attack(card, otherPlayer, game, async () => {
+            const top3 = otherPlayer.topNCards(3);
+            game.revealCards(top3, otherPlayer);
+            const toDiscard = top3.filter(
+              (c) => c.types.includes(CardType.ACTION) || c.types.includes(CardType.TREASURE)
+            );
+            for (const card of toDiscard) {
+              game.discardCard(card, otherPlayer);
+            }
+          });
+        }
+      },
+    },
+  ],
+};
+
+const Vault: CardParams = {
+  name: "Vault",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    {
+      prompt: "Discard any number of cards for +1$ each",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const toDiscard = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Choose cards to discard",
+          cardList: player.hand,
+          sourceCard: card,
+        });
+
+        await new GainMoney({ amount: toDiscard.length }).effect(card, player, game);
+        for (const card of toDiscard) {
+          game.discardCard(card, player);
+        }
+      },
+    },
+    {
+      prompt: "Each other player may discard 2 cards to draw 1 card",
+      effect: async (card: Card, player: Player, game: Game) => {
+        for (const otherPlayer of game.otherPlayers()) {
+          const toDiscard = await otherPlayer.playerInput.chooseCardsFromList(otherPlayer, game, {
+            prompt: "Choose 2 cards to discard to draw a card, or don't discard",
+            cardList: otherPlayer.hand,
+            sourceCard: card,
+            minCards: 0,
+            maxCards: 2,
+          });
+
+          if (toDiscard.length == 2) {
+            game.discardCard(toDiscard[0], otherPlayer);
+            game.discardCard(toDiscard[1], otherPlayer);
+            await new DrawCards({ amount: 1 }).effect(card, otherPlayer, game);
+          }
+        }
+      },
+    },
+  ],
+};
+
+const WarChest: CardParams = {
+  name: "War Chest",
+  types: [CardType.TREASURE],
+  cost: 5,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    //FIXME: technically war chest is any card named with war chest this turn, not just named this time
+    {
+      prompt: "The player to your left names a card. Gain a card costing up to 5$ that wasn't named",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const leftPlayer = game.leftPlayer();
+        const input = await leftPlayer.playerInput.chooseCardsFromList(leftPlayer, game, {
+          prompt: "Name a card to not be gained",
+          cardList: game.getAllUniqueCards(),
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
+        if (input.length == 0) return;
+        const named = input[0].name;
+
+        const selected = await player.playerInput.choosePileFromSupply(player, game, {
+          prompt: `Choose a card to gain costing 5 or less that wasn't named (named: ${named})`,
+          sourceCard: card,
+          filter: (pile) =>
+            pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 5 && pile.cards[0].name != named,
+        });
+        if (!selected) return;
+
+        await game.gainCardFromSupply(selected, player, false);
+      },
+    },
+  ],
+};
+
+const GrandMarket: CardParams = {
+  name: "Grand Market",
+  types: [CardType.ACTION],
+  cost: 6,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    new GainBuys({ amount: 1 }),
+    new GainMoney({ amount: 2 }),
+  ],
+  additionalBuyRestrictions: (player: Player, game: Game): boolean => {
+    return player.cardsInPlay.filter((c) => c.name == BasicCards.Copper.name).length == 0;
+  },
+};
+
+const Hoard: CardParams = {
+  name: "Hoard",
+  types: [CardType.TREASURE],
+  cost: 6,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    {
+      prompt: "This turn when you gain a victory card, if you bought it, gain a gold",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const onGain = new OnGainCardTrigger(
+          true,
+          async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+            if (gainedCard.types.includes(CardType.VICTORY) && wasBought == true) {
+              await new GainCard({ name: BasicCards.Gold.name }).effect(card, gainer, game);
+            }
+          }
+        );
+        player.onGainCardTriggers.push(onGain);
+      },
+    },
+  ],
+};
+
+const Bank: CardParams = {
+  name: "Bank",
+  types: [CardType.TREASURE],
+  cost: 7,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Worth 1$ per treasure you have in play (including this)",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const treasuresInPlay = player.cardsInPlay.filter((c) => c.types.includes(CardType.TREASURE));
+        await new GainMoney({ amount: treasuresInPlay.length }).effect(card, player, game);
+      },
+    },
+  ],
+};
+
+const Expand: CardParams = {
+  name: "Expand",
+  types: [CardType.ACTION],
+  cost: 7,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Trash a card from your hand. Gain one costing up to 3 more",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose a card from your hand to trash",
+          cardList: activePlayer.hand,
+          minCards: 1,
+          maxCards: 1,
+          sourceCard: card,
+        });
+
+        if (selected.length == 0) return; // return early - in cases like there's no cards in hand so something
+
+        game.trashCard(selected[0], activePlayer);
+
+        const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: `Choose a card costing up to ${selected[0].calculateCost(game) + 3}`,
+          filter: (pile) =>
+            pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= selected[0].calculateCost(game) + 3,
+          sourceCard: card,
+        });
+
+        if (!gainPile) return; // return early if no options
+
+        await game.gainCardFromSupply(gainPile, activePlayer, false);
+      },
+    },
+  ],
+};
+
+const Forge: CardParams = {
+  name: "Forge",
+  types: [CardType.ACTION],
+  cost: 7,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Trash any number of cards from your hand. Gain a card costing exactly their total cost",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const toTrash = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Choose cards to trash",
+          cardList: player.hand,
+          sourceCard: card,
+        });
+
+        if (toTrash.length == 0) return;
+
+        const totalCost = toTrash.map((c) => c.calculateCost(game)).reduce((prev, cur) => prev + cur);
+
+        const toGain = await player.playerInput.choosePileFromSupply(player, game, {
+          prompt: `Choose a card costing exactly ${totalCost}$`,
+          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) == totalCost,
+          sourceCard: card,
+        });
+
+        if (!toGain) return; // return early if no options
+        await game.gainCardFromSupply(toGain, player, false);
+
+        for (const card of toTrash) {
+          game.trashCard(card, player);
+        }
+      },
+    },
+  ],
+};
+
+const KingsCourt: CardParams = {
+  name: "King's Court",
+  types: [CardType.ACTION],
+  cost: 7,
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [
+    {
+      //FIXME: throne room should remain in play if it "thrones" a duration card
+      prompt: "You may play an action card from your hand thrice",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
+          prompt: "Choose an action card from your hand to play thrice",
+          cardList: activePlayer.hand.filter((card) => card.types.includes(CardType.ACTION)),
+          sourceCard: card,
+          maxCards: 1,
+        });
+
+        if (selected.length > 0) {
+          await game.playCard(selected[0], activePlayer);
+          await game.playCard(selected[0], activePlayer);
+          await game.playCard(selected[0], activePlayer);
+        }
+      },
+    },
+  ],
+};
+
+const Peddler: CardParams = {
+  name: "Peddler",
+  types: [CardType.ACTION],
+  cost: 8,
+  costModifier: (player: Player, game: Game) => {
+    if (game.currentPhase == TurnPhase.BUY) {
+      return player.cardsInPlay.filter((c) => c.types.includes(CardType.ACTION)).length * 2 * -1;
+    }
+    return 0;
+  },
+  expansion: DominionExpansion.PROSPERITY,
+  kingdomCard: true,
+  playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 1 }), new GainMoney({ amount: 1 })],
+};
+
 export function register() {
   cardConfigRegistry.registerAll(
     Anvil,
@@ -449,7 +790,18 @@ export function register() {
     City,
     Collection,
     CrystalBall,
-    Magnate
+    Magnate,
+    Mint,
+    Rabble,
+    Vault,
+    WarChest,
+    GrandMarket,
+    Hoard,
+    Bank,
+    Expand,
+    Forge,
+    KingsCourt,
+    Peddler
   );
 }
 register();
@@ -469,4 +821,15 @@ export {
   Collection,
   CrystalBall,
   Magnate,
+  Mint,
+  Rabble,
+  Vault,
+  WarChest,
+  GrandMarket,
+  Hoard,
+  Bank,
+  Expand,
+  Forge,
+  KingsCourt,
+  Peddler,
 };
