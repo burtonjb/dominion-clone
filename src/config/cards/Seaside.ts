@@ -740,6 +740,7 @@ const Pirate: CardParams = {
   ],
   reactionEffects: {
     onGainCardEffects: [
+      // if a player gains a treasure, you may play pirate
       async (owningPlayer: Player, cardWithEffect: Card, game: Game, gainParams: GainParams) => {
         if (!gainParams.gainedCard.types.includes(CardType.TREASURE)) return; // skip this effect if the gained card is not a treasure
 

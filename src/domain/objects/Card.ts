@@ -21,6 +21,7 @@ export enum DominionExpansion {
   INTRIGUE = "Intrigue",
   SEASIDE = "Seaside",
   PROSPERITY = "Prosperity",
+  HINTERLANDS = "Hinterlands",
 }
 
 export interface CardParams {

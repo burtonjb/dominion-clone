@@ -14,7 +14,7 @@ process.on("SIGINT", () => {
 });
 
 async function main() {
-  const game = createGame(2, true, new Date().getTime());
+  const game = createGame(2, false, new Date().getTime());
   // TODO: better way to set this up
   game.players[0].playerInput = new HumanPlayerInput();
   game.players[0].name = "P1";

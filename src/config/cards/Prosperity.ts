@@ -52,6 +52,7 @@ const Watchtower: CardParams = {
   playEffects: [new DrawToHandsize({ handsize: 6 })],
   reactionEffects: {
     onGainCardEffects: [
+      // if you gain a card you may trash it or gain it onto your deck
       async (owningPlayer: Player, cardWithEffect: Card, game: Game, gainParams: GainParams) => {
         if (owningPlayer != gainParams.gainedPlayer) return; // return early if it wasn't you that gain the card
 

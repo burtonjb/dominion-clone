@@ -325,7 +325,7 @@ const Baron: CardParams = {
         const selected = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
           defaultChoice: true,
           sourceCard: card,
-          prompt: "`Discard an estate for +4 $? Otherwise gain an estate`",
+          prompt: "Discard an estate for +4 $? Otherwise gain an estate",
         });
 
         if (selected) {
