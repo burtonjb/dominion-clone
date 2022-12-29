@@ -136,7 +136,7 @@ export class HumanPlayerInput implements PlayerInput {
         .allPiles()
         .filter((p) => p.cards.length > 0)
         .filter((p) => p.cards[0].calculateCost(game) <= player.money)
-        .filter((p) => player.money && p.cards[0].canBuy(player, game));
+        .filter((p) => p.cards[0].canBuy(player, game));
 
       gameScreen?.renderPrompt(
         `Buy a card from the supply: ${applicablePiles.map((p) =>
