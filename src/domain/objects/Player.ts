@@ -55,6 +55,7 @@ export class Player {
   public actions: number;
   public buys: number;
   public money: number;
+  public victoryTokens: number;
 
   public turns: number;
 
@@ -89,6 +90,7 @@ export class Player {
     this.actions = 1;
     this.buys = 1;
     this.money = 0;
+    this.victoryTokens = 0;
 
     this.onPlayCardTriggers = [];
     this.onGainCardTriggers = [];
@@ -185,9 +187,12 @@ export class Player {
   }
 
   public calculateVictoryPoints() {
-    return this.allCards()
-      .map((card) => card.calculateVictoryPoints(this))
-      .reduce((prev, cur) => prev + cur);
+    return (
+      this.victoryTokens +
+      this.allCards()
+        .map((card) => card.calculateVictoryPoints(this))
+        .reduce((prev, cur) => prev + cur)
+    );
   }
 
   public infoString(): string {
@@ -235,5 +240,6 @@ export class Player {
 
     // clean up the onPlay effects
     this.onPlayCardTriggers = this.onPlayCardTriggers.filter((t) => !t.cleanAtEndOfTurn);
+    this.onGainCardTriggers = this.onGainCardTriggers.filter((t) => !t.cleanAtEndOfTurn);
   }
 }

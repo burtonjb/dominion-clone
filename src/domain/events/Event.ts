@@ -1,4 +1,9 @@
-import { GainActionsParams, GainBuysParams, GainMoneyParams } from "../../config/effects/BaseEffects";
+import {
+  GainActionsParams,
+  GainBuysParams,
+  GainMoneyParams,
+  GainVictoryTokens,
+} from "../../config/effects/BaseEffects";
 import { Card } from "../objects/Card";
 import { CardLocation, Player } from "../objects/Player";
 
@@ -14,9 +19,11 @@ export type Event =
   | TrashCardEvent
   | CleanUpEvent
   | TestEvent
-  | CardSetAside
-  | CardPutInHand
-  | ExtraTurn;
+  | CardSetAsideEvent
+  | CardPutInHandEvent
+  | ExtraTurnEvent
+  | TopDeckCardEvent
+  | GainVictoryTokensEvent;
 
 export interface BaseEvent {
   readonly type: string;
@@ -46,6 +53,11 @@ export interface GainActionsEvent extends BaseEvent, GainActionsParams {
 
 export interface GainBuysEvent extends BaseEvent, GainBuysParams {
   readonly type: "GainBuys";
+  readonly card: Card;
+}
+
+export interface GainVictoryTokensEvent extends BaseEvent, GainBuysParams {
+  readonly type: "GainVictoryTokens";
   readonly card: Card;
 }
 
@@ -82,18 +94,23 @@ export interface CleanUpEvent extends BaseEvent {
   readonly turn: number;
 }
 
-export interface CardSetAside extends BaseEvent {
+export interface CardSetAsideEvent extends BaseEvent {
   readonly type: "CardSetAside";
   readonly card: Card;
 }
 
-export interface CardPutInHand extends BaseEvent {
+export interface CardPutInHandEvent extends BaseEvent {
   readonly type: "CardPutInHand";
   readonly card: Card;
 }
 
-export interface ExtraTurn extends BaseEvent {
+export interface ExtraTurnEvent extends BaseEvent {
   readonly type: "TakesAnExtraTurn";
+}
+
+export interface TopDeckCardEvent extends BaseEvent {
+  readonly type: "TopDeckCard";
+  readonly card: Card;
 }
 
 export function formatEvent(event: Event, includeDebugInfo = false): string {
@@ -144,6 +161,10 @@ export function formatEvent(event: Event, includeDebugInfo = false): string {
       return formattedOut + `${formatPlayer(event.player)} puts ${formatCard(event.card)} in hand`;
     case "TakesAnExtraTurn":
       return formattedOut + `${formatPlayer(event.player)} takes an extra turn`;
+    case "TopDeckCard":
+      return formattedOut + `${formatPlayer(event.player)} topdecks ${formatCard(event.card)}`;
+    case "GainVictoryTokens":
+      return formattedOut + `${formatPlayer(event.player)} gains ${event.amount} Victory Tokens`;
     default:
       return event["type"]; // should never occur (typescript determines type is "never")
   }

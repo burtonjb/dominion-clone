@@ -60,8 +60,10 @@ export class Game {
     const isProvincePileEmpty =
       this.supply.basePiles.find((pile) => pile.name == BasicCards.Province.name)?.cards.length == 0;
     const areAtLeast3PilesEmpty = this.supply.allPiles().filter((pile) => pile.cards.length == 0).length >= 3;
+    const isColonyPileEmpty =
+      this.supply.basePiles.find((pile) => pile.name === BasicCards.Colony.name)?.cards.length == 0;
 
-    const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty;
+    const gameFinished = isProvincePileEmpty || areAtLeast3PilesEmpty || isColonyPileEmpty;
     if (gameFinished) {
       console.warn("Provinces empty? " + isProvincePileEmpty);
 
@@ -72,6 +74,8 @@ export class Game {
             .filter((pile) => pile.cards.length == 0)
             .map((p) => p.name)
       );
+
+      console.warn("Colonies empty? " + isColonyPileEmpty);
     }
 
     return gameFinished;
@@ -128,6 +132,7 @@ export class Game {
   }
 
   async gainCard(cardToGain: Card, player: Player, wasBought: boolean, toLocation?: CardLocation) {
+    // put the card in the correct location
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
     } else if (toLocation == CardLocation.TOP_OF_DECK) {
@@ -147,6 +152,15 @@ export class Game {
     });
 
     player.cardsGainedLastTurn.push(cardToGain);
+
+    // fire all onGain triggers (on the card, put on the player or via reactions own by players)
+
+    await cardToGain.onGainCard(this, {
+      gainedCard: cardToGain,
+      gainedPlayer: player,
+      wasBought: wasBought,
+      toLocation: toLocation,
+    });
 
     for (const trigger of player.onGainCardTriggers.slice()) {
       await trigger.effect(cardToGain, player, this, wasBought, toLocation);
@@ -187,11 +201,16 @@ export class Game {
     activePlayer.startTurn();
 
     this.ui?.render();
+
     // trigger all the duration effects
+    // FIXME: the order can actually be chosen by the active player, but I haven't implemented that
     for (const card of activePlayer.cardsInPlay.slice()) {
       for (const effect of card.durationEffects) {
         await effect.effect(activePlayer, this);
       }
+    }
+    for (const card of activePlayer.hand.slice()) {
+      await card.onStartTurnReaction(activePlayer, this);
     }
 
     // clean up the duration effects that have completed

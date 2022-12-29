@@ -3,6 +3,8 @@ import { DominionExpansion } from "../../domain/objects/Card";
 import { KingdomParams } from "../../domain/objects/Kingdom";
 import * as BaseCards from "../cards/Base";
 
+// Each file with the kingdom config will cover kingdoms from that expansion and the expansions before it
+// (so this file is base only, intrigue is base+intr., seaside is seaside, intrigue, base)
 const FirstGame: KingdomParams = {
   name: "First Game",
   expansions: [DominionExpansion.BASE],

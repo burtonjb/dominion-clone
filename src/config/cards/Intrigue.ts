@@ -66,8 +66,9 @@ const Lurker: CardParams = {
               },
             },
             {
-              prompt:
-                "Gain an action from the trash. [Available ${game.trash.filter((c) => c.types.includes(CardType.ACTION)).map(c => c.name)}]",
+              prompt: `Gain an action from the trash. [Available ${game.trash
+                .filter((c) => c.types.includes(CardType.ACTION))
+                .map((c) => c.name)}]`,
               effect: async (card: Card, activePlayer: Player, game: Game) => {
                 const selected = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
                   prompt: `Gain an action from the trash.`,
@@ -416,7 +417,7 @@ const Ironworks: CardParams = {
         });
         if (!selected) return;
 
-        const gainedCard = await await game.gainCardFromSupply(selected, activePlayer, false);
+        const gainedCard = await game.gainCardFromSupply(selected, activePlayer, false);
 
         // if card was not gained successfully, return early
         if (!gainedCard) return;

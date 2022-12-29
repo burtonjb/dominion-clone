@@ -3,7 +3,6 @@ import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 import {
   attack,
-  CardEffect,
   DurationEffect,
   DurationTiming,
   OnGainCardTrigger,
@@ -229,7 +228,7 @@ const Monkey: CardParams = {
       prompt:
         "Until your next turn, whenever the player on your right gains a card, +1 card. At the start of your next turn, +1 cards",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        const onGainEffect = new OnGainCardTrigger(async () => {
+        const onGainEffect = new OnGainCardTrigger(false, async () => {
           await new DrawCards({ amount: 1 }).effect(card, activePlayer, game);
         });
         const rightPlayer = game.rightPlayer(activePlayer);
@@ -344,6 +343,7 @@ const Blockade: CardParams = {
         for (const otherPlayer of game.otherPlayers()) {
           await attack(card, otherPlayer, game, async () => {
             const onGainAttack = new OnGainCardTrigger(
+              false,
               async (
                 otherGainedCard: Card,
                 gainer: Player,
@@ -463,12 +463,7 @@ const Island: CardParams = {
 
         if (selectedCards.length == 0) return;
         const selectedCard = selectedCards[0];
-        activePlayer.transferCard(
-          selectedCard,
-          activePlayer.cardsInPlay,
-          activePlayer.mats.island,
-          CardPosition.BOTTOM
-        );
+        activePlayer.transferCard(selectedCard, activePlayer.hand, activePlayer.mats.island, CardPosition.BOTTOM);
         game.eventLog.publishEvent({ type: "CardSetAside", player: activePlayer, card: selectedCard });
       },
     },
@@ -490,6 +485,7 @@ const Sailor: CardParams = {
         // add the effect to be able to play duration effects
         let hasAlreadyTriggered = false;
         const onGainTrigger = new OnGainCardTrigger(
+          false,
           async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
             if (hasAlreadyTriggered) return; // return early if this has already fired
             if (!gainedCard.types.includes(CardType.DURATION)) return; // return early if non-duration gained

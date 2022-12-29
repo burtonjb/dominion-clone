@@ -115,3 +115,22 @@ export class GainCard implements BasicCardEffectConfig<GainCardParams> {
     await game.gainCardByName(this.params.name, player, false, this.params.toLocation);
   }
 }
+
+export interface GainVictoryTokensParams {
+  amount: number;
+}
+export class GainVictoryTokens implements BasicCardEffectConfig<GainVictoryTokensParams> {
+  public readonly type = "GainVictoryTokens";
+  public params: GainVictoryTokensParams;
+  public readonly prompt: string;
+
+  constructor(params: GainVictoryTokensParams) {
+    this.params = params;
+    this.prompt = `Gain ${params.amount} Victory Tokens`;
+  }
+
+  async effect(source: Card, player: Player, game: Game) {
+    player.victoryTokens += this.params.amount;
+    game.eventLog.publishEvent({ type: "GainVictoryTokens", amount: this.params.amount, player: player, card: source });
+  }
+}

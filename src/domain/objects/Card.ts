@@ -1,4 +1,4 @@
-import { CardEffectConfig, DurationEffect } from "./CardEffect";
+import { CardEffectConfig, DurationEffect, OnGainCardEffect } from "./CardEffect";
 import { Game } from "./Game";
 import { Player } from "./Player";
 import { GainParams, ReactionEffectsCardParams } from "./Reaction";
@@ -20,12 +20,14 @@ export enum DominionExpansion {
   BASE = "Base",
   INTRIGUE = "Intrigue",
   SEASIDE = "Seaside",
+  PROSPERITY = "Prosperity",
 }
 
 export interface CardParams {
   readonly name: string;
   readonly types: Array<CardType>;
   readonly cost: number;
+  readonly costModifier?: (player: Player, game: Game) => number; // returns a number that is added to the total cost (use negative numbers for cost reduction)
   readonly worth?: number;
   readonly victoryPoints?: number;
   readonly text?: string;
@@ -35,6 +37,8 @@ export interface CardParams {
   readonly reactionEffects?: ReactionEffectsCardParams;
   readonly calculateVictoryPoints?: (player: Player) => number;
   readonly onCleanupEffects?: Array<CardEffectConfig>;
+  readonly onGainEffects?: Array<{ prompt: string; effect: OnGainCardEffect }>;
+  readonly additionalBuyRestrictions?: (player: Player, game: Game) => boolean;
 }
 
 export class Card {
@@ -59,9 +63,16 @@ export class Card {
     this.durationEffects = [];
   }
 
+  public canBuy(player: Player, game: Game): boolean {
+    if (!this.params.additionalBuyRestrictions) return true;
+    return this.params.additionalBuyRestrictions(player, game);
+  }
+
   public calculateCost(game: Game): number {
     // cost can't be less than 0
-    return Math.max(0, this.baseCost + game.costModifiers.map((mod) => mod(this)).reduce((prev, cur) => prev + cur, 0));
+    const cardCostMod = this.params.costModifier ? this.params.costModifier(game.getActivePlayer(), game) : 0;
+    const gameCostMods = game.costModifiers.map((mod) => mod(this)).reduce((prev, cur) => prev + cur, 0);
+    return Math.max(0, this.baseCost + cardCostMod + gameCostMods);
   }
 
   public calculateVictoryPoints(player: Player): number {
@@ -80,11 +91,26 @@ export class Card {
     }
   }
 
+  public async onGainCard(game: Game, args: GainParams) {
+    if (!this.params.onGainEffects) return;
+    for (let i = 0; i < this.params.onGainEffects?.length; i++) {
+      await this.params.onGainEffects[i].effect(this, args.gainedPlayer, game, args.wasBought, args.toLocation);
+    }
+  }
+
   public async onGainReaction(game: Game, owningPlayer: Player, gainParams: GainParams) {
     if (!this.params.reactionEffects || !this.params.reactionEffects.onGainCardEffects) return;
     for (let i = 0; i < this.params.reactionEffects.onGainCardEffects.length; i++) {
       game.ui?.render();
       await this.params.reactionEffects.onGainCardEffects[i](owningPlayer, this, game, gainParams);
+    }
+  }
+
+  public async onStartTurnReaction(activePlayer: Player, game: Game) {
+    if (!this.params.reactionEffects || !this.params.reactionEffects.onStartTurnEffects) return;
+    for (let i = 0; i < this.params.reactionEffects.onStartTurnEffects.length; i++) {
+      game.ui?.render();
+      await this.params.reactionEffects.onStartTurnEffects[i].effect(this, activePlayer, game);
     }
   }
 

@@ -67,8 +67,7 @@ export type OnGainCardEffect = (
 ) => Promise<void>;
 
 export class OnGainCardTrigger {
-  // TODO: eventually add a "managed" property that will have these effects clean up during clean up or start of turn, but right now all duration will manage the lifecycle of their own effects
-  constructor(private internalEffect: OnGainCardEffect) {}
+  constructor(public readonly cleanAtEndOfTurn: boolean, private internalEffect: OnGainCardEffect) {}
 
   async effect(card: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) {
     await this.internalEffect(card, gainer, game, wasBought, toLocation);

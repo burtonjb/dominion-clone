@@ -111,9 +111,13 @@ export class HumanPlayerInput implements PlayerInput {
         const matchingCard = matchingCards[0];
         return [matchingCard];
       } else if (input.toLowerCase() == "all") {
-        // play all coppers, silvers, golds
+        // play all coppers, silvers, golds, or plats
         const m = player.hand.filter(
-          (c) => c.name == BasicCards.Copper.name || c.name == BasicCards.Silver.name || c.name == BasicCards.Gold.name
+          (c) =>
+            c.name == BasicCards.Copper.name ||
+            c.name == BasicCards.Silver.name ||
+            c.name == BasicCards.Gold.name ||
+            c.name == BasicCards.Platinum.name
         );
         return m;
       } else if (input.toLowerCase() == "end") {
@@ -128,20 +132,21 @@ export class HumanPlayerInput implements PlayerInput {
     const gameScreen = game.ui;
     while (true) {
       gameScreen?.render();
+      const applicablePiles = game.supply
+        .allPiles()
+        .filter((p) => p.cards.length > 0)
+        .filter((p) => p.cards[0].calculateCost(game) <= player.money)
+        .filter((p) => player.money && p.cards[0].canBuy(player, game));
+
       gameScreen?.renderPrompt(
-        `Buy a card from the supply: ${game.supply
-          .allPiles()
-          .filter((p) => p.cards.length > 0 && p.cards[0].calculateCost(game) <= player.money)
-          .map((p) => gameScreen.formatCardName(p.cards[0]))}, or 'end' to end.\n> `
+        `Buy a card from the supply: ${applicablePiles.map((p) =>
+          gameScreen.formatCardName(p.cards[0])
+        )}, or 'end' to end.\n> `
       );
       const input = await question("");
 
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-      const matchingPiles = game.supply
-        .allPiles()
-        .filter((p) => p.cards.length > 0)
-        .filter((p) => p.cards[0].calculateCost(game) <= player.money)
-        .filter((p) => p.name.match(inputMatch));
+      const matchingPiles = applicablePiles.filter((p) => p.name.match(inputMatch));
       const singleMatch = new Set(matchingPiles.map((c) => c.name)).size == 1;
 
       if (input.length > 0 && singleMatch) {
