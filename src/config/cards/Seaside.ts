@@ -211,7 +211,7 @@ const Lookout: CardParams = {
           sourceCard: card,
         });
         if (cardToDiscard.length == 0) return;
-        game.discardCard(cardToDiscard[0], activePlayer);
+        await game.discardCard(cardToDiscard[0], activePlayer);
       },
     },
   ],
@@ -430,7 +430,7 @@ const Cutpurse: CardParams = {
               return;
             } else {
               // discard the copper from their hand
-              game.discardCard(coppers[0], otherPlayer);
+              await game.discardCard(coppers[0], otherPlayer);
             }
           });
         }
@@ -806,7 +806,7 @@ const Tactician: CardParams = {
         }
 
         for (const card of activePlayer.hand.slice()) {
-          game.discardCard(card, activePlayer);
+          await game.discardCard(card, activePlayer);
         }
 
         const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {

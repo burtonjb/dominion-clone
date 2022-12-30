@@ -25,7 +25,7 @@ const Cellar: CardParams = {
         });
 
         for (const card of selectedCards) {
-          game.discardCard(card, activePlayer), activePlayer.drawCard();
+          await game.discardCard(card, activePlayer), activePlayer.drawCard();
         }
       },
     },
@@ -121,7 +121,7 @@ const Vassal: CardParams = {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const topCard = activePlayer.topNCards(1);
         if (topCard.length == 0) return; // just return if there's no cards in draw/discard piles
-        game.discardCard(topCard[0], activePlayer);
+        await game.discardCard(topCard[0], activePlayer);
         if (!topCard[0].types.includes(CardType.ACTION)) return; // exit early if the top card is not an action
 
         const choice = await activePlayer.playerInput.chooseBoolean(activePlayer, game, {
@@ -245,7 +245,7 @@ const Militia: CardParams = {
             });
 
             for (const card of toDiscard) {
-              game.discardCard(card, otherPlayer);
+              await game.discardCard(card, otherPlayer);
             }
           });
         }
@@ -305,7 +305,7 @@ const Poacher: CardParams = {
         });
 
         for (const card of selected) {
-          game.discardCard(card, activePlayer);
+          await game.discardCard(card, activePlayer);
         }
       },
     },
@@ -419,7 +419,7 @@ const Bandit: CardParams = {
               await game.trashCard(selected[0], otherPlayer);
             }
             for (const card of other) {
-              game.discardCard(card, otherPlayer);
+              await game.discardCard(card, otherPlayer);
             }
           });
         }
@@ -501,7 +501,7 @@ const Library: CardParams = {
         }
 
         for (const card of actions) {
-          game.discardCard(card, activePlayer);
+          await game.discardCard(card, activePlayer);
         }
       },
     },
@@ -598,7 +598,7 @@ const Sentry: CardParams = {
           maxCards: 2,
         });
         for (const card of toDiscard) {
-          game.discardCard(card, activePlayer);
+          await game.discardCard(card, activePlayer);
         }
 
         const afterDiscard = remaining.filter((c) => !toDiscard.includes(c));

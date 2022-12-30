@@ -27,7 +27,7 @@ const Anvil: CardParams = {
           sourceCard: card,
         });
         if (choice.length == 0) return;
-        game.discardCard(choice[0], activePlayer);
+        await game.discardCard(choice[0], activePlayer);
 
         const selected = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
           prompt: "Choose a card to gain costing 4 or less",
@@ -403,7 +403,7 @@ const CrystalBall: CardParams = {
             },
             {
               prompt: "Discard card",
-              effect: async (card: Card, player: Player, game: Game) => game.discardCard(topCard[0], player),
+              effect: async (card: Card, player: Player, game: Game) => await game.discardCard(topCard[0], player),
             },
             {
               prompt: "Play card",
@@ -509,7 +509,7 @@ const Rabble: CardParams = {
               (c) => c.types.includes(CardType.ACTION) || c.types.includes(CardType.TREASURE)
             );
             for (const card of toDiscard) {
-              game.discardCard(card, otherPlayer);
+              await game.discardCard(card, otherPlayer);
             }
           });
         }
@@ -537,7 +537,7 @@ const Vault: CardParams = {
 
         await new GainMoney({ amount: toDiscard.length }).effect(card, player, game);
         for (const card of toDiscard) {
-          game.discardCard(card, player);
+          await game.discardCard(card, player);
         }
       },
     },
@@ -554,8 +554,8 @@ const Vault: CardParams = {
           });
 
           if (toDiscard.length == 2) {
-            game.discardCard(toDiscard[0], otherPlayer);
-            game.discardCard(toDiscard[1], otherPlayer);
+            await game.discardCard(toDiscard[0], otherPlayer);
+            await game.discardCard(toDiscard[1], otherPlayer);
             await new DrawCards({ amount: 1 }).effect(card, otherPlayer, game);
           }
         }

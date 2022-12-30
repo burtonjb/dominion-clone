@@ -330,7 +330,7 @@ const Baron: CardParams = {
 
         if (selected) {
           await new GainMoney({ amount: 4 }).effect(card, activePlayer, game);
-          game.discardCard(activePlayer.hand.find((c) => c.name == BasicCards.Estate.name)!, activePlayer);
+          await game.discardCard(activePlayer.hand.find((c) => c.name == BasicCards.Estate.name)!, activePlayer);
         } else {
           await new GainCard({ name: BasicCards.Estate.name }).effect(card, activePlayer, game);
         }
@@ -466,7 +466,7 @@ const Mill: CardParams = {
           });
 
           for (const card of selectedCards) {
-            game.discardCard(card, activePlayer);
+            await game.discardCard(card, activePlayer);
           }
 
           if (selectedCards.length >= 2) {
@@ -619,7 +619,7 @@ const Minion: CardParams = {
               effect: async (card: Card, activePlayer: Player, game: Game) => {
                 const hand = activePlayer.hand.slice();
                 for (const card of hand) {
-                  game.discardCard(card, activePlayer);
+                  await game.discardCard(card, activePlayer);
                 }
                 await new DrawCards({ amount: 4 }).effect(card, activePlayer, game);
 
@@ -629,7 +629,7 @@ const Minion: CardParams = {
                     if (otherPlayer.hand.length >= 5) {
                       const hand = otherPlayer.hand.slice();
                       for (const card of hand) {
-                        game.discardCard(card, otherPlayer);
+                        await game.discardCard(card, otherPlayer);
                       }
                       await new DrawCards({ amount: 4 }).effect(card, otherPlayer, game);
                     }
@@ -752,7 +752,7 @@ const Torturer: CardParams = {
                     });
 
                     for (const card of selectedCards) {
-                      game.discardCard(card, otherPlayer);
+                      await game.discardCard(card, otherPlayer);
                     }
                   },
                 },

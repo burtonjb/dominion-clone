@@ -107,6 +107,13 @@ export class Card {
     }
   }
 
+  public async onDiscard(player: Player, game: Game) {
+    if (!this.params.reactionEffects || !this.params.reactionEffects.onDiscardEffects) return;
+    for (let i = 0; i < this.params.reactionEffects.onDiscardEffects.length; i++) {
+      await this.params.reactionEffects.onDiscardEffects[i].effect(this, player, game);
+    }
+  }
+
   public async onGainReaction(game: Game, owningPlayer: Player, gainParams: GainParams) {
     if (!this.params.reactionEffects || !this.params.reactionEffects.onGainCardEffects) return;
     for (let i = 0; i < this.params.reactionEffects.onGainCardEffects.length; i++) {

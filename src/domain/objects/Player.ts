@@ -216,11 +216,15 @@ export class Player {
 
     // discard all cards in play
     const cardsInPlay = this.cardsInPlay.slice(); // create a copy of the array (to not run into concurrent modification problems)
-    cardsInPlay.filter((c) => c.shouldCleanUp()).forEach((card) => game.discardCard(card, this));
+    for (const card of cardsInPlay.filter((c) => c.shouldCleanUp())) {
+      await game.discardCard(card, this);
+    }
 
     // discard all cards in hand
     const cardsInHand = this.hand.slice();
-    cardsInHand.forEach((card) => game.discardCard(card, this));
+    for (const card of cardsInHand) {
+      await game.discardCard(card, this);
+    }
 
     if (this.cardFlags.outpost) {
       // outpost draws 3 cards at the start of the next turn. Set the extra turn flag so outpost can't be repeatedly played

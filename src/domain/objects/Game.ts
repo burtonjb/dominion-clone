@@ -177,10 +177,12 @@ export class Game {
     }
   }
 
-  public discardCard(card: Card, player: Player) {
+  public async discardCard(card: Card, player: Player) {
     player.removeCard(card);
     player.discardPile.unshift(card); // put on-top of discard pile
     this.eventLog.publishEvent({ type: "DiscardCard", player: player, card: card });
+
+    await card.onDiscard(player, this);
   }
 
   // TODO: unify the trash from player and trash from supply APIs

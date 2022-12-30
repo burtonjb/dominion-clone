@@ -212,7 +212,7 @@ const JackOfAllTrades: CardParams = {
           sourceCard: card,
         });
         if (topCard.length > 0 && shouldDiscard) {
-          game.discardCard(topCard[0], player);
+          await game.discardCard(topCard[0], player);
         }
 
         await new DrawToHandsize({ handsize: 5 }).effect(card, player, game);
@@ -293,6 +293,189 @@ const SpiceMerchant: CardParams = {
   ],
 };
 
+const Trader: CardParams = {
+  name: "Trader",
+  types: [CardType.ACTION, CardType.REACTION],
+  cost: 4,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Trash a card from your hand. Gain 1 silver per $ it costs",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const toTrash = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Choose a card to trash",
+          cardList: player.hand,
+          sourceCard: card,
+          minCards: 1,
+          maxCards: 1,
+        });
+        if (toTrash.length == 0) return;
+        await game.trashCard(toTrash[0], player);
+
+        for (let i = 0; i < toTrash[0].calculateCost(game); i++) {
+          await game.gainCardByName(BasicCards.Silver.name, player, false, CardLocation.DISCARD);
+        }
+      },
+    },
+  ],
+  reactionEffects: {
+    onGainCardEffects: [
+      async (owningPlayer: Player, cardWithEffect: Card, game: Game, gainParams: GainParams) => {
+        // when you gain a card, you may reveal trader from your hand to exchange the card for a Silver
+        // this does not trigger trash/gain effects, so going to do some hacky coding here
+        if (owningPlayer == gainParams.gainedPlayer) {
+          const shouldExchange = await owningPlayer.playerInput.chooseBoolean(owningPlayer, game, {
+            prompt: `Reveal trader to exchange the gained card for a Silver? ${gainParams.gainedCard.name}`,
+            defaultChoice: true,
+            sourceCard: cardWithEffect,
+          });
+
+          if (shouldExchange) {
+            // return the card
+            const toReturnPile = game.supply.allPiles().find((p) => p.name == gainParams.gainedCard.name);
+            if (!toReturnPile) return; // return if something is wrong
+            owningPlayer.removeCard(gainParams.gainedCard);
+            toReturnPile.cards.unshift(gainParams.gainedCard);
+
+            // get a silver (not gained)
+            const silverPile = game.supply.allPiles().find((p) => p.name == BasicCards.Silver.name);
+            if (!silverPile) return; // shouldn't happen, but good to handle this case instead of throwing weird errors
+            const topSilver = silverPile.cards.shift();
+            if (!topSilver) return; // pile probably empty so return
+            owningPlayer.discardPile.unshift(topSilver);
+          }
+        }
+      },
+    ],
+  },
+};
+
+const Trail: CardParams = {
+  name: "Trail",
+  types: [CardType.ACTION, CardType.REACTION],
+  cost: 4,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 1 })],
+  onGainEffects: [
+    {
+      prompt: "Play the gained trail?",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        if (game.currentPhase == TurnPhase.CLEAN_UP) return;
+        const shouldPlay = await gainer.playerInput.chooseBoolean(gainer, game, {
+          prompt: "Play the gained trail?",
+          defaultChoice: true,
+          sourceCard: gainedCard,
+        });
+        if (shouldPlay) {
+          await game.playCard(gainedCard, gainer);
+        }
+      },
+    },
+  ],
+  onTrashEffects: [
+    {
+      prompt: "Play the trashed trail?",
+      effect: async (card: Card, player: Player, game: Game) => {
+        if (game.currentPhase == TurnPhase.CLEAN_UP) return;
+        const shouldPlay = await player.playerInput.chooseBoolean(player, game, {
+          prompt: "Play the trashed trail?",
+          defaultChoice: true,
+          sourceCard: card,
+        });
+        if (shouldPlay) {
+          await game.playCard(card, player);
+        }
+      },
+    },
+  ],
+  reactionEffects: {
+    onDiscardEffects: [
+      {
+        prompt: "Play the discarded trail?",
+        effect: async (card: Card, player: Player, game: Game) => {
+          if (game.currentPhase == TurnPhase.CLEAN_UP) return;
+          const shouldPlay = await player.playerInput.chooseBoolean(player, game, {
+            prompt: "Play the discarded trail?",
+            defaultChoice: true,
+            sourceCard: card,
+          });
+          if (shouldPlay) {
+            await game.playCard(card, player);
+          }
+        },
+      },
+    ],
+  },
+};
+
+const Weaver: CardParams = {
+  name: "Weaver",
+  types: [CardType.ACTION, CardType.REACTION],
+  cost: 4,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Gain two silvers or a card costing up to 4",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const effect = await player.playerInput.chooseEffectFromList(player, game, {
+          prompt: "Choose an effect. Either gain:",
+          choices: [
+            {
+              prompt: "Two silvers",
+              effect: async (card: Card, player: Player, game: Game) => {
+                await game.gainCardByName(BasicCards.Silver.name, player, false);
+                await game.gainCardByName(BasicCards.Silver.name, player, false);
+              },
+            },
+            {
+              prompt: "Card costing up to 4$",
+              effect: async (card: Card, player: Player, game: Game) => {
+                const selected = await player.playerInput.choosePileFromSupply(player, game, {
+                  prompt: "Choose a card to gain costing 4 or less",
+                  filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= 4,
+                  sourceCard: card,
+                });
+
+                if (!selected) return; // return early in cases like there's no piles costing 4 or less (unlikely, but could happen)
+
+                await game.gainCardFromSupply(selected, player, false);
+              },
+            },
+          ],
+          sourceCard: card,
+          minChoices: 1,
+          maxChoices: 1,
+        });
+
+        for (const e of effect) {
+          await e.effect(card, player, game);
+        }
+      },
+    },
+  ],
+  reactionEffects: {
+    onDiscardEffects: [
+      {
+        prompt: "Play the discarded weaver?",
+        effect: async (card: Card, player: Player, game: Game) => {
+          if (game.currentPhase == TurnPhase.CLEAN_UP) return;
+          const shouldPlay = await player.playerInput.chooseBoolean(player, game, {
+            prompt: "Play the discarded weaver?",
+            defaultChoice: true,
+            sourceCard: card,
+          });
+          if (shouldPlay) {
+            await game.playCard(card, player);
+          }
+        },
+      },
+    ],
+  },
+};
+
 export function register() {
   cardConfigRegistry.registerAll(
     Crossroads,
@@ -304,9 +487,26 @@ export function register() {
     Tunnel,
     JackOfAllTrades,
     Nomads,
-    SpiceMerchant
+    SpiceMerchant,
+    Trader,
+    Trail,
+    Weaver
   );
 }
 register();
 
-export { Crossroads, FoolsGold, Develop, Oasis, GuardDog, Scheme, Tunnel, JackOfAllTrades, Nomads, SpiceMerchant };
+export {
+  Crossroads,
+  FoolsGold,
+  Develop,
+  Oasis,
+  GuardDog,
+  Scheme,
+  Tunnel,
+  JackOfAllTrades,
+  Nomads,
+  SpiceMerchant,
+  Trader,
+  Trail,
+  Weaver,
+};

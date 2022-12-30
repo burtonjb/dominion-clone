@@ -60,7 +60,7 @@ export class DiscardCardsFromHand implements BasicCardEffectConfig<DiscardCardsF
     });
 
     for (const card of chosenCards) {
-      game.discardCard(card, player);
+      await game.discardCard(card, player);
     }
   }
 }
