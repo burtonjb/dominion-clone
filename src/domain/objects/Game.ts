@@ -191,10 +191,12 @@ export class Game {
     this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
   }
 
-  public trashCard(card: Card, player: Player) {
+  public async trashCard(card: Card, player: Player) {
     player.removeCard(card);
     this.trash.push(card);
     this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
+
+    await card.onTrash(player, this);
   }
 
   public async startTurn(activePlayer: Player) {

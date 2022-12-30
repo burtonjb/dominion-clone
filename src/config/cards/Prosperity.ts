@@ -63,7 +63,7 @@ const Watchtower: CardParams = {
         });
         if (shouldTrash) {
           game.revealCards([cardWithEffect], owningPlayer);
-          game.trashCard(gainParams.gainedCard, owningPlayer);
+          await game.trashCard(gainParams.gainedCard, owningPlayer);
           return;
         }
 
@@ -106,7 +106,7 @@ const Bishop: CardParams = {
         if (toTrash.length > 0) {
           const victoryTokensToGain = Math.floor(toTrash[0].calculateCost(game) / 2);
           await new GainVictoryTokens({ amount: victoryTokensToGain }).effect(card, activePlayer, game);
-          game.trashCard(toTrash[0], activePlayer);
+          await game.trashCard(toTrash[0], activePlayer);
         }
 
         for (const otherPlayer of game.otherPlayers()) {
@@ -118,7 +118,7 @@ const Bishop: CardParams = {
             maxCards: 1,
           });
           if (toTrash.length > 0) {
-            game.trashCard(toTrash[0], otherPlayer);
+            await game.trashCard(toTrash[0], otherPlayer);
           }
         }
       },
@@ -193,7 +193,7 @@ const Investment: CardParams = {
               prompt: "Trash this to reveal your hand and gain +1VP per differently named treasure",
               effect: async (card: Card, player: Player, game: Game) => {
                 if (!player.cardsInPlay.includes(card)) return; // exit if this is no longer in play - like if it was tiara'd
-                game.trashCard(card, player);
+                await game.trashCard(card, player);
                 game.revealCards(player.hand, player);
 
                 const treasureNames = player.hand.filter((c) => c.types.includes(CardType.TREASURE)).map((c) => c.name);
@@ -399,7 +399,7 @@ const CrystalBall: CardParams = {
           choices: [
             {
               prompt: "Trash card",
-              effect: async (card: Card, player: Player, game: Game) => game.trashCard(topCard[0], player),
+              effect: async (card: Card, player: Player, game: Game) => await game.trashCard(topCard[0], player),
             },
             {
               prompt: "Discard card",
@@ -480,7 +480,7 @@ const Mint: CardParams = {
           (c) => c.types.includes(CardType.TREASURE) && !c.types.includes(CardType.DURATION)
         );
         for (const card of toTrash) {
-          game.trashCard(card, gainer);
+          await game.trashCard(card, gainer);
         }
       },
     },
@@ -679,7 +679,7 @@ const Expand: CardParams = {
 
         if (selected.length == 0) return; // return early - in cases like there's no cards in hand so something
 
-        game.trashCard(selected[0], activePlayer);
+        await game.trashCard(selected[0], activePlayer);
 
         const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
           prompt: `Choose a card costing up to ${selected[0].calculateCost(game) + 3}`,
@@ -726,7 +726,7 @@ const Forge: CardParams = {
         await game.gainCardFromSupply(toGain, player, false);
 
         for (const card of toTrash) {
-          game.trashCard(card, player);
+          await game.trashCard(card, player);
         }
       },
     },

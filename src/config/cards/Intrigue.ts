@@ -62,7 +62,7 @@ const Lurker: CardParams = {
 
                 if (!pile) return;
 
-                game.trashCardFromSupply(pile, activePlayer);
+                await game.trashCardFromSupply(pile, activePlayer);
               },
             },
             {
@@ -242,7 +242,7 @@ const Swindler: CardParams = {
             if (topCards.length == 0) return; // return early if no cards left to trash
 
             const topCard = topCards[0];
-            game.trashCard(topCard, otherPlayer);
+            await game.trashCard(topCard, otherPlayer);
 
             const applicableCosts = game.supply
               .allPiles()
@@ -497,7 +497,7 @@ const MiningVillage: CardParams = {
         });
 
         if (selected) {
-          game.trashCard(card, activePlayer);
+          await game.trashCard(card, activePlayer);
           await new GainMoney({ amount: 2 }).effect(card, activePlayer, game);
         }
       },
@@ -694,7 +694,7 @@ const Replace: CardParams = {
         });
         if (selected.length == 0) return;
         const selectedCard = selected[0];
-        game.trashCard(selectedCard, activePlayer);
+        await game.trashCard(selectedCard, activePlayer);
 
         const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
           prompt: `Choose a card costing up to ${selectedCard.calculateCost(game) + 2}`,
@@ -792,7 +792,7 @@ const TradingPost: CardParams = {
         });
 
         for (const card of selectedCards) {
-          game.trashCard(card, activePlayer);
+          await game.trashCard(card, activePlayer);
         }
 
         if (selectedCards.length == 2) {
@@ -824,7 +824,7 @@ const Upgrade: CardParams = {
         });
         if (selected.length == 0) return; // return early if no cards picked
 
-        game.trashCard(selected[0], activePlayer);
+        await game.trashCard(selected[0], activePlayer);
 
         const applicableCosts = game.supply
           .allPiles()

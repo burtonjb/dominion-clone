@@ -273,7 +273,7 @@ const Moneylender: CardParams = {
         });
 
         if (selected) {
-          game.trashCard(copper, activePlayer);
+          await game.trashCard(copper, activePlayer);
           await new GainMoney({ amount: 3 }).effect(card, activePlayer, game);
         }
       },
@@ -331,7 +331,7 @@ const Remodel: CardParams = {
 
         if (selected.length == 0) return; // return early - in cases like there's no cards in hand so something
 
-        game.trashCard(selected[0], activePlayer);
+        await game.trashCard(selected[0], activePlayer);
 
         const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
           prompt: `Choose a card costing up to ${selected[0].calculateCost(game) + 2}`,
@@ -416,7 +416,7 @@ const Bandit: CardParams = {
 
               if (selected.length == 0) return;
 
-              game.trashCard(selected[0], otherPlayer);
+              await game.trashCard(selected[0], otherPlayer);
             }
             for (const card of other) {
               game.discardCard(card, otherPlayer);
@@ -542,7 +542,7 @@ const Mine: CardParams = {
 
         if (selected.length == 0) return;
 
-        game.trashCard(selected[0], activePlayer);
+        await game.trashCard(selected[0], activePlayer);
 
         const gainPile = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
           prompt: `Choose a treasure to gain costing up to ${selected[0].calculateCost(game) + 3}`,
@@ -584,7 +584,7 @@ const Sentry: CardParams = {
         });
 
         for (const card of toTrash) {
-          game.trashCard(card, activePlayer);
+          await game.trashCard(card, activePlayer);
         }
 
         const remaining = top2.filter((c) => !toTrash.includes(c));

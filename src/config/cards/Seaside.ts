@@ -200,7 +200,7 @@ const Lookout: CardParams = {
           sourceCard: card,
         });
         if (cardToTrash.length == 0) return;
-        game.trashCard(cardToTrash[0], activePlayer);
+        await game.trashCard(cardToTrash[0], activePlayer);
 
         const top2Cards = top3Cards.filter((c) => c != cardToTrash[0]);
         const cardToDiscard = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
@@ -545,7 +545,7 @@ const Salvager: CardParams = {
         if (selected.length == 0) return;
 
         const toTrash = selected[0];
-        game.trashCard(toTrash, activePlayer);
+        await game.trashCard(toTrash, activePlayer);
         await new GainMoney({ amount: toTrash.calculateCost(game) }).effect(card, activePlayer, game);
       },
     },
@@ -584,7 +584,7 @@ const TreasureMap: CardParams = {
     {
       prompt: "Trash this and a treasure map from your hand. If you do gain 4 Golds onto your deck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        game.trashCard(card, activePlayer);
+        await game.trashCard(card, activePlayer);
 
         const mapsInHand = activePlayer.hand.filter((c) => c.name == TreasureMap.name);
         if (mapsInHand.length == 0) return; // just trash this map and return (this is the rules in the FAQ)
@@ -596,7 +596,7 @@ const TreasureMap: CardParams = {
             game
           );
         }
-        game.trashCard(mapsInHand[0], activePlayer);
+        await game.trashCard(mapsInHand[0], activePlayer);
       },
     },
   ],
@@ -632,7 +632,7 @@ const Corsair: CardParams = {
             const onPlayEffect = new OnPlayCardTrigger(false, async (card, player, game) => {
               if (hasAlreadyTriggered) return; // return early if the effect has already fired
               if (card.name == BasicCards.Silver.name || card.name == BasicCards.Gold.name) {
-                game.trashCard(card, otherPlayer);
+                await game.trashCard(card, otherPlayer);
                 hasAlreadyTriggered = true;
               }
             });
