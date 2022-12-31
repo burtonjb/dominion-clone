@@ -5,6 +5,7 @@ import { attack, OnGainCardTrigger } from "../../domain/objects/CardEffect";
 import { Game, TurnPhase } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { GainParams } from "../../domain/objects/Reaction";
+import { logger } from "../../util/Logger";
 import { DiscardCardsFromHand, DrawToHandsize, TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney, GainVictoryTokens } from "../effects/BaseEffects";
 
@@ -187,8 +188,24 @@ const Tunnel: CardParams = {
   expansion: DominionExpansion.HINTERLANDS,
   kingdomCard: true,
   victoryPoints: 2,
-  playEffects: [],
-  // FIXME: add on discard effect (since its the key part of tunnel)
+  reactionEffects: {
+    onDiscardEffects: [
+      {
+        prompt: "Gain a gold?",
+        effect: async (card: Card, player: Player, game: Game) => {
+          if (game.currentPhase == TurnPhase.CLEAN_UP) return;
+          const shouldGainGold = await player.playerInput.chooseBoolean(player, game, {
+            prompt: "Gain a gold because you discarded tunnel?",
+            defaultChoice: true,
+            sourceCard: card,
+          });
+          if (shouldGainGold) {
+            await game.gainCardByName(BasicCards.Gold.name, player, false);
+          }
+        },
+      },
+    ],
+  },
 };
 
 const JackOfAllTrades: CardParams = {
@@ -476,6 +493,187 @@ const Weaver: CardParams = {
   },
 };
 
+const Berserker: CardParams = {
+  name: "Berserker",
+  types: [CardType.ACTION, CardType.ATTACK],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "Gain a card costing less than this. Each other player discards down to 3 cards",
+      effect: async (card: Card, activePlayer: Player, game: Game) => {
+        // gainer effect
+        const selected = await activePlayer.playerInput.choosePileFromSupply(activePlayer, game, {
+          prompt: `Choose a card to gain costing less than berserker`,
+          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) < card.calculateCost(game),
+          sourceCard: card,
+        });
+
+        if (!selected) return;
+        await game.gainCardFromSupply(selected, activePlayer, false);
+
+        // attack
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            const handSize = otherPlayer.hand.length;
+            const numToDiscard = handSize - 3;
+            if (numToDiscard <= 0) return;
+
+            const toDiscard = await otherPlayer.playerInput.chooseCardsFromList(otherPlayer, game, {
+              prompt: `Choose ${numToDiscard} cards to discard`,
+              cardList: otherPlayer.hand,
+              sourceCard: card,
+              minCards: numToDiscard,
+              maxCards: numToDiscard,
+            });
+
+            for (const card of toDiscard) {
+              await game.discardCard(card, otherPlayer);
+            }
+          });
+        }
+      },
+    },
+  ],
+  onGainEffects: [
+    {
+      prompt: "When you gain this, if you have an action in play, you may play this",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        if (gainer.cardsInPlay.filter((c) => c.types.includes(CardType.ACTION)).length > 0) {
+          const shouldPlay = await gainer.playerInput.chooseBoolean(gainer, game, {
+            prompt: "Play the gained berserker?",
+            defaultChoice: true,
+            sourceCard: gainedCard,
+          });
+
+          if (shouldPlay) {
+            await game.playCard(gainedCard, gainer);
+          }
+        }
+      },
+    },
+  ],
+};
+
+const Cartographer: CardParams = {
+  name: "Cartographer",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "Look at the top 4 cards of your draw pile. You may discard any of them",
+      // FIXME: I'm not going to implement re-ordering the cards that get put back
+      effect: async (card: Card, player: Player, game: Game) => {
+        const top4 = player.topNCards(4);
+        const toDiscard = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Choose any cards to discard",
+          cardList: top4,
+          sourceCard: card,
+        });
+
+        for (const card of toDiscard) {
+          await game.discardCard(card, player);
+        }
+      },
+    },
+  ],
+};
+
+const Cauldron: CardParams = {
+  name: "Cauldron",
+  types: [CardType.ATTACK, CardType.TREASURE],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    new GainBuys({ amount: 1 }),
+    {
+      prompt: "The third time you gain an action this turn, each other player gains a curse",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const onGainCardTriggers: Array<OnGainCardTrigger> = [];
+        const otherPlayers = game.otherPlayers();
+
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            const onGainEffect = new OnGainCardTrigger(
+              true,
+              async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+                if (
+                  gainedCard.types.includes(CardType.ACTION) &&
+                  gainer.cardsGainedLastTurn.filter((c) => c.types.includes(CardType.ACTION)).length == 3
+                ) {
+                  await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+                }
+              }
+            );
+            onGainCardTriggers.push(onGainEffect);
+          });
+        }
+        player.onGainCardTriggers.push(...onGainCardTriggers);
+      },
+    },
+  ],
+};
+
+const Haggler: CardParams = {
+  name: "Haggler",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new GainMoney({ amount: 2 }),
+    {
+      prompt: "This turn when you gain a card, if you bought it you may gain a cheaper non-victory card",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const onGainEffect = new OnGainCardTrigger(
+          true,
+          async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+            if (wasBought) {
+              const selected = await gainer.playerInput.choosePileFromSupply(gainer, game, {
+                prompt: `Choose a card to gain costing less than ${gainedCard.calculateCost(game)}`,
+                filter: (pile) =>
+                  pile.cards.length > 0 && pile.cards[0].calculateCost(game) < gainedCard.calculateCost(game),
+                sourceCard: card,
+              });
+
+              if (!selected) return;
+              await game.gainCardFromSupply(selected, gainer, false);
+            }
+          }
+        );
+        player.onGainCardTriggers.push(onGainEffect);
+      },
+    },
+  ],
+};
+
+const Highway: CardParams = {
+  name: "Highway",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "This turn, cards cost 1$ less",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const reduceCostMod = (card: Card) => -1;
+        game.costModifiers.push(reduceCostMod);
+      },
+    },
+  ],
+};
+
 export function register() {
   cardConfigRegistry.registerAll(
     Crossroads,
@@ -490,7 +688,12 @@ export function register() {
     SpiceMerchant,
     Trader,
     Trail,
-    Weaver
+    Weaver,
+    Berserker,
+    Cartographer,
+    Cauldron,
+    Haggler,
+    Highway
   );
 }
 register();
@@ -509,4 +712,9 @@ export {
   Trader,
   Trail,
   Weaver,
+  Berserker,
+  Cartographer,
+  Cauldron,
+  Haggler,
+  Highway,
 };

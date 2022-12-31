@@ -115,6 +115,9 @@ export class GameScreen {
     if (card.types.includes(CardType.VICTORY) && card.types.includes(CardType.TREASURE)) {
       formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Green")!);
       formattedName = formatBackgroundColor(formattedName, xtermColors.getByName("Yellow2")!);
+    } else if (card.types.includes(CardType.VICTORY) && card.types.includes(CardType.REACTION)) {
+      formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Green")!);
+      formattedName = formatBackgroundColor(formattedName, xtermColors.getByName("Blue1")!);
     } else if (card.types.includes(CardType.REACTION) && card.types.includes(CardType.TREASURE)) {
       formattedName = formatForegroundColor(formattedName, xtermColors.getByName("Blue1")!);
       formattedName = formatBackgroundColor(formattedName, xtermColors.getByName("Yellow2")!);

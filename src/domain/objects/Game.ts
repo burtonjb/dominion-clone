@@ -132,6 +132,8 @@ export class Game {
   }
 
   async gainCard(cardToGain: Card, player: Player, wasBought: boolean, toLocation?: CardLocation) {
+    if (toLocation == undefined) toLocation = CardLocation.DISCARD;
+
     // put the card in the correct location
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
