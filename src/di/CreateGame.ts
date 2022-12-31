@@ -9,7 +9,7 @@ import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
-import registerAll, { BaseCards, ProsperityCards } from "./RegisterConfig";
+import registerAll from "./RegisterConfig";
 
 export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, seed?: number): Game {
   // construct utility classes and "services"
@@ -33,8 +33,7 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
   // create the kingdom based on the number of players
   const kingdom = createKingdom(
     numberOfPlayers,
-    [...hinterlandsCards.map((c) => c.name), BaseCards.Cellar.name]
-    // selectedCards.map((c) => c.name)
+    selectedCards.map((c) => c.name)
   );
 
   if (!usePlatAndColony) usePlatAndColony = false; // FIXME: update this to be N/10 chance, where N = # of prosperity cards in the kingdom
