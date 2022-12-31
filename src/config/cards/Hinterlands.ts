@@ -1,13 +1,13 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
-import { BaseCards, BasicCards } from "../../di/RegisterConfig";
+import { BasicCards } from "../../di/RegisterConfig";
 import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack, OnGainCardTrigger } from "../../domain/objects/CardEffect";
 import { Game, TurnPhase } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
 import { GainParams } from "../../domain/objects/Reaction";
-import { logger } from "../../util/Logger";
+import { shuffleArray } from "../../util/ArrayExtensions";
 import { DiscardCardsFromHand, DrawToHandsize, TrashCardsFromHand } from "../effects/AdvancedEffects";
-import { DrawCards, GainActions, GainBuys, GainCard, GainMoney, GainVictoryTokens } from "../effects/BaseEffects";
+import { DrawCards, GainActions, GainBuys, GainMoney } from "../effects/BaseEffects";
 
 const Crossroads: CardParams = {
   name: "Crossroads",
@@ -674,6 +674,270 @@ const Highway: CardParams = {
   ],
 };
 
+const Inn: CardParams = {
+  name: "Inn",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 2 }),
+    new GainActions({ amount: 2 }),
+    new DiscardCardsFromHand({ minCards: 2, maxCards: 2 }),
+  ],
+  onGainEffects: [
+    {
+      prompt: "When you gain this, shuffle any number of actions from your discard pile into your draw pile",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        const chosenActions = await gainer.playerInput.chooseCardsFromList(gainer, game, {
+          prompt: "Choose any number of actions",
+          cardList: gainer.discardPile.filter((c) => c.types.includes(CardType.ACTION)),
+          sourceCard: gainedCard,
+        });
+
+        for (const card of chosenActions) {
+          gainer.removeCard(card);
+          gainer.drawPile.unshift(card);
+        }
+
+        shuffleArray(gainer.drawPile, game.random);
+      },
+    },
+  ],
+};
+
+const Margrave: CardParams = {
+  name: "Margrave",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 3 }),
+    new GainBuys({ amount: 1 }),
+    {
+      prompt: "Each other player draws a card and then discards down to 3 cards in hand",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const otherPlayers = game.otherPlayers();
+        for (const otherPlayer of otherPlayers) {
+          await attack(card, otherPlayer, game, async () => {
+            //draw - its part of the attack. If they're moated they don't draw
+            await new DrawCards({ amount: 1 }).effect(card, otherPlayer, game);
+
+            // handsize attack
+            const handSize = otherPlayer.hand.length;
+            const numToDiscard = handSize - 3;
+            if (numToDiscard <= 0) return;
+
+            const toDiscard = await otherPlayer.playerInput.chooseCardsFromList(otherPlayer, game, {
+              prompt: `Choose ${numToDiscard} cards to discard`,
+              cardList: otherPlayer.hand,
+              sourceCard: card,
+              minCards: numToDiscard,
+              maxCards: numToDiscard,
+            });
+
+            for (const card of toDiscard) {
+              await game.discardCard(card, otherPlayer);
+            }
+          });
+        }
+      },
+    },
+  ],
+};
+
+const Souk: CardParams = {
+  name: "Souk",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new GainBuys({ amount: 1 }),
+    new GainMoney({ amount: 7 }),
+    {
+      prompt: "-1$ per card in hand (player's money can't go below 0)",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const moneyToLose = Math.min(player.hand.length, player.money);
+        await new GainMoney({ amount: -1 * moneyToLose }).effect(card, player, game);
+      },
+    },
+  ],
+  onGainEffects: [
+    {
+      prompt: "When you gain this, trash up to 2 cards from hand",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        await new TrashCardsFromHand({ minCards: 0, maxCards: 2 }).effect(gainedCard, gainer, game);
+      },
+    },
+  ],
+};
+
+const Stables: CardParams = {
+  name: "Stables",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    {
+      prompt: "You may discard a treasure. If you do, +3 cards and +1 action",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const toDiscard = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Discard a treasure",
+          cardList: player.hand.filter((c) => c.types.includes(CardType.TREASURE)),
+          minCards: 0,
+          maxCards: 1,
+          sourceCard: card,
+        });
+        if (toDiscard.length == 0) return;
+
+        await game.discardCard(toDiscard[0], player);
+
+        await new DrawCards({ amount: 3 }).effect(card, player, game);
+        await new GainActions({ amount: 1 }).effect(card, player, game);
+      },
+    },
+  ],
+};
+
+const Wheelwright: CardParams = {
+  name: "Wheelwright",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 1 }),
+    new GainActions({ amount: 1 }),
+    {
+      prompt: "You may discard a card to gain an action that costs as much as it or less",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const toDiscard = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Discard a card to gain an action costing as much or less",
+          cardList: player.hand,
+          minCards: 0,
+          maxCards: 1,
+          sourceCard: card,
+        });
+        if (toDiscard.length == 0) return;
+        const discarded = toDiscard[0];
+
+        await game.discardCard(discarded, player);
+
+        const selected = await player.playerInput.choosePileFromSupply(player, game, {
+          prompt: `Choose a card to gain costing up to ${discarded.calculateCost(game)}`,
+          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= discarded.calculateCost(game),
+          sourceCard: card,
+        });
+
+        if (!selected) return;
+        await game.gainCardFromSupply(selected, player, false);
+      },
+    },
+  ],
+};
+
+const WitchsHut: CardParams = {
+  name: "Witch's Hut",
+  types: [CardType.ACTION],
+  cost: 5,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [
+    new DrawCards({ amount: 4 }),
+    {
+      prompt: "Discard two cards. If they're both actions each other player gains a curse",
+      effect: async (card: Card, player: Player, game: Game) => {
+        const toDiscard = await player.playerInput.chooseCardsFromList(player, game, {
+          prompt: "Discard two cards",
+          cardList: player.hand,
+          minCards: 2,
+          maxCards: 2,
+          sourceCard: card,
+        });
+        if (toDiscard.length < 2) return;
+
+        game.revealCards(toDiscard, player);
+        await game.discardCard(toDiscard[0], player);
+        await game.discardCard(toDiscard[1], player);
+
+        if (toDiscard[0].types.includes(CardType.ACTION) && toDiscard[1].types.includes(CardType.ACTION)) {
+          const otherPlayers = game.otherPlayers();
+          for (const otherPlayer of otherPlayers) {
+            await attack(card, otherPlayer, game, async () => {
+              await game.gainCardByName(BasicCards.Curse.name, otherPlayer, false);
+            });
+          }
+        }
+      },
+    },
+  ],
+};
+
+const BorderVillage: CardParams = {
+  name: "Border Village",
+  types: [CardType.ACTION],
+  cost: 6,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 2 })],
+  onGainEffects: [
+    {
+      prompt: "When you gain this, gain a cheaper card",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        const selected = await gainer.playerInput.choosePileFromSupply(gainer, game, {
+          prompt: `Choose a card to gain costing less than ${gainedCard.calculateCost(game)}`,
+          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) < gainedCard.calculateCost(game),
+          sourceCard: gainedCard,
+        });
+
+        if (!selected) return;
+        await game.gainCardFromSupply(selected, gainer, false);
+      },
+    },
+  ],
+};
+
+const Farmland: CardParams = {
+  name: "Farmland",
+  types: [CardType.VICTORY],
+  cost: 6,
+  victoryPoints: 2,
+  expansion: DominionExpansion.HINTERLANDS,
+  kingdomCard: true,
+  onGainEffects: [
+    {
+      prompt: "When you gain this, trash a card from your hand and gain a non-farmland card costing exactly 2 more",
+      effect: async (gainedCard: Card, gainer: Player, game: Game, wasBought: boolean, toLocation?: CardLocation) => {
+        const selected = await gainer.playerInput.chooseCardsFromList(gainer, game, {
+          prompt: "Choose a card from your hand to trash",
+          cardList: gainer.hand,
+          minCards: 1,
+          maxCards: 1,
+          sourceCard: gainedCard,
+        });
+
+        if (selected.length == 0) return; // return early - in cases like there's no cards in hand so something
+        await game.trashCard(selected[0], gainer);
+
+        const gainPile = await gainer.playerInput.choosePileFromSupply(gainer, game, {
+          prompt: `Choose a card exactly to ${selected[0].calculateCost(game) + 2} (and not a farmland)`,
+          filter: (pile) =>
+            pile.cards.length > 0 &&
+            pile.cards[0].calculateCost(game) == selected[0].calculateCost(game) + 2 &&
+            pile.cards[0].name != Farmland.name,
+          sourceCard: gainedCard,
+        });
+
+        if (!gainPile) return; // return early if no options
+        await game.gainCardFromSupply(gainPile, gainer, false);
+      },
+    },
+  ],
+};
+
 export function register() {
   cardConfigRegistry.registerAll(
     Crossroads,
@@ -693,7 +957,15 @@ export function register() {
     Cartographer,
     Cauldron,
     Haggler,
-    Highway
+    Highway,
+    Inn,
+    Margrave,
+    Souk,
+    Stables,
+    Wheelwright,
+    WitchsHut,
+    BorderVillage,
+    Farmland
   );
 }
 register();
@@ -717,4 +989,12 @@ export {
   Cauldron,
   Haggler,
   Highway,
+  Inn,
+  Margrave,
+  Souk,
+  Stables,
+  Wheelwright,
+  WitchsHut,
+  BorderVillage,
+  Farmland,
 };
