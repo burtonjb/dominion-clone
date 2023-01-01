@@ -132,6 +132,8 @@ export class Game {
   }
 
   async gainCard(cardToGain: Card, player: Player, wasBought: boolean, toLocation?: CardLocation) {
+    if (toLocation == undefined) toLocation = CardLocation.DISCARD;
+
     // put the card in the correct location
     if (toLocation == undefined || toLocation == CardLocation.DISCARD) {
       player.discardPile.unshift(cardToGain);
@@ -177,10 +179,12 @@ export class Game {
     }
   }
 
-  public discardCard(card: Card, player: Player) {
+  public async discardCard(card: Card, player: Player) {
     player.removeCard(card);
     player.discardPile.unshift(card); // put on-top of discard pile
     this.eventLog.publishEvent({ type: "DiscardCard", player: player, card: card });
+
+    await card.onDiscard(player, this);
   }
 
   // TODO: unify the trash from player and trash from supply APIs
@@ -191,10 +195,12 @@ export class Game {
     this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
   }
 
-  public trashCard(card: Card, player: Player) {
+  public async trashCard(card: Card, player: Player) {
     player.removeCard(card);
     this.trash.push(card);
     this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
+
+    await card.onTrash(player, this);
   }
 
   public async startTurn(activePlayer: Player) {

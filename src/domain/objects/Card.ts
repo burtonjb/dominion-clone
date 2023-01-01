@@ -21,6 +21,7 @@ export enum DominionExpansion {
   INTRIGUE = "Intrigue",
   SEASIDE = "Seaside",
   PROSPERITY = "Prosperity",
+  HINTERLANDS = "Hinterlands",
 }
 
 export interface CardParams {
@@ -38,6 +39,7 @@ export interface CardParams {
   readonly calculateVictoryPoints?: (player: Player) => number;
   readonly onCleanupEffects?: Array<CardEffectConfig>;
   readonly onGainEffects?: Array<{ prompt: string; effect: OnGainCardEffect }>;
+  readonly onTrashEffects?: Array<CardEffectConfig>;
   readonly additionalBuyRestrictions?: (player: Player, game: Game) => boolean;
 }
 
@@ -95,6 +97,20 @@ export class Card {
     if (!this.params.onGainEffects) return;
     for (let i = 0; i < this.params.onGainEffects?.length; i++) {
       await this.params.onGainEffects[i].effect(this, args.gainedPlayer, game, args.wasBought, args.toLocation);
+    }
+  }
+
+  public async onTrash(player: Player, game: Game) {
+    if (!this.params.onTrashEffects) return;
+    for (let i = 0; i < this.params.onTrashEffects?.length; i++) {
+      await this.params.onTrashEffects[i].effect(this, player, game);
+    }
+  }
+
+  public async onDiscard(player: Player, game: Game) {
+    if (!this.params.reactionEffects || !this.params.reactionEffects.onDiscardEffects) return;
+    for (let i = 0; i < this.params.reactionEffects.onDiscardEffects.length; i++) {
+      await this.params.reactionEffects.onDiscardEffects[i].effect(this, player, game);
     }
   }
 

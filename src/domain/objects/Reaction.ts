@@ -18,7 +18,8 @@ but I'm going to implement them so that they're the same as Dominion.
 Though the reactions from Menagerie and onwards (including Pirate from Seaside 2nd) seem more consistent!
 */
 export interface ReactionEffectsCardParams {
-  onStartTurnEffects?: Array<CardEffectConfig>; // TODO
+  // reaction that triggers when the card is in hand at the start of the owner's turn
+  onStartTurnEffects?: Array<CardEffectConfig>;
 
   // triggered both on when the person having the card plays the card and when others play the card.
   // filter internally if its only on when others play the card
@@ -29,4 +30,6 @@ export interface ReactionEffectsCardParams {
   onGainCardEffects?: Array<
     (owningPlayer: Player, cardWithEffect: Card, game: Game, gainParams: GainParams) => Promise<void>
   >;
+
+  onDiscardEffects?: Array<CardEffectConfig>;
 }

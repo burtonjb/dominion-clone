@@ -200,7 +200,7 @@ const Lookout: CardParams = {
           sourceCard: card,
         });
         if (cardToTrash.length == 0) return;
-        game.trashCard(cardToTrash[0], activePlayer);
+        await game.trashCard(cardToTrash[0], activePlayer);
 
         const top2Cards = top3Cards.filter((c) => c != cardToTrash[0]);
         const cardToDiscard = await activePlayer.playerInput.chooseCardsFromList(activePlayer, game, {
@@ -211,7 +211,7 @@ const Lookout: CardParams = {
           sourceCard: card,
         });
         if (cardToDiscard.length == 0) return;
-        game.discardCard(cardToDiscard[0], activePlayer);
+        await game.discardCard(cardToDiscard[0], activePlayer);
       },
     },
   ],
@@ -430,7 +430,7 @@ const Cutpurse: CardParams = {
               return;
             } else {
               // discard the copper from their hand
-              game.discardCard(coppers[0], otherPlayer);
+              await game.discardCard(coppers[0], otherPlayer);
             }
           });
         }
@@ -545,7 +545,7 @@ const Salvager: CardParams = {
         if (selected.length == 0) return;
 
         const toTrash = selected[0];
-        game.trashCard(toTrash, activePlayer);
+        await game.trashCard(toTrash, activePlayer);
         await new GainMoney({ amount: toTrash.calculateCost(game) }).effect(card, activePlayer, game);
       },
     },
@@ -584,7 +584,7 @@ const TreasureMap: CardParams = {
     {
       prompt: "Trash this and a treasure map from your hand. If you do gain 4 Golds onto your deck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
-        game.trashCard(card, activePlayer);
+        await game.trashCard(card, activePlayer);
 
         const mapsInHand = activePlayer.hand.filter((c) => c.name == TreasureMap.name);
         if (mapsInHand.length == 0) return; // just trash this map and return (this is the rules in the FAQ)
@@ -596,7 +596,7 @@ const TreasureMap: CardParams = {
             game
           );
         }
-        game.trashCard(mapsInHand[0], activePlayer);
+        await game.trashCard(mapsInHand[0], activePlayer);
       },
     },
   ],
@@ -632,7 +632,7 @@ const Corsair: CardParams = {
             const onPlayEffect = new OnPlayCardTrigger(false, async (card, player, game) => {
               if (hasAlreadyTriggered) return; // return early if the effect has already fired
               if (card.name == BasicCards.Silver.name || card.name == BasicCards.Gold.name) {
-                game.trashCard(card, otherPlayer);
+                await game.trashCard(card, otherPlayer);
                 hasAlreadyTriggered = true;
               }
             });
@@ -740,6 +740,7 @@ const Pirate: CardParams = {
   ],
   reactionEffects: {
     onGainCardEffects: [
+      // if a player gains a treasure, you may play pirate
       async (owningPlayer: Player, cardWithEffect: Card, game: Game, gainParams: GainParams) => {
         if (!gainParams.gainedCard.types.includes(CardType.TREASURE)) return; // skip this effect if the gained card is not a treasure
 
@@ -805,7 +806,7 @@ const Tactician: CardParams = {
         }
 
         for (const card of activePlayer.hand.slice()) {
-          game.discardCard(card, activePlayer);
+          await game.discardCard(card, activePlayer);
         }
 
         const durationEffect = new DurationEffect(DurationTiming.START_OF_TURN, async (p: Player, g: Game) => {

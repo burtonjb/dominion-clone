@@ -72,6 +72,7 @@ export class HumanPlayerInput implements PlayerInput {
       );
       const input = await question("");
 
+      // FIXME: Add try/catch around this since it will crash if a bad input is passed
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
       const matchingCards = player.hand
         .filter((c) => c.types.includes(CardType.ACTION))

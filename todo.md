@@ -1,8 +1,11 @@
 ## Feature roadmap
 * Add other expansions
   - add ~~seaside/prosperity/~~hinterlands
+* "big" code cleanup and refactor
+* add stats tracking - victory points/turn and money/turn for now
 * Easy way to configure games - ui for game/kingdom config?
 * Update the prompts so there's some flavor in them (e.g. pirate's input prompt should say avast or arrg, masquerade should reference 'Fidelio' (either from Robot Chicken or Eyes Wide Shut))
+
 
 ## Out of scope (for now)
 * unit tests (I should, but I'm supposed to wrap this up)

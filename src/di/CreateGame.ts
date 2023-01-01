@@ -9,7 +9,7 @@ import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
-import registerAll, { ProsperityCards } from "./RegisterConfig";
+import registerAll from "./RegisterConfig";
 
 export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, seed?: number): Game {
   // construct utility classes and "services"
@@ -18,8 +18,8 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
 
   // create players and their starting cards
   const players = createPlayers(random, numberOfPlayers);
-
   const kingdomCards = cardConfigRegistry.values().filter((c) => c.kingdomCard);
+  const hinterlandsCards = kingdomCards.filter((c) => c.expansion == DominionExpansion.HINTERLANDS);
   shuffleArray(kingdomCards, random);
   const selectedCards = kingdomCards.slice(0, 10);
   selectedCards.sort((a, b) => {

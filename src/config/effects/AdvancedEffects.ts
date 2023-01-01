@@ -31,7 +31,7 @@ export class TrashCardsFromHand implements BasicCardEffectConfig<TrashCardsFromH
     });
 
     for (const card of chosenCards) {
-      game.trashCard(card, player);
+      await game.trashCard(card, player);
     }
   }
 }
@@ -60,7 +60,7 @@ export class DiscardCardsFromHand implements BasicCardEffectConfig<DiscardCardsF
     });
 
     for (const card of chosenCards) {
-      game.discardCard(card, player);
+      await game.discardCard(card, player);
     }
   }
 }
