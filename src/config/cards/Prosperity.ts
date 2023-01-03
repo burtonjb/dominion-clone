@@ -1,6 +1,6 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { BasicCards } from "../../di/RegisterConfig";
-import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { Card, CardConfig, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack, OnGainCardTrigger } from "../../domain/objects/CardEffect";
 import { Game, TurnPhase } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
@@ -8,7 +8,7 @@ import { GainParams } from "../../domain/objects/Reaction";
 import { DrawToHandsize, TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney, GainVictoryTokens } from "../effects/BaseEffects";
 
-const Anvil: CardParams = {
+const Anvil: CardConfig = {
   name: "Anvil",
   types: [CardType.TREASURE],
   cost: 3,
@@ -43,7 +43,7 @@ const Anvil: CardParams = {
   ],
 };
 
-const Watchtower: CardParams = {
+const Watchtower: CardConfig = {
   name: "Watchtower",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 3,
@@ -83,7 +83,7 @@ const Watchtower: CardParams = {
   },
 };
 
-const Bishop: CardParams = {
+const Bishop: CardConfig = {
   name: "Bishop",
   types: [CardType.ACTION],
   cost: 4,
@@ -126,7 +126,7 @@ const Bishop: CardParams = {
   ],
 };
 
-const Clerk: CardParams = {
+const Clerk: CardConfig = {
   name: "Clerk",
   types: [CardType.ACTION, CardType.ATTACK, CardType.REACTION],
   cost: 4,
@@ -174,7 +174,7 @@ const Clerk: CardParams = {
   },
 };
 
-const Investment: CardParams = {
+const Investment: CardConfig = {
   name: "Investment",
   types: [CardType.TREASURE],
   cost: 4,
@@ -215,7 +215,7 @@ const Investment: CardParams = {
   ],
 };
 
-const Monument: CardParams = {
+const Monument: CardConfig = {
   name: "Monument",
   types: [CardType.ACTION],
   cost: 4,
@@ -224,7 +224,7 @@ const Monument: CardParams = {
   playEffects: [new GainMoney({ amount: 2 }), new GainVictoryTokens({ amount: 1 })],
 };
 
-const Quarry: CardParams = {
+const Quarry: CardConfig = {
   name: "Quarry",
   types: [CardType.TREASURE],
   cost: 4,
@@ -248,7 +248,7 @@ const Quarry: CardParams = {
   ],
 };
 
-const Tiara: CardParams = {
+const Tiara: CardConfig = {
   name: "Tiara",
   types: [CardType.TREASURE],
   cost: 4,
@@ -298,7 +298,7 @@ const Tiara: CardParams = {
   ],
 };
 
-const WorkersVillage: CardParams = {
+const WorkersVillage: CardConfig = {
   name: "Worker's Village",
   types: [CardType.ACTION],
   cost: 4,
@@ -307,7 +307,7 @@ const WorkersVillage: CardParams = {
   playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 2 }), new GainBuys({ amount: 1 })],
 };
 
-const Charlatan: CardParams = {
+const Charlatan: CardConfig = {
   name: "Charlatan",
   types: [CardType.ACTION],
   cost: 5,
@@ -330,7 +330,7 @@ const Charlatan: CardParams = {
   // TODO: add in the start-of-game effect
 };
 
-const City: CardParams = {
+const City: CardConfig = {
   name: "City",
   types: [CardType.ACTION],
   cost: 5,
@@ -354,7 +354,7 @@ const City: CardParams = {
   ],
 };
 
-const Collection: CardParams = {
+const Collection: CardConfig = {
   name: "Collection",
   types: [CardType.TREASURE],
   cost: 5,
@@ -380,7 +380,7 @@ const Collection: CardParams = {
   ],
 };
 
-const CrystalBall: CardParams = {
+const CrystalBall: CardConfig = {
   name: "Crystal Ball",
   types: [CardType.TREASURE],
   cost: 5,
@@ -426,7 +426,7 @@ const CrystalBall: CardParams = {
   ],
 };
 
-const Magnate: CardParams = {
+const Magnate: CardConfig = {
   name: "Magnate",
   types: [CardType.ACTION],
   cost: 5,
@@ -447,7 +447,7 @@ const Magnate: CardParams = {
   ],
 };
 
-const Mint: CardParams = {
+const Mint: CardConfig = {
   name: "Mint",
   types: [CardType.ACTION],
   cost: 5,
@@ -487,7 +487,7 @@ const Mint: CardParams = {
   ],
 };
 
-const Rabble: CardParams = {
+const Rabble: CardConfig = {
   name: "Rabble",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -518,7 +518,7 @@ const Rabble: CardParams = {
   ],
 };
 
-const Vault: CardParams = {
+const Vault: CardConfig = {
   name: "Vault",
   types: [CardType.ACTION],
   cost: 5,
@@ -564,7 +564,7 @@ const Vault: CardParams = {
   ],
 };
 
-const WarChest: CardParams = {
+const WarChest: CardConfig = {
   name: "War Chest",
   types: [CardType.TREASURE],
   cost: 5,
@@ -600,7 +600,7 @@ const WarChest: CardParams = {
   ],
 };
 
-const GrandMarket: CardParams = {
+const GrandMarket: CardConfig = {
   name: "Grand Market",
   types: [CardType.ACTION],
   cost: 6,
@@ -617,7 +617,7 @@ const GrandMarket: CardParams = {
   },
 };
 
-const Hoard: CardParams = {
+const Hoard: CardConfig = {
   name: "Hoard",
   types: [CardType.TREASURE],
   cost: 6,
@@ -642,7 +642,7 @@ const Hoard: CardParams = {
   ],
 };
 
-const Bank: CardParams = {
+const Bank: CardConfig = {
   name: "Bank",
   types: [CardType.TREASURE],
   cost: 7,
@@ -659,7 +659,7 @@ const Bank: CardParams = {
   ],
 };
 
-const Expand: CardParams = {
+const Expand: CardConfig = {
   name: "Expand",
   types: [CardType.ACTION],
   cost: 7,
@@ -696,7 +696,7 @@ const Expand: CardParams = {
   ],
 };
 
-const Forge: CardParams = {
+const Forge: CardConfig = {
   name: "Forge",
   types: [CardType.ACTION],
   cost: 7,
@@ -733,7 +733,7 @@ const Forge: CardParams = {
   ],
 };
 
-const KingsCourt: CardParams = {
+const KingsCourt: CardConfig = {
   name: "King's Court",
   types: [CardType.ACTION],
   cost: 7,
@@ -761,7 +761,7 @@ const KingsCourt: CardParams = {
   ],
 };
 
-const Peddler: CardParams = {
+const Peddler: CardConfig = {
   name: "Peddler",
   types: [CardType.ACTION],
   cost: 8,

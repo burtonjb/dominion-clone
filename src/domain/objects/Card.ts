@@ -24,7 +24,7 @@ export enum DominionExpansion {
   HINTERLANDS = "Hinterlands",
 }
 
-export interface CardParams {
+export interface CardConfig {
   readonly name: string;
   readonly types: Array<CardType>;
   readonly cost: number;
@@ -44,7 +44,7 @@ export interface CardParams {
 }
 
 export class Card {
-  private readonly params: CardParams;
+  private readonly params: CardConfig;
   public readonly id: number; // used to trace the exact card instance - for debugging mostly
   public name: string;
   public baseCost: number;
@@ -54,7 +54,7 @@ export class Card {
 
   public durationEffects: Array<DurationEffect>;
 
-  constructor(params: CardParams) {
+  constructor(params: CardConfig) {
     this.params = params;
     this.id = cardNumber++;
     this.name = params.name;

@@ -1,11 +1,11 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
-import { CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { CardConfig, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { GainMoney } from "../effects/BaseEffects";
 
 // This file is the basic cards from the base dominion set
 // - copper, silver, gold, estate, duchy, province, curse
 
-const Copper: CardParams = {
+const Copper: CardConfig = {
   name: "Copper",
   types: [CardType.TREASURE],
   cost: 0,
@@ -15,7 +15,7 @@ const Copper: CardParams = {
   playEffects: [new GainMoney({ amount: 1 })],
 };
 
-const Silver: CardParams = {
+const Silver: CardConfig = {
   name: "Silver",
   types: [CardType.TREASURE],
   cost: 3,
@@ -25,7 +25,7 @@ const Silver: CardParams = {
   playEffects: [new GainMoney({ amount: 2 })],
 };
 
-const Gold: CardParams = {
+const Gold: CardConfig = {
   name: "Gold",
   types: [CardType.TREASURE],
   cost: 6,
@@ -35,7 +35,7 @@ const Gold: CardParams = {
   playEffects: [new GainMoney({ amount: 3 })],
 };
 
-const Estate: CardParams = {
+const Estate: CardConfig = {
   name: "Estate",
   types: [CardType.VICTORY],
   cost: 2,
@@ -44,7 +44,7 @@ const Estate: CardParams = {
   expansion: DominionExpansion.BASE,
 };
 
-const Duchy: CardParams = {
+const Duchy: CardConfig = {
   name: "Duchy",
   types: [CardType.VICTORY],
   cost: 5,
@@ -53,7 +53,7 @@ const Duchy: CardParams = {
   expansion: DominionExpansion.BASE,
 };
 
-const Province: CardParams = {
+const Province: CardConfig = {
   name: "Province",
   types: [CardType.VICTORY],
   cost: 8,
@@ -62,7 +62,7 @@ const Province: CardParams = {
   expansion: DominionExpansion.BASE,
 };
 
-const Curse: CardParams = {
+const Curse: CardConfig = {
   name: "Curse",
   types: [CardType.CURSE],
   cost: 0,
@@ -71,7 +71,7 @@ const Curse: CardParams = {
   expansion: DominionExpansion.BASE,
 };
 
-const Platinum: CardParams = {
+const Platinum: CardConfig = {
   name: "Platinum",
   types: [CardType.TREASURE],
   cost: 9,
@@ -81,7 +81,7 @@ const Platinum: CardParams = {
   playEffects: [new GainMoney({ amount: 5 })],
 };
 
-const Colony: CardParams = {
+const Colony: CardConfig = {
   name: "Colony",
   types: [CardType.VICTORY],
   cost: 11,

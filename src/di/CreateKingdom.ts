@@ -1,4 +1,4 @@
-import { CardParams, CardType } from "../domain/objects/Card";
+import { CardConfig, CardType } from "../domain/objects/Card";
 import { CardPile } from "../domain/objects/CardPile";
 import { Kingdom } from "../domain/objects/Kingdom";
 import { createNInstances } from "../util/ArrayExtensions";
@@ -15,7 +15,7 @@ export function createKingdom(numberOfPlayers: number, cardNames: Array<string>)
   return new Kingdom(cards);
 }
 
-function getNumberOfPileCards(numberOfPlayers: number, card: CardParams): number {
+function getNumberOfPileCards(numberOfPlayers: number, card: CardConfig): number {
   // victory cards have 8 cards in the supply (or 12 if >= 3 players), otherwise piles have 10 cards by default
   if (card.types.includes(CardType.VICTORY)) {
     return numberOfPlayers <= 2 ? 8 : 12;

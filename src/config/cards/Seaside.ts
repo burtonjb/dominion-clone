@@ -1,6 +1,6 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { BasicCards } from "../../di/RegisterConfig";
-import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { Card, CardConfig, CardType, DominionExpansion } from "../../domain/objects/Card";
 import {
   attack,
   DurationEffect,
@@ -14,7 +14,7 @@ import { GainParams } from "../../domain/objects/Reaction";
 import { DiscardCardsFromHand, TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 
-const Haven: CardParams = {
+const Haven: CardConfig = {
   name: "Haven",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 2,
@@ -51,7 +51,7 @@ const Haven: CardParams = {
   ],
 };
 
-const Lighthouse: CardParams = {
+const Lighthouse: CardConfig = {
   name: "Lighthouse",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 2,
@@ -73,7 +73,7 @@ const Lighthouse: CardParams = {
   ],
 };
 
-const NativeVillage: CardParams = {
+const NativeVillage: CardConfig = {
   name: "Native Village",
   types: [CardType.ACTION],
   cost: 2,
@@ -134,7 +134,7 @@ const NativeVillage: CardParams = {
   ],
 };
 
-const Astrolabe: CardParams = {
+const Astrolabe: CardConfig = {
   name: "Astrolabe",
   types: [CardType.TREASURE, CardType.DURATION],
   cost: 3,
@@ -157,7 +157,7 @@ const Astrolabe: CardParams = {
   ],
 };
 
-const FishingVillage: CardParams = {
+const FishingVillage: CardConfig = {
   name: "Fishing Village",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 3,
@@ -180,7 +180,7 @@ const FishingVillage: CardParams = {
   ],
 };
 
-const Lookout: CardParams = {
+const Lookout: CardConfig = {
   name: "Lookout",
   types: [CardType.ACTION],
   cost: 3,
@@ -217,7 +217,7 @@ const Lookout: CardParams = {
   ],
 };
 
-const Monkey: CardParams = {
+const Monkey: CardConfig = {
   name: "Monkey",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 3,
@@ -251,7 +251,7 @@ const Monkey: CardParams = {
   ],
 };
 
-const SeaChart: CardParams = {
+const SeaChart: CardConfig = {
   name: "Sea Chart",
   types: [CardType.ACTION],
   cost: 3,
@@ -277,7 +277,7 @@ const SeaChart: CardParams = {
   ],
 };
 
-const Smugglers: CardParams = {
+const Smugglers: CardConfig = {
   name: "Smugglers",
   types: [CardType.ACTION],
   cost: 3,
@@ -306,7 +306,7 @@ const Smugglers: CardParams = {
   ],
 };
 
-const Warehouse: CardParams = {
+const Warehouse: CardConfig = {
   name: "Warehouse",
   types: [CardType.ACTION],
   cost: 3,
@@ -319,7 +319,7 @@ const Warehouse: CardParams = {
   ],
 };
 
-const Blockade: CardParams = {
+const Blockade: CardConfig = {
   name: "Blockade",
   types: [CardType.ACTION, CardType.ATTACK, CardType.DURATION],
   cost: 4,
@@ -381,13 +381,14 @@ const Blockade: CardParams = {
           }
           return false;
         });
+
         card.durationEffects.push(durationEffect);
       },
     },
   ],
 };
 
-const Caravan: CardParams = {
+const Caravan: CardConfig = {
   name: "Caravan",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 4,
@@ -409,7 +410,7 @@ const Caravan: CardParams = {
   ],
 };
 
-const Cutpurse: CardParams = {
+const Cutpurse: CardConfig = {
   name: "Cutpurse",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 4,
@@ -439,7 +440,7 @@ const Cutpurse: CardParams = {
   ],
 };
 
-const Island: CardParams = {
+const Island: CardConfig = {
   name: "Island",
   types: [CardType.ACTION, CardType.VICTORY],
   cost: 4,
@@ -470,7 +471,7 @@ const Island: CardParams = {
   ],
 };
 
-const Sailor: CardParams = {
+const Sailor: CardConfig = {
   name: "Sailor",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 4,
@@ -524,7 +525,7 @@ const Sailor: CardParams = {
   ],
 };
 
-const Salvager: CardParams = {
+const Salvager: CardConfig = {
   name: "Salvager",
   types: [CardType.ACTION],
   cost: 4,
@@ -552,7 +553,7 @@ const Salvager: CardParams = {
   ],
 };
 
-const TidePools: CardParams = {
+const TidePools: CardConfig = {
   name: "Tide Pools",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 4,
@@ -574,7 +575,7 @@ const TidePools: CardParams = {
   ],
 };
 
-const TreasureMap: CardParams = {
+const TreasureMap: CardConfig = {
   name: "Treasure Map",
   types: [CardType.ACTION],
   cost: 4,
@@ -602,7 +603,7 @@ const TreasureMap: CardParams = {
   ],
 };
 
-const Bazaar: CardParams = {
+const Bazaar: CardConfig = {
   name: "Bazaar",
   types: [CardType.ACTION],
   cost: 5,
@@ -611,7 +612,7 @@ const Bazaar: CardParams = {
   playEffects: [new DrawCards({ amount: 1 }), new GainActions({ amount: 2 }), new GainMoney({ amount: 1 })],
 };
 
-const Corsair: CardParams = {
+const Corsair: CardConfig = {
   name: "Corsair",
   types: [CardType.ACTION, CardType.ATTACK, CardType.DURATION],
   cost: 5,
@@ -662,7 +663,7 @@ const Corsair: CardParams = {
   ],
 };
 
-const MerchantShip: CardParams = {
+const MerchantShip: CardConfig = {
   name: "Merchant Ship",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 5,
@@ -683,7 +684,7 @@ const MerchantShip: CardParams = {
   ],
 };
 
-const Outpost: CardParams = {
+const Outpost: CardConfig = {
   name: "Outpost",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 5,
@@ -708,7 +709,7 @@ const Outpost: CardParams = {
   ],
 };
 
-const Pirate: CardParams = {
+const Pirate: CardConfig = {
   name: "Pirate",
   types: [CardType.ACTION, CardType.DURATION, CardType.REACTION],
   cost: 5,
@@ -757,7 +758,7 @@ const Pirate: CardParams = {
   },
 };
 
-const SeaWitch: CardParams = {
+const SeaWitch: CardConfig = {
   name: "Sea Witch",
   types: [CardType.ACTION, CardType.ATTACK, CardType.DURATION],
   cost: 5,
@@ -790,7 +791,7 @@ const SeaWitch: CardParams = {
   ],
 };
 
-const Tactician: CardParams = {
+const Tactician: CardConfig = {
   name: "Tactician",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 5,
@@ -821,7 +822,7 @@ const Tactician: CardParams = {
   ],
 };
 
-const Treasury: CardParams = {
+const Treasury: CardConfig = {
   name: "Treasury",
   types: [CardType.ACTION],
   cost: 5,
@@ -849,7 +850,7 @@ const Treasury: CardParams = {
   ],
 };
 
-const Wharf: CardParams = {
+const Wharf: CardConfig = {
   name: "Wharf",
   types: [CardType.ACTION, CardType.DURATION],
   cost: 5,

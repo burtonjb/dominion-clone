@@ -1,12 +1,12 @@
 import { kingdomConfigRegistry } from "../../di/configservice/KingdomConfigRegistry";
 import { DominionExpansion } from "../../domain/objects/Card";
-import { KingdomParams } from "../../domain/objects/Kingdom";
+import { KingdomConfig } from "../../domain/objects/Kingdom";
 import * as BaseCards from "../cards/Base";
 import * as IntrigueCards from "../cards/Intrigue";
 import * as SeasideCards from "../cards/Seaside";
 import * as ProsperityCards from "../cards/Prosperity";
 
-const Beginners: KingdomParams = {
+const Beginners: KingdomConfig = {
   name: "Beginners",
   expansions: [DominionExpansion.PROSPERITY],
   cards: [
@@ -24,7 +24,7 @@ const Beginners: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const FriendlyInteractive: KingdomParams = {
+const FriendlyInteractive: KingdomConfig = {
   name: "Friendly Interactive",
   expansions: [DominionExpansion.PROSPERITY],
   cards: [
@@ -42,7 +42,7 @@ const FriendlyInteractive: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const BiggestMoney: KingdomParams = {
+const BiggestMoney: KingdomConfig = {
   name: "Biggest Money",
   expansions: [DominionExpansion.PROSPERITY, DominionExpansion.BASE],
   cards: [
@@ -60,7 +60,7 @@ const BiggestMoney: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const TheKingsArmy: KingdomParams = {
+const TheKingsArmy: KingdomConfig = {
   name: "The King's Army",
   expansions: [DominionExpansion.PROSPERITY, DominionExpansion.BASE],
   cards: [
@@ -78,7 +78,7 @@ const TheKingsArmy: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const PathsToVictory: KingdomParams = {
+const PathsToVictory: KingdomConfig = {
   name: "PathsToVictory",
   expansions: [DominionExpansion.PROSPERITY, DominionExpansion.INTRIGUE],
   cards: [
@@ -97,7 +97,7 @@ const PathsToVictory: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const LuckySeven: KingdomParams = {
+const LuckySeven: KingdomConfig = {
   name: "Lucky Seven",
   expansions: [DominionExpansion.PROSPERITY, DominionExpansion.INTRIGUE],
   cards: [
@@ -115,7 +115,7 @@ const LuckySeven: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const ExplodingKingdom: KingdomParams = {
+const ExplodingKingdom: KingdomConfig = {
   name: "Exploding Kingdom",
   expansions: [DominionExpansion.PROSPERITY, DominionExpansion.SEASIDE],
   cards: [
@@ -133,7 +133,7 @@ const ExplodingKingdom: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const PirateBay: KingdomParams = {
+const PirateBay: KingdomConfig = {
   name: "Pirate Bay",
   expansions: [DominionExpansion.PROSPERITY, DominionExpansion.SEASIDE],
   cards: [

@@ -89,6 +89,15 @@ export class GameScreen {
     }
   }
 
+  formatCardPileName(pile: CardPile): string {
+    if (pile.cards.length > 0) {
+      const pileLength = `[${pile.cards.length}]`.padEnd(4, " ");
+      return `${pileLength} ${this.formatCardName(pile.cards[0])}`;
+    } else {
+      return `[0]`;
+    }
+  }
+
   formatCard(card: Card, skipEffects = false): string {
     const formattedName = this.formatCardName(card, 14);
     const formattedCost = `(${card.calculateCost(this.game)})`;

@@ -1,11 +1,11 @@
 import { kingdomConfigRegistry } from "../../di/configservice/KingdomConfigRegistry";
 import { DominionExpansion } from "../../domain/objects/Card";
-import { KingdomParams } from "../../domain/objects/Kingdom";
+import { KingdomConfig } from "../../domain/objects/Kingdom";
 import * as BaseCards from "../cards/Base";
 
 // Each file with the kingdom config will cover kingdoms from that expansion and the expansions before it
 // (so this file is base only, intrigue is base+intr., seaside is seaside, intrigue, base)
-const FirstGame: KingdomParams = {
+const FirstGame: KingdomConfig = {
   name: "First Game",
   expansions: [DominionExpansion.BASE],
   cards: [
@@ -22,7 +22,7 @@ const FirstGame: KingdomParams = {
   ],
 };
 
-const SizeDistortion: KingdomParams = {
+const SizeDistortion: KingdomConfig = {
   name: "Size Distortion",
   expansions: [DominionExpansion.BASE],
   cards: [
@@ -39,7 +39,7 @@ const SizeDistortion: KingdomParams = {
   ],
 };
 
-const DeckTop: KingdomParams = {
+const DeckTop: KingdomConfig = {
   name: "Deck Top",
   expansions: [DominionExpansion.BASE],
   cards: [
@@ -55,7 +55,7 @@ const DeckTop: KingdomParams = {
     BaseCards.Village.name,
   ],
 };
-const SleightOfHand: KingdomParams = {
+const SleightOfHand: KingdomConfig = {
   name: "Sleight of Hand",
   expansions: [DominionExpansion.BASE],
   cards: [
@@ -71,7 +71,7 @@ const SleightOfHand: KingdomParams = {
     BaseCards.ThroneRoom.name,
   ],
 };
-const Improvements: KingdomParams = {
+const Improvements: KingdomConfig = {
   name: "Improvements",
   expansions: [DominionExpansion.BASE],
   cards: [
@@ -88,7 +88,7 @@ const Improvements: KingdomParams = {
   ],
 };
 
-const SilverAndGold: KingdomParams = {
+const SilverAndGold: KingdomConfig = {
   name: "Silver & Gold",
   expansions: [DominionExpansion.BASE],
   cards: [

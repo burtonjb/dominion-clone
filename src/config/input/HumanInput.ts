@@ -23,7 +23,7 @@ import { CardEffectConfig } from "../../domain/objects/CardEffect";
 
 export class HumanPlayerInput implements PlayerInput {
   async chooseInteger(player: Player, game: Game, params: ChooseIntegerParams): Promise<number> {
-    const input = new IntegerChoice(params.prompt, params.defaultValue, params.minValue, params.maxValue);
+    const input = new IntegerChoice(params.prompt, game, params.defaultValue, params.minValue, params.maxValue);
     return await input.getChoice();
   }
 
@@ -32,7 +32,7 @@ export class HumanPlayerInput implements PlayerInput {
     game: Game,
     params: ChooseEffectFromListParams
   ): Promise<CardEffectConfig[]> {
-    const input = new ChooseEffectChoice(params.prompt, player, params.choices, {
+    const input = new ChooseEffectChoice(params.prompt, game, player, params.choices, {
       minChoices: params.minChoices,
       maxChoices: params.maxChoices,
     });
@@ -43,18 +43,18 @@ export class HumanPlayerInput implements PlayerInput {
     game: Game,
     params: ChooseCardFromSupplyParams
   ): Promise<CardPile | undefined> {
-    const input = new ChooseCardFromSupply(params.prompt, game.supply, params.filter);
+    const input = new ChooseCardFromSupply(params.prompt, game.supply, game, params.filter);
     const selected = await input.getChoice();
     return selected;
   }
 
   async chooseBoolean(player: Player, game: Game, params: ChooseBooleanParams): Promise<boolean> {
-    const input = new BooleanChoice(params.prompt, params.defaultChoice);
+    const input = new BooleanChoice(params.prompt, game, params.defaultChoice);
     return await input.getChoice();
   }
 
   async chooseCardsFromList(player: Player, game: Game, params: ChooseCardsFromListParams): Promise<Array<Card>> {
-    const input = new CardsFromPlayerChoice(params.prompt, player, params.cardList, {
+    const input = new CardsFromPlayerChoice(params.prompt, player, params.cardList, game, {
       minCards: params.minCards,
       maxCards: params.maxCards,
     });
@@ -70,7 +70,7 @@ export class HumanPlayerInput implements PlayerInput {
           .filter((c) => c.types.includes(CardType.ACTION))
           .map((c) => gameScreen.formatCardName(c))}, or 'end' to end\n> `
       );
-      const input = await question("");
+      const input = await question();
 
       // FIXME: Add try/catch around this since it will crash if a bad input is passed
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
@@ -86,7 +86,7 @@ export class HumanPlayerInput implements PlayerInput {
         return undefined;
       } else {
         // multi-match case or I guess they tried to play a treasure - though treasures shouldn't appear in the prompt
-        console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+        console.warn(`Unknown input: ${input}`); // TODO: split out messaging for different error conditions
       }
     }
   }
@@ -98,9 +98,9 @@ export class HumanPlayerInput implements PlayerInput {
       gameScreen?.renderPrompt(
         `Play a treasure from your hand: ${player.hand
           .filter((c) => c.types.includes(CardType.TREASURE))
-          .map((c) => gameScreen.formatCardName(c))}, or 'end' to end\n> `
+          .map((c) => gameScreen.formatCardName(c))}, or 'all' to play all basic treasures or 'end' to end\n> `
       );
-      const input = await question("");
+      const input = await question();
 
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
       const matchingCards = player.hand
@@ -124,7 +124,7 @@ export class HumanPlayerInput implements PlayerInput {
       } else if (input.toLowerCase() == "end") {
         return undefined;
       } else {
-        console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+        console.warn(`Unknown input: ${input}`); // TODO: split out messaging for different error conditions
       }
     }
   }
@@ -144,7 +144,7 @@ export class HumanPlayerInput implements PlayerInput {
           gameScreen.formatCardName(p.cards[0])
         )}, or 'end' to end.\n> `
       );
-      const input = await question("");
+      const input = await question();
 
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
       const matchingPiles = applicablePiles.filter((p) => p.name.match(inputMatch));
@@ -156,7 +156,7 @@ export class HumanPlayerInput implements PlayerInput {
       } else if (input == "end") {
         return undefined;
       } else {
-        console.log(`Unknown input: ${input}`); // TODO: handle unknowns or handle trying to play cards that cannot be played now
+        console.warn(`Unknown input: ${input}`); // TODO: split out messaging for different error conditions
       }
     }
   }

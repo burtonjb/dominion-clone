@@ -4,6 +4,7 @@ import { CardEffectConfig } from "../domain/objects/CardEffect";
 import { CardPile } from "../domain/objects/CardPile";
 import { Player } from "../domain/objects/Player";
 import { Supply } from "../domain/objects/Supply";
+import { Game } from "../domain/objects/Game";
 
 // Choices
 export interface Choice<T> {
@@ -20,17 +21,18 @@ export class BooleanChoice implements Choice<boolean> {
   public readonly prompt: string;
   public readonly options = [true, false];
 
-  constructor(prompt: string, private defaultValue: boolean = true) {
+  constructor(prompt: string, private game: Game, private defaultValue: boolean = true) {
     this.prompt = prompt;
   }
 
   public async getChoice(): Promise<boolean> {
-    const input = await question(`${this.prompt} (t=yes, f=no)\n> `);
+    this.game.ui?.renderPrompt(`${this.prompt} (t=yes, f=no)\n> `);
+    const input = await question();
     if (this.defaultValue == true) {
-      if (input.toLowerCase().startsWith("f")) return false;
+      if (input.toLowerCase().startsWith("f") || input.toLowerCase().startsWith("n")) return false;
       return true;
     } else {
-      if (input.toLowerCase().startsWith("t")) return true;
+      if (input.toLowerCase().startsWith("t") || input.toLowerCase().startsWith("y")) return true;
       return false;
     }
   }
@@ -51,7 +53,13 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
   public readonly options: Array<Card>;
   private params: CardsFromPlayerChoiceConfig;
 
-  constructor(prompt: string, player: Player, cardContainer: Array<Card>, params?: CardsFromPlayerChoiceConfig) {
+  constructor(
+    prompt: string,
+    player: Player,
+    cardContainer: Array<Card>,
+    private game: Game,
+    params?: CardsFromPlayerChoiceConfig
+  ) {
     this.prompt = prompt;
     this.player = player;
 
@@ -73,11 +81,12 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
     while (!done) {
       const availableOptions = this.options.filter((card) => !selected.includes(card));
 
-      const input = await question(
-        `${this.prompt} (available: ${availableOptions.map((c) => c.name)}) (already selected: ${selected.map(
-          (s) => s.name
-        )})\n> `
+      this.game.ui?.renderPrompt(
+        `${this.prompt} (available: ${availableOptions.map((c) =>
+          this.game.ui?.formatCardName(c)
+        )}) (already selected: ${selected.map((s) => s.name)})\n> `
       );
+      const input = await question();
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingCards = this.options
@@ -120,7 +129,7 @@ export class ChooseCardFromSupply implements Choice<CardPile | undefined> {
   private supply: Supply;
   private filter?: (pile: CardPile) => boolean;
 
-  constructor(prompt: string, supply: Supply, filter?: (pile: CardPile) => boolean) {
+  constructor(prompt: string, supply: Supply, private game: Game, filter?: (pile: CardPile) => boolean) {
     this.prompt = prompt;
     this.supply = supply;
     this.filter = filter;
@@ -143,9 +152,10 @@ export class ChooseCardFromSupply implements Choice<CardPile | undefined> {
         .filter((pile) => pile.cards.length > 0) // filter out non-empty piles
         .filter((pile) => (this.filter ? this.filter(pile) : true));
 
-      const availableDisplay = available.map((p) => `[{${p.cards.length}} ${p.name}] `);
+      const availableDisplay = available.map((p) => this.game.ui?.formatCardPileName(p));
 
-      const input = await question(`${this.prompt}. (available: ${availableDisplay})\n> `);
+      this.game.ui?.renderPrompt(`${this.prompt}. (available: ${availableDisplay})\n> `);
+      const input = await question();
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingPiles = this.supply
@@ -180,6 +190,7 @@ export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
 
   constructor(
     public readonly prompt: string,
+    private game: Game,
     private player: Player,
     private options: Array<CardEffectConfig>,
     config?: ChooseEffectChoiceConfig
@@ -201,11 +212,12 @@ export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
     while (!done) {
       const availableOptions = this.options.filter((card) => !selected.includes(card));
 
-      const input = await question(
+      this.game.ui?.renderPrompt(
         `${this.prompt} (available: ${availableOptions.map((c) => c.prompt)}) (already selected: ${selected.map(
           (s) => s.prompt
         )})\n> `
       );
+      const input = await question();
       const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingCards = this.options
@@ -240,12 +252,13 @@ export class StringChoice implements Choice<string> {
   public readonly prompt: string;
   public readonly options = "";
 
-  constructor(prompt: string) {
+  constructor(prompt: string, private game: Game) {
     this.prompt = prompt;
   }
 
   public async getChoice(): Promise<string> {
-    const input = await question(`${this.prompt}\n> `);
+    this.game.ui?.renderPrompt(`${this.prompt}\n> `);
+    const input = await question();
     return input;
   }
 }
@@ -254,12 +267,19 @@ export class IntegerChoice implements Choice<number> {
   public readonly prompt: string;
   public readonly options = -1;
 
-  constructor(prompt: string, private defaultValue: number, private minValue?: number, private maxValue?: number) {
+  constructor(
+    prompt: string,
+    private game: Game,
+    private defaultValue: number,
+    private minValue?: number,
+    private maxValue?: number
+  ) {
     this.prompt = `${prompt} (between ${minValue} and ${maxValue})`;
   }
 
   public async getChoice(): Promise<number> {
-    const input = await question(`${this.prompt}\n> `);
+    this.game.ui?.renderPrompt(`${this.prompt}\n> `);
+    const input = await question();
     try {
       const out = Number.parseInt(input.trim());
       if (this.minValue && out < this.minValue) {

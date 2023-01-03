@@ -3,7 +3,6 @@ import { Game } from "./Game";
 import { CardLocation, Player } from "./Player";
 import * as BaseCards from "../../config/cards/Base";
 import * as SeasideCards from "../../config/cards/Seaside";
-import { CardPile } from "./CardPile";
 
 // function that returns a modifier on the cost of a card - e.g. -1$, -2$ if its an action
 // They are applied at a game level as they affect other players' cards' costs

@@ -1,9 +1,9 @@
-import { Kingdom, KingdomParams } from "../../domain/objects/Kingdom";
+import { Kingdom, KingdomConfig } from "../../domain/objects/Kingdom";
 import { createKingdom } from "../CreateKingdom";
 import { ConfigError } from "./ConfigRegistryError";
 
 export class KingdomConfigRegistry {
-  private kingdoms: Map<string, KingdomParams>;
+  private kingdoms: Map<string, KingdomConfig>;
 
   constructor() {
     this.kingdoms = new Map();
@@ -13,25 +13,25 @@ export class KingdomConfigRegistry {
     return Array.from(this.kingdoms.keys());
   }
 
-  values(): Array<KingdomParams> {
+  values(): Array<KingdomConfig> {
     return Array.from(this.kingdoms.entries()).map((pair) => pair[1]);
   }
 
-  register(params: KingdomParams) {
+  register(params: KingdomConfig) {
     this.kingdoms.set(params.name, params);
   }
 
-  registerAll(...params: Array<KingdomParams>) {
+  registerAll(...params: Array<KingdomConfig>) {
     params.forEach((p) => this.register(p));
   }
 
-  getParams(name: string): KingdomParams {
+  getParams(name: string): KingdomConfig {
     const out = this.kingdoms.get(name);
     if (!out) throw new ConfigError(`Unable to find config for ${name}`);
     return out;
   }
 
-  getParamsOfUndef(name: string): KingdomParams | undefined {
+  getParamsOfUndef(name: string): KingdomConfig | undefined {
     return this.kingdoms.get(name);
   }
 

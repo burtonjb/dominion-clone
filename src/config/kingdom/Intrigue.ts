@@ -1,10 +1,10 @@
 import { kingdomConfigRegistry } from "../../di/configservice/KingdomConfigRegistry";
 import { DominionExpansion } from "../../domain/objects/Card";
-import { KingdomParams } from "../../domain/objects/Kingdom";
+import { KingdomConfig } from "../../domain/objects/Kingdom";
 import * as Base from "../cards/Base";
 import * as Intrigue from "../cards/Intrigue";
 
-const VictoryDance: KingdomParams = {
+const VictoryDance: KingdomConfig = {
   name: "Victory Dance",
   expansions: [DominionExpansion.INTRIGUE],
   cards: [
@@ -21,7 +21,7 @@ const VictoryDance: KingdomParams = {
   ],
 };
 
-const ThePlotThickens: KingdomParams = {
+const ThePlotThickens: KingdomConfig = {
   name: "The Plot Thickens",
   expansions: [DominionExpansion.INTRIGUE],
   cards: [
@@ -38,7 +38,7 @@ const ThePlotThickens: KingdomParams = {
   ],
 };
 
-const BestWishes: KingdomParams = {
+const BestWishes: KingdomConfig = {
   name: "Best Wishes",
   expansions: [DominionExpansion.INTRIGUE],
   cards: [
@@ -55,7 +55,7 @@ const BestWishes: KingdomParams = {
   ],
 };
 
-const Underlings: KingdomParams = {
+const Underlings: KingdomConfig = {
   name: "Underlings",
   expansions: [DominionExpansion.BASE, DominionExpansion.INTRIGUE],
   cards: [
@@ -72,7 +72,7 @@ const Underlings: KingdomParams = {
   ],
 };
 
-const GrandScheme: KingdomParams = {
+const GrandScheme: KingdomConfig = {
   name: "Grand Scheme",
   expansions: [DominionExpansion.BASE, DominionExpansion.INTRIGUE],
   cards: [
@@ -89,7 +89,7 @@ const GrandScheme: KingdomParams = {
   ],
 };
 
-const Deconstruction: KingdomParams = {
+const Deconstruction: KingdomConfig = {
   name: "Deconstruction",
   expansions: [DominionExpansion.BASE, DominionExpansion.INTRIGUE],
   cards: [

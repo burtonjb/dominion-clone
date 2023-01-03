@@ -1,5 +1,5 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
-import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { Card, CardConfig, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack } from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
@@ -7,7 +7,7 @@ import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effect
 import * as BasicCards from "./Basic";
 import { TrashCardsFromHand } from "../effects/AdvancedEffects";
 
-const Courtyard: CardParams = {
+const Courtyard: CardConfig = {
   name: "Courtyard",
   types: [CardType.ACTION],
   cost: 2,
@@ -35,7 +35,7 @@ const Courtyard: CardParams = {
   ],
 };
 
-const Lurker: CardParams = {
+const Lurker: CardConfig = {
   name: "Lurker",
   types: [CardType.ACTION],
   cost: 2,
@@ -98,7 +98,7 @@ const Lurker: CardParams = {
   ],
 };
 
-const Pawn: CardParams = {
+const Pawn: CardConfig = {
   name: "Pawn",
   types: [CardType.ACTION],
   cost: 2,
@@ -129,7 +129,7 @@ const Pawn: CardParams = {
   ],
 };
 
-const Masquerade: CardParams = {
+const Masquerade: CardConfig = {
   name: "Masquerade",
   types: [CardType.ACTION],
   cost: 3,
@@ -173,7 +173,7 @@ const Masquerade: CardParams = {
   ],
 };
 
-const ShantyTown: CardParams = {
+const ShantyTown: CardConfig = {
   name: "Shanty Town",
   types: [CardType.ACTION],
   cost: 3,
@@ -193,7 +193,7 @@ const ShantyTown: CardParams = {
   ],
 };
 
-const Steward: CardParams = {
+const Steward: CardConfig = {
   name: "Steward",
   types: [CardType.ACTION],
   cost: 3,
@@ -223,7 +223,7 @@ const Steward: CardParams = {
   ],
 };
 
-const Swindler: CardParams = {
+const Swindler: CardConfig = {
   name: "Swindler",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 3,
@@ -268,7 +268,7 @@ const Swindler: CardParams = {
   ],
 };
 
-const WishingWell: CardParams = {
+const WishingWell: CardConfig = {
   name: "Wishing Well",
   types: [CardType.ACTION],
   cost: 3,
@@ -297,14 +297,14 @@ const WishingWell: CardParams = {
         game.revealCards(topCards, activePlayer);
         if (topCard.name.toLowerCase() == named.toLowerCase()) {
           activePlayer.transferCard(topCard, activePlayer.drawPile, activePlayer.hand, CardPosition.TOP);
-          // TODO: publish event for putting card in hand
+          game.eventLog.publishEvent({ type: "CardPutInHand", player: activePlayer, card: topCard });
         }
       },
     },
   ],
 };
 
-const Baron: CardParams = {
+const Baron: CardConfig = {
   name: "Baron",
   types: [CardType.ACTION],
   cost: 4,
@@ -339,7 +339,7 @@ const Baron: CardParams = {
   ],
 };
 
-const Bridge: CardParams = {
+const Bridge: CardConfig = {
   name: "Bridge",
   types: [CardType.ACTION],
   cost: 4,
@@ -358,7 +358,7 @@ const Bridge: CardParams = {
   ],
 };
 
-const Conspirator: CardParams = {
+const Conspirator: CardConfig = {
   name: "Conspirator",
   types: [CardType.ACTION],
   cost: 4,
@@ -380,7 +380,7 @@ const Conspirator: CardParams = {
   ],
 };
 
-const Diplomat: CardParams = {
+const Diplomat: CardConfig = {
   name: "Diplomat",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 4,
@@ -400,7 +400,7 @@ const Diplomat: CardParams = {
   // TODO: reaction effect for being attacked
 };
 
-const Ironworks: CardParams = {
+const Ironworks: CardConfig = {
   name: "Ironworks",
   types: [CardType.ACTION],
   cost: 4,
@@ -437,7 +437,7 @@ const Ironworks: CardParams = {
   ],
 };
 
-const Mill: CardParams = {
+const Mill: CardConfig = {
   name: "Mill",
   types: [CardType.ACTION, CardType.VICTORY],
   cost: 4,
@@ -478,7 +478,7 @@ const Mill: CardParams = {
   ],
 };
 
-const MiningVillage: CardParams = {
+const MiningVillage: CardConfig = {
   name: "Mining Village",
   types: [CardType.ACTION],
   cost: 4,
@@ -505,7 +505,7 @@ const MiningVillage: CardParams = {
   ],
 };
 
-const SecretPassage: CardParams = {
+const SecretPassage: CardConfig = {
   name: "Secret Passage",
   types: [CardType.ACTION],
   cost: 4,
@@ -541,7 +541,7 @@ const SecretPassage: CardParams = {
   ],
 };
 
-const Courtier: CardParams = {
+const Courtier: CardConfig = {
   name: "Courtier",
   types: [CardType.ACTION],
   cost: 5,
@@ -585,7 +585,7 @@ const Courtier: CardParams = {
   ],
 };
 
-const Duke: CardParams = {
+const Duke: CardConfig = {
   name: "Duke",
   types: [CardType.VICTORY],
   cost: 5,
@@ -597,7 +597,7 @@ const Duke: CardParams = {
   },
 };
 
-const Minion: CardParams = {
+const Minion: CardConfig = {
   name: "Minion",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -651,7 +651,7 @@ const Minion: CardParams = {
   ],
 };
 
-const Patrol: CardParams = {
+const Patrol: CardConfig = {
   name: "Patrol",
   types: [CardType.ACTION],
   cost: 5,
@@ -674,7 +674,7 @@ const Patrol: CardParams = {
   ],
 };
 
-const Replace: CardParams = {
+const Replace: CardConfig = {
   name: "Replace",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -723,7 +723,7 @@ const Replace: CardParams = {
   ],
 };
 
-const Torturer: CardParams = {
+const Torturer: CardConfig = {
   name: "Torturer",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -773,7 +773,7 @@ const Torturer: CardParams = {
   ],
 };
 
-const TradingPost: CardParams = {
+const TradingPost: CardConfig = {
   name: "Trading Post",
   types: [CardType.ACTION],
   cost: 5,
@@ -803,7 +803,7 @@ const TradingPost: CardParams = {
   ],
 };
 
-const Upgrade: CardParams = {
+const Upgrade: CardConfig = {
   name: "Upgrade",
   types: [CardType.ACTION],
   cost: 5,
@@ -845,7 +845,7 @@ const Upgrade: CardParams = {
   ],
 };
 
-const Harem: CardParams = {
+const Harem: CardConfig = {
   name: "Harem",
   types: [CardType.VICTORY, CardType.TREASURE],
   cost: 6,
@@ -856,7 +856,7 @@ const Harem: CardParams = {
   playEffects: [new GainMoney({ amount: 2 })],
 };
 
-const Nobles: CardParams = {
+const Nobles: CardConfig = {
   name: "Nobles",
   types: [CardType.VICTORY, CardType.ACTION],
   cost: 6,

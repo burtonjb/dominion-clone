@@ -7,7 +7,6 @@ import { CardPile } from "./CardPile";
 import { EventLog } from "../events/EventLog";
 import { GameScreen } from "../../ui/GameScreen";
 import { CostModifier } from "./CardEffect";
-import { stringify } from "querystring";
 
 export interface GameParams {
   seed: number;
@@ -187,12 +186,11 @@ export class Game {
     await card.onDiscard(player, this);
   }
 
-  // TODO: unify the trash from player and trash from supply APIs
-  public trashCardFromSupply(pile: CardPile, player: Player) {
+  public async trashCardFromSupply(pile: CardPile, player: Player) {
     const card = pile.cards.shift();
     if (!card) return;
-    this.trash.push(card);
-    this.eventLog.publishEvent({ type: "TrashCard", player: player, card: card });
+
+    await this.trashCard(card, player);
   }
 
   public async trashCard(card: Card, player: Player) {

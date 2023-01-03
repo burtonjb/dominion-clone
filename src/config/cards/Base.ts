@@ -1,5 +1,5 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
-import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { Card, CardConfig, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack, OnPlayCardTrigger } from "../../domain/objects/CardEffect";
 import { Game } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
@@ -7,7 +7,7 @@ import { TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainCard, GainMoney } from "../effects/BaseEffects";
 import * as BasicCards from "./Basic";
 
-const Cellar: CardParams = {
+const Cellar: CardConfig = {
   name: "Cellar",
   types: [CardType.ACTION],
   cost: 2,
@@ -32,7 +32,7 @@ const Cellar: CardParams = {
   ],
 };
 
-const Chapel: CardParams = {
+const Chapel: CardConfig = {
   name: "Chapel",
   types: [CardType.ACTION],
   cost: 2,
@@ -41,7 +41,7 @@ const Chapel: CardParams = {
   playEffects: [new TrashCardsFromHand({ minCards: 0, maxCards: 4 })],
 };
 
-const Moat: CardParams = {
+const Moat: CardConfig = {
   name: "Moat",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 2,
@@ -51,7 +51,7 @@ const Moat: CardParams = {
   // TODO: reaction effects (I've hacked in the reaction for now)
 };
 
-const Harbinger: CardParams = {
+const Harbinger: CardConfig = {
   name: "Harbinger",
   types: [CardType.ACTION],
   cost: 3,
@@ -80,7 +80,7 @@ const Harbinger: CardParams = {
     },
   ],
 };
-const Merchant: CardParams = {
+const Merchant: CardConfig = {
   name: "Merchant",
   types: [CardType.ACTION],
   cost: 3,
@@ -108,7 +108,7 @@ const Merchant: CardParams = {
   ],
 };
 
-const Vassal: CardParams = {
+const Vassal: CardConfig = {
   name: "Vassal",
   types: [CardType.ACTION],
   cost: 3,
@@ -138,7 +138,7 @@ const Vassal: CardParams = {
   ],
 };
 
-const Village: CardParams = {
+const Village: CardConfig = {
   name: "Village",
   types: [CardType.ACTION],
   cost: 3,
@@ -147,7 +147,7 @@ const Village: CardParams = {
   playEffects: [new GainActions({ amount: 2 }), new DrawCards({ amount: 1 })],
 };
 
-const Workshop: CardParams = {
+const Workshop: CardConfig = {
   name: "Workshop",
   types: [CardType.ACTION],
   cost: 3,
@@ -170,7 +170,7 @@ const Workshop: CardParams = {
     },
   ],
 };
-const Bureaucrat: CardParams = {
+const Bureaucrat: CardConfig = {
   name: "Bureaucrat",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 4,
@@ -207,7 +207,7 @@ const Bureaucrat: CardParams = {
     },
   ],
 };
-const Gardens: CardParams = {
+const Gardens: CardConfig = {
   name: "Gardens",
   types: [CardType.VICTORY],
   cost: 4,
@@ -218,7 +218,7 @@ const Gardens: CardParams = {
     return Math.floor(player.allCards().length / 10);
   },
 };
-const Militia: CardParams = {
+const Militia: CardConfig = {
   name: "Militia",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 4,
@@ -253,7 +253,7 @@ const Militia: CardParams = {
     },
   ],
 };
-const Moneylender: CardParams = {
+const Moneylender: CardConfig = {
   name: "Moneylender",
   types: [CardType.ACTION],
   cost: 4,
@@ -280,7 +280,7 @@ const Moneylender: CardParams = {
     },
   ],
 };
-const Poacher: CardParams = {
+const Poacher: CardConfig = {
   name: "Poacher",
   types: [CardType.ACTION],
   cost: 4,
@@ -311,7 +311,7 @@ const Poacher: CardParams = {
     },
   ],
 };
-const Remodel: CardParams = {
+const Remodel: CardConfig = {
   name: "Remodel",
   types: [CardType.ACTION],
   cost: 4,
@@ -348,7 +348,7 @@ const Remodel: CardParams = {
   ],
 };
 
-const Smithy: CardParams = {
+const Smithy: CardConfig = {
   name: "Smithy",
   types: [CardType.ACTION],
   cost: 4,
@@ -357,7 +357,7 @@ const Smithy: CardParams = {
   playEffects: [new DrawCards({ amount: 3 })],
 };
 
-const ThroneRoom: CardParams = {
+const ThroneRoom: CardConfig = {
   name: "Throne Room",
   types: [CardType.ACTION],
   cost: 4,
@@ -384,7 +384,7 @@ const ThroneRoom: CardParams = {
   ],
 };
 
-const Bandit: CardParams = {
+const Bandit: CardConfig = {
   name: "Bandit",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -427,7 +427,7 @@ const Bandit: CardParams = {
     },
   ],
 };
-const CouncilRoom: CardParams = {
+const CouncilRoom: CardConfig = {
   name: "Council Room",
   types: [CardType.ACTION],
   cost: 5,
@@ -446,7 +446,7 @@ const CouncilRoom: CardParams = {
   ],
 };
 
-const Festival: CardParams = {
+const Festival: CardConfig = {
   name: "Festival",
   types: [CardType.ACTION],
   cost: 5,
@@ -455,7 +455,7 @@ const Festival: CardParams = {
   playEffects: [new GainActions({ amount: 2 }), new GainBuys({ amount: 1 }), new GainMoney({ amount: 2 })],
 };
 
-const Laboratory: CardParams = {
+const Laboratory: CardConfig = {
   name: "Laboratory",
   types: [CardType.ACTION],
   cost: 5,
@@ -464,7 +464,7 @@ const Laboratory: CardParams = {
   playEffects: [new DrawCards({ amount: 2 }), new GainActions({ amount: 1 })],
 };
 
-const Library: CardParams = {
+const Library: CardConfig = {
   name: "Library",
   types: [CardType.ACTION],
   cost: 5,
@@ -508,7 +508,7 @@ const Library: CardParams = {
   ],
 };
 
-const Market: CardParams = {
+const Market: CardConfig = {
   name: "Market",
   types: [CardType.ACTION],
   cost: 5,
@@ -522,7 +522,7 @@ const Market: CardParams = {
   ],
 };
 
-const Mine: CardParams = {
+const Mine: CardConfig = {
   name: "Mine",
   types: [CardType.ACTION],
   cost: 5,
@@ -561,7 +561,7 @@ const Mine: CardParams = {
   ],
 };
 
-const Sentry: CardParams = {
+const Sentry: CardConfig = {
   name: "Sentry",
   types: [CardType.ACTION],
   cost: 5,
@@ -623,7 +623,7 @@ const Sentry: CardParams = {
   ],
 };
 
-const Witch: CardParams = {
+const Witch: CardConfig = {
   name: "Witch",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -645,7 +645,7 @@ const Witch: CardParams = {
   ],
 };
 
-const Artisan: CardParams = {
+const Artisan: CardConfig = {
   name: "Artisan",
   types: [CardType.ACTION],
   cost: 6,

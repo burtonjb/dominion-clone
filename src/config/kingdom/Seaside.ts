@@ -1,11 +1,11 @@
 import { kingdomConfigRegistry } from "../../di/configservice/KingdomConfigRegistry";
 import { DominionExpansion } from "../../domain/objects/Card";
-import { KingdomParams } from "../../domain/objects/Kingdom";
+import { KingdomConfig } from "../../domain/objects/Kingdom";
 import * as BaseCards from "../cards/Base";
 import * as IntrigueCards from "../cards/Intrigue";
 import * as SeasideCards from "../cards/Seaside";
 
-const HighSeas: KingdomParams = {
+const HighSeas: KingdomConfig = {
   name: "High Seas",
   expansions: [DominionExpansion.SEASIDE],
   cards: [
@@ -22,7 +22,7 @@ const HighSeas: KingdomParams = {
   ],
 };
 
-const BuriedTreasure: KingdomParams = {
+const BuriedTreasure: KingdomConfig = {
   name: "Buried Treasure",
   expansions: [DominionExpansion.SEASIDE],
   cards: [
@@ -39,7 +39,7 @@ const BuriedTreasure: KingdomParams = {
   ],
 };
 
-const ReachForTomorrow: KingdomParams = {
+const ReachForTomorrow: KingdomConfig = {
   name: "Reach for Tomorrow",
   expansions: [DominionExpansion.BASE, DominionExpansion.SEASIDE],
   cards: [
@@ -56,7 +56,7 @@ const ReachForTomorrow: KingdomParams = {
   ],
 };
 
-const Repetition: KingdomParams = {
+const Repetition: KingdomConfig = {
   name: "Repetition",
   expansions: [DominionExpansion.BASE, DominionExpansion.SEASIDE],
   cards: [
@@ -73,7 +73,7 @@ const Repetition: KingdomParams = {
   ],
 };
 
-const AStarToSteerBy: KingdomParams = {
+const AStarToSteerBy: KingdomConfig = {
   name: "A Star to Steer by",
   expansions: [DominionExpansion.INTRIGUE, DominionExpansion.SEASIDE],
   cards: [
@@ -90,7 +90,7 @@ const AStarToSteerBy: KingdomParams = {
   ],
 };
 
-const ShorePatrol: KingdomParams = {
+const ShorePatrol: KingdomConfig = {
   name: "Shore Patrol",
   expansions: [DominionExpansion.INTRIGUE, DominionExpansion.SEASIDE],
   cards: [

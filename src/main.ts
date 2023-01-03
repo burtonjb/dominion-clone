@@ -8,11 +8,6 @@ import { BigMoneyAiInput } from "./config/input/BaseAiInput";
 import { HumanPlayerInput } from "./config/input/HumanInput";
 import { rl } from "./util/PromiseExtensions";
 
-process.on("SIGINT", () => {
-  // TODO: add some logging on exit
-  process.exit(0);
-});
-
 async function main() {
   const game = createGame(2, false, new Date().getTime());
   // TODO: better way to set this up
@@ -29,7 +24,8 @@ async function main() {
   const gameScreen = new GameScreen(new BaseTerminalScreen(), game, showDebugInfoInUi);
   game.ui = gameScreen; // you can leave this unset and then it won't display anything - and leaving it off will speed up bot v bot gameplay
 
-  while (!game.isGameFinished()) {
+  let isGameFinished = false;
+  while (!isGameFinished) {
     game.ui?.render();
 
     if (game.currentPhase == TurnPhase.ACTION) {
@@ -37,7 +33,7 @@ async function main() {
     } else if (game.currentPhase == TurnPhase.BUY) {
       await handleBuyPhase(game);
     } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
-      await handleCleanUpPhase(game);
+      isGameFinished = await handleCleanUpPhase(game);
     }
   }
   game.ui?.render();
@@ -128,7 +124,11 @@ async function handleBuyPhase(game: Game) {
 async function handleCleanUpPhase(game: Game) {
   game.eventLog.publishEvent({ type: "Cleanup", player: game.getActivePlayer(), turn: game.getActivePlayer().turns });
   await game.cleanUp();
+  if (game.isGameFinished()) {
+    return true;
+  }
   game.currentPhase = TurnPhase.ACTION;
+  return false;
 }
 
 main();

@@ -1,6 +1,6 @@
 import { cardConfigRegistry } from "../../di/configservice/CardConfigRegistry";
 import { BasicCards } from "../../di/RegisterConfig";
-import { Card, CardParams, CardType, DominionExpansion } from "../../domain/objects/Card";
+import { Card, CardConfig, CardType, DominionExpansion } from "../../domain/objects/Card";
 import { attack, OnGainCardTrigger } from "../../domain/objects/CardEffect";
 import { Game, TurnPhase } from "../../domain/objects/Game";
 import { CardLocation, CardPosition, Player } from "../../domain/objects/Player";
@@ -9,7 +9,7 @@ import { shuffleArray } from "../../util/ArrayExtensions";
 import { DiscardCardsFromHand, DrawToHandsize, TrashCardsFromHand } from "../effects/AdvancedEffects";
 import { DrawCards, GainActions, GainBuys, GainMoney } from "../effects/BaseEffects";
 
-const Crossroads: CardParams = {
+const Crossroads: CardConfig = {
   name: "Crossroads",
   types: [CardType.ACTION],
   cost: 2,
@@ -33,7 +33,7 @@ const Crossroads: CardParams = {
   ],
 };
 
-const FoolsGold: CardParams = {
+const FoolsGold: CardConfig = {
   name: "Fool's Gold",
   types: [CardType.TREASURE, CardType.REACTION],
   cost: 2,
@@ -72,7 +72,7 @@ const FoolsGold: CardParams = {
   },
 };
 
-const Develop: CardParams = {
+const Develop: CardConfig = {
   name: "Develop",
   types: [CardType.ACTION],
   cost: 3,
@@ -121,7 +121,7 @@ const Develop: CardParams = {
   ],
 };
 
-const GuardDog: CardParams = {
+const GuardDog: CardConfig = {
   name: "Guard Dog",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 3,
@@ -141,7 +141,7 @@ const GuardDog: CardParams = {
   //FIXME: add the reaction
 };
 
-const Oasis: CardParams = {
+const Oasis: CardConfig = {
   name: "Oasis",
   types: [CardType.ACTION],
   cost: 3,
@@ -155,7 +155,7 @@ const Oasis: CardParams = {
   ],
 };
 
-const Scheme: CardParams = {
+const Scheme: CardConfig = {
   name: "Scheme",
   types: [CardType.ACTION],
   cost: 3,
@@ -181,7 +181,7 @@ const Scheme: CardParams = {
   ],
 };
 
-const Tunnel: CardParams = {
+const Tunnel: CardConfig = {
   name: "Tunnel",
   types: [CardType.VICTORY, CardType.REACTION],
   cost: 3,
@@ -208,7 +208,7 @@ const Tunnel: CardParams = {
   },
 };
 
-const JackOfAllTrades: CardParams = {
+const JackOfAllTrades: CardConfig = {
   name: "Jack Of All Trades",
   types: [CardType.ACTION],
   cost: 4,
@@ -249,7 +249,7 @@ const JackOfAllTrades: CardParams = {
   ],
 };
 
-const Nomads: CardParams = {
+const Nomads: CardConfig = {
   name: "Nomads",
   types: [CardType.ACTION],
   cost: 4,
@@ -260,7 +260,7 @@ const Nomads: CardParams = {
   onTrashEffects: [new GainMoney({ amount: 2 })],
 };
 
-const SpiceMerchant: CardParams = {
+const SpiceMerchant: CardConfig = {
   name: "Spice Merchant",
   types: [CardType.ACTION],
   cost: 4,
@@ -310,7 +310,7 @@ const SpiceMerchant: CardParams = {
   ],
 };
 
-const Trader: CardParams = {
+const Trader: CardConfig = {
   name: "Trader",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 4,
@@ -368,7 +368,7 @@ const Trader: CardParams = {
   },
 };
 
-const Trail: CardParams = {
+const Trail: CardConfig = {
   name: "Trail",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 4,
@@ -427,7 +427,7 @@ const Trail: CardParams = {
   },
 };
 
-const Weaver: CardParams = {
+const Weaver: CardConfig = {
   name: "Weaver",
   types: [CardType.ACTION, CardType.REACTION],
   cost: 4,
@@ -493,7 +493,7 @@ const Weaver: CardParams = {
   },
 };
 
-const Berserker: CardParams = {
+const Berserker: CardConfig = {
   name: "Berserker",
   types: [CardType.ACTION, CardType.ATTACK],
   cost: 5,
@@ -557,7 +557,7 @@ const Berserker: CardParams = {
   ],
 };
 
-const Cartographer: CardParams = {
+const Cartographer: CardConfig = {
   name: "Cartographer",
   types: [CardType.ACTION],
   cost: 5,
@@ -585,7 +585,7 @@ const Cartographer: CardParams = {
   ],
 };
 
-const Cauldron: CardParams = {
+const Cauldron: CardConfig = {
   name: "Cauldron",
   types: [CardType.ATTACK, CardType.TREASURE],
   cost: 5,
@@ -622,7 +622,7 @@ const Cauldron: CardParams = {
   ],
 };
 
-const Haggler: CardParams = {
+const Haggler: CardConfig = {
   name: "Haggler",
   types: [CardType.ACTION],
   cost: 5,
@@ -655,7 +655,7 @@ const Haggler: CardParams = {
   ],
 };
 
-const Highway: CardParams = {
+const Highway: CardConfig = {
   name: "Highway",
   types: [CardType.ACTION],
   cost: 5,
@@ -674,7 +674,7 @@ const Highway: CardParams = {
   ],
 };
 
-const Inn: CardParams = {
+const Inn: CardConfig = {
   name: "Inn",
   types: [CardType.ACTION],
   cost: 5,
@@ -706,7 +706,7 @@ const Inn: CardParams = {
   ],
 };
 
-const Margrave: CardParams = {
+const Margrave: CardConfig = {
   name: "Margrave",
   types: [CardType.ACTION],
   cost: 5,
@@ -747,7 +747,7 @@ const Margrave: CardParams = {
   ],
 };
 
-const Souk: CardParams = {
+const Souk: CardConfig = {
   name: "Souk",
   types: [CardType.ACTION],
   cost: 5,
@@ -774,7 +774,7 @@ const Souk: CardParams = {
   ],
 };
 
-const Stables: CardParams = {
+const Stables: CardConfig = {
   name: "Stables",
   types: [CardType.ACTION],
   cost: 5,
@@ -802,7 +802,7 @@ const Stables: CardParams = {
   ],
 };
 
-const Wheelwright: CardParams = {
+const Wheelwright: CardConfig = {
   name: "Wheelwright",
   types: [CardType.ACTION],
   cost: 5,
@@ -839,7 +839,7 @@ const Wheelwright: CardParams = {
   ],
 };
 
-const WitchsHut: CardParams = {
+const WitchsHut: CardConfig = {
   name: "Witch's Hut",
   types: [CardType.ACTION],
   cost: 5,
@@ -876,7 +876,7 @@ const WitchsHut: CardParams = {
   ],
 };
 
-const BorderVillage: CardParams = {
+const BorderVillage: CardConfig = {
   name: "Border Village",
   types: [CardType.ACTION],
   cost: 6,
@@ -900,7 +900,7 @@ const BorderVillage: CardParams = {
   ],
 };
 
-const Farmland: CardParams = {
+const Farmland: CardConfig = {
   name: "Farmland",
   types: [CardType.VICTORY],
   cost: 6,

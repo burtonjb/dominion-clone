@@ -1,7 +1,7 @@
-import { Card, DominionExpansion } from "./Card";
+import { DominionExpansion } from "./Card";
 import { CardPile } from "./CardPile";
 
-export interface KingdomParams {
+export interface KingdomConfig {
   readonly name: string;
   readonly expansions: Array<DominionExpansion>;
   readonly cards: Array<string>;

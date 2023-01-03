@@ -1,4 +1,4 @@
-import { Card, CardParams } from "../../domain/objects/Card";
+import { Card, CardConfig } from "../../domain/objects/Card";
 import { ConfigError } from "./ConfigRegistryError";
 
 /* 
@@ -6,7 +6,7 @@ Provides information about all cards that are available
 in the game
 */
 export class CardConfigRegistry {
-  private cards: Map<string, CardParams>;
+  private cards: Map<string, CardConfig>;
 
   constructor() {
     this.cards = new Map();
@@ -16,25 +16,25 @@ export class CardConfigRegistry {
     return Array.from(this.cards.keys());
   }
 
-  values(): Array<CardParams> {
+  values(): Array<CardConfig> {
     return Array.from(this.cards.entries()).map((pair) => pair[1]);
   }
 
-  register(params: CardParams) {
+  register(params: CardConfig) {
     this.cards.set(params.name, params);
   }
 
-  registerAll(...params: Array<CardParams>) {
+  registerAll(...params: Array<CardConfig>) {
     params.forEach((p) => this.register(p));
   }
 
-  getParams(name: string): CardParams {
+  getParams(name: string): CardConfig {
     const params = this.cards.get(name);
     if (!params) throw new ConfigError(`Failed to find config for ${name}`);
     return params;
   }
 
-  getParamsOrUndef(name: string): CardParams | undefined {
+  getParamsOrUndef(name: string): CardConfig | undefined {
     return this.cards.get(name);
   }
 

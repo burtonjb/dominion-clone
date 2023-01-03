@@ -1,13 +1,13 @@
 import { kingdomConfigRegistry } from "../../di/configservice/KingdomConfigRegistry";
 import { DominionExpansion } from "../../domain/objects/Card";
-import { Kingdom, KingdomParams } from "../../domain/objects/Kingdom";
+import { Kingdom, KingdomConfig } from "../../domain/objects/Kingdom";
 import * as BaseCards from "../cards/Base";
 import * as IntrigueCards from "../cards/Intrigue";
 import * as SeasideCards from "../cards/Seaside";
 import * as ProsperityCards from "../cards/Prosperity";
 import * as HinterlandsCards from "../cards/Hinterlands";
 
-const Introduction: KingdomParams = {
+const Introduction: KingdomConfig = {
   name: "Introduction",
   expansions: [DominionExpansion.HINTERLANDS],
   cards: [
@@ -24,7 +24,7 @@ const Introduction: KingdomParams = {
   ],
 };
 
-const Bargains: KingdomParams = {
+const Bargains: KingdomConfig = {
   name: "Bargains",
   expansions: [DominionExpansion.HINTERLANDS],
   cards: [
@@ -41,7 +41,7 @@ const Bargains: KingdomParams = {
   ],
 };
 
-const HighwayRobbery: KingdomParams = {
+const HighwayRobbery: KingdomConfig = {
   name: "Highway Robbery",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.BASE],
   cards: [
@@ -58,7 +58,7 @@ const HighwayRobbery: KingdomParams = {
   ],
 };
 
-const AdventuresAbroad: KingdomParams = {
+const AdventuresAbroad: KingdomConfig = {
   name: "Adventures Abroad",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.BASE],
   cards: [
@@ -75,7 +75,7 @@ const AdventuresAbroad: KingdomParams = {
   ],
 };
 
-const MoneyForNothing: KingdomParams = {
+const MoneyForNothing: KingdomConfig = {
   name: "Money For Nothing",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.INTRIGUE],
   cards: [
@@ -92,7 +92,7 @@ const MoneyForNothing: KingdomParams = {
   ],
 };
 
-const TheDukesBall: KingdomParams = {
+const TheDukesBall: KingdomConfig = {
   name: "The Duke's Ball",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.INTRIGUE],
   cards: [
@@ -109,7 +109,7 @@ const TheDukesBall: KingdomParams = {
   ],
 };
 
-const Travelers: KingdomParams = {
+const Travelers: KingdomConfig = {
   name: "Travelers",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.SEASIDE],
   cards: [
@@ -126,7 +126,7 @@ const Travelers: KingdomParams = {
   ],
 };
 
-const Runners: KingdomParams = {
+const Runners: KingdomConfig = {
   name: "Runners",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.SEASIDE],
   cards: [
@@ -143,7 +143,7 @@ const Runners: KingdomParams = {
   ],
 };
 
-const InstantGratification: KingdomParams = {
+const InstantGratification: KingdomConfig = {
   name: "Instant Gratification",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.PROSPERITY],
   cards: [
@@ -161,7 +161,7 @@ const InstantGratification: KingdomParams = {
   usePlatinumAndColony: true,
 };
 
-const TreasureTrove: KingdomParams = {
+const TreasureTrove: KingdomConfig = {
   name: "Treasure Trove",
   expansions: [DominionExpansion.HINTERLANDS, DominionExpansion.PROSPERITY],
   cards: [
