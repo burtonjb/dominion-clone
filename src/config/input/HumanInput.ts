@@ -20,6 +20,7 @@ import {
 import { question } from "../../util/PromiseExtensions";
 import * as BasicCards from "../cards/Basic";
 import { CardEffectConfig } from "../../domain/objects/CardEffect";
+import { matchInput } from "../../util/MatchInput";
 
 export class HumanPlayerInput implements PlayerInput {
   async chooseInteger(player: Player, game: Game, params: ChooseIntegerParams): Promise<number> {
@@ -72,20 +73,18 @@ export class HumanPlayerInput implements PlayerInput {
       );
       const input = await question();
 
-      // FIXME: Add try/catch around this since it will crash if a bad input is passed
-      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-      const matchingCards = player.hand
+      const actionCards: Array<[string, Card]> = player.hand
         .filter((c) => c.types.includes(CardType.ACTION))
-        .filter((card) => card.name.match(inputMatch));
-      const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
+        .map((c) => [c.name, c]);
 
-      if (input.length > 0 && singleMatch) {
-        const matchingCard = matchingCards[0];
-        return matchingCard;
-      } else if (input.toLowerCase() == "end" || player.actions <= 0) {
+      const matchingInput = matchInput<Card>(input, actionCards);
+
+      if (input.toLowerCase() == "end" || player.actions <= 0) {
         return undefined;
+      } else if (matchingInput) {
+        return matchingInput;
       } else {
-        // multi-match case or I guess they tried to play a treasure - though treasures shouldn't appear in the prompt
+        // either no matches or multi-match
         console.warn(`Unknown input: ${input}`); // TODO: split out messaging for different error conditions
       }
     }
@@ -102,15 +101,14 @@ export class HumanPlayerInput implements PlayerInput {
       );
       const input = await question();
 
-      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-      const matchingCards = player.hand
+      const treasureCards: Array<[string, Card]> = player.hand
         .filter((c) => c.types.includes(CardType.TREASURE))
-        .filter((card) => card.name.match(inputMatch));
-      const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
+        .map((c) => [c.name, c]);
 
-      if (input.length > 0 && singleMatch) {
-        const matchingCard = matchingCards[0];
-        return [matchingCard];
+      const matchingInput = matchInput<Card>(input, treasureCards);
+
+      if (input.toLowerCase() == "end") {
+        return undefined;
       } else if (input.toLowerCase() == "all") {
         // play all coppers, silvers, golds, or plats
         const m = player.hand.filter(
@@ -121,8 +119,8 @@ export class HumanPlayerInput implements PlayerInput {
             c.name == BasicCards.Platinum.name
         );
         return m;
-      } else if (input.toLowerCase() == "end") {
-        return undefined;
+      } else if (input.length > 0 && matchingInput) {
+        return [matchingInput];
       } else {
         console.warn(`Unknown input: ${input}`); // TODO: split out messaging for different error conditions
       }
@@ -144,17 +142,17 @@ export class HumanPlayerInput implements PlayerInput {
           gameScreen.formatCardName(p.cards[0])
         )}, or 'end' to end.\n> `
       );
+
       const input = await question();
+      const selectedPile = matchInput(
+        input,
+        applicablePiles.map((p) => [p.cards[0].name, p])
+      );
 
-      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-      const matchingPiles = applicablePiles.filter((p) => p.name.match(inputMatch));
-      const singleMatch = new Set(matchingPiles.map((c) => c.name)).size == 1;
-
-      if (input.length > 0 && singleMatch) {
-        const matchingPile = matchingPiles[0];
-        return matchingPile;
-      } else if (input == "end") {
+      if (input == "end") {
         return undefined;
+      } else if (input.length > 0 && selectedPile) {
+        return selectedPile;
       } else {
         console.warn(`Unknown input: ${input}`); // TODO: split out messaging for different error conditions
       }

@@ -5,6 +5,7 @@ import { CardPile } from "../domain/objects/CardPile";
 import { Player } from "../domain/objects/Player";
 import { Supply } from "../domain/objects/Supply";
 import { Game } from "../domain/objects/Game";
+import { matchInput } from "../util/MatchInput";
 
 // Choices
 export interface Choice<T> {
@@ -87,17 +88,14 @@ export class CardsFromPlayerChoice implements Choice<Array<Card>> {
         )}) (already selected: ${selected.map((s) => s.name)})\n> `
       );
       const input = await question();
-      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
-      const matchingCards = this.options
-        .filter((card) => !selected.includes(card)) // filter out cards that are already selected
-        .filter((card) => card.name.match(inputMatch));
+      const match = matchInput(
+        input,
+        this.options.filter((card) => !selected.includes(card)).map((c) => [c.name, c])
+      );
 
-      const singleMatch = new Set(matchingCards.map((c) => c.name)).size == 1;
-
-      if (input.length > 0 && singleMatch) {
-        const matchingCard = matchingCards[0];
-        selected.push(matchingCard);
+      if (input.length > 0 && match) {
+        selected.push(match);
         if (this.params.maxCards && selected.length >= this.params.maxCards) {
           done = true;
         }
@@ -156,15 +154,16 @@ export class ChooseCardFromSupply implements Choice<CardPile | undefined> {
 
       this.game.ui?.renderPrompt(`${this.prompt}. (available: ${availableDisplay})\n> `);
       const input = await question();
-      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
 
       const matchingPiles = this.supply
         .allPiles()
         .filter((pile) => pile.cards.length > 0) // filter out non-empty piles
-        .filter((card) => card.name.match(inputMatch))
         .filter((pile) => (this.filter ? this.filter(pile) : true));
 
-      const singleMatch = new Set(matchingPiles.map((c) => c.name)).size == 1;
+      const singleMatch = matchInput(
+        input,
+        matchingPiles.map((p) => [p.cards[0].name, p])
+      );
 
       if (singleMatch) {
         const matchingPile = matchingPiles[0];
@@ -210,7 +209,7 @@ export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
     }
 
     while (!done) {
-      const availableOptions = this.options.filter((card) => !selected.includes(card));
+      const availableOptions = this.options.filter((effect) => !selected.includes(effect));
 
       this.game.ui?.renderPrompt(
         `${this.prompt} (available: ${availableOptions.map((c) => c.prompt)}) (already selected: ${selected.map(
@@ -218,17 +217,14 @@ export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
         )})\n> `
       );
       const input = await question();
-      const inputMatch = new RegExp("^" + input + ".*", "i"); // matcher for options that start with the input
-
-      const matchingCards = this.options
-        .filter((card) => !selected.includes(card)) // filter out cards that are already selected
-        .filter((card) => (card.prompt ? card.prompt.match(inputMatch) : false)); // hacky - make sure that prompts are set
-
-      const singleMatch = new Set(matchingCards.map((c) => c.prompt!)).size == 1;
+      const effects = this.options.filter((effect) => !selected.includes(effect)); // filter out cards that are already selected
+      const singleMatch = matchInput(
+        input,
+        effects.map((e) => [e.prompt, e])
+      );
 
       if (input.length > 0 && singleMatch) {
-        const matchingCard = matchingCards[0];
-        selected.push(matchingCard);
+        selected.push(singleMatch);
         if (this.config.maxChoices && selected.length >= this.config.maxChoices) {
           done = true;
         }
@@ -238,7 +234,7 @@ export class ChooseEffectChoice implements Choice<Array<CardEffectConfig>> {
         } else if (!this.config.minChoices) {
           done = true;
         } else {
-          console.debug("Not enough cards selected");
+          console.debug("Not enough effects selected");
         }
       } else {
         console.warn(`Unknown input ${input}`);

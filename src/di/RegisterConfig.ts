@@ -3,6 +3,7 @@ import * as BaseCards from "../config/cards/Base";
 import * as IntrigueCards from "../config/cards/Intrigue";
 import * as SeasideCards from "../config/cards/Seaside";
 import * as ProsperityCards from "../config/cards/Prosperity";
+import * as HinterlandsCards from "../config/cards/Hinterlands";
 
 import { register as registerBase } from "../config/cards/Base";
 import { register as registerBasic } from "../config/cards/Basic";
@@ -45,4 +46,5 @@ export {
   IntrigueCards as IntrigueCards,
   SeasideCards as SeasideCards,
   ProsperityCards as ProsperityCards,
+  HinterlandsCards as HinterlandsCards,
 };

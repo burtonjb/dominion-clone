@@ -11,7 +11,6 @@
 * additional code cleanup
 
 ## Bugs
-* Some prompts move around the UI (some are at the bottom of the page, som seem to move upwards, though this might be because I've scrolled down)
 * card selection 
   - should support cancel/clear to clear the UI
 * add game ends after max number of turns (not in the real rules, but useful when doing AI testing)

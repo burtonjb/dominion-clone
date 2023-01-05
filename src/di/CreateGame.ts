@@ -1,5 +1,4 @@
 import * as BasicCards from "../config/cards/Basic";
-import { DominionExpansion } from "../domain/objects/Card";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";

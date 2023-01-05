@@ -56,6 +56,7 @@ export class GameScreen {
 
   renderPrompt(prompt: string) {
     const start = this.terminal.getSize()[1] - 5;
+    this.terminal.clearLine(0, start + 2);
     this.terminal.putString(0, start + 2, prompt);
   }
 

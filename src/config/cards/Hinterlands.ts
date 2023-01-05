@@ -640,7 +640,9 @@ const Haggler: CardConfig = {
               const selected = await gainer.playerInput.choosePileFromSupply(gainer, game, {
                 prompt: `Choose a card to gain costing less than ${gainedCard.calculateCost(game)}`,
                 filter: (pile) =>
-                  pile.cards.length > 0 && pile.cards[0].calculateCost(game) < gainedCard.calculateCost(game),
+                  pile.cards.length > 0 &&
+                  pile.cards[0].calculateCost(game) < gainedCard.calculateCost(game) &&
+                  !pile.cards[0].types.includes(CardType.VICTORY),
                 sourceCard: card,
               });
 

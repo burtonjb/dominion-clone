@@ -17,6 +17,11 @@ export class BaseTerminalScreen {
     this.outStream.clearScreenDown();
   }
 
+  clearLine(column: number, row: number): void {
+    this.outStream.cursorTo(column, row);
+    this.outStream.clearLine(0);
+  }
+
   getCursor(): [number, number] {
     throw new Error("Method not implemented.");
   }
