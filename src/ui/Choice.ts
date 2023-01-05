@@ -166,8 +166,7 @@ export class ChooseCardFromSupply implements Choice<CardPile | undefined> {
       );
 
       if (singleMatch) {
-        const matchingPile = matchingPiles[0];
-        return matchingPile;
+        return singleMatch;
       } else {
         console.warn(`Unknown input ${input}`);
       }

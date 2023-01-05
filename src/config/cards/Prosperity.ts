@@ -714,6 +714,10 @@ const Forge: CardConfig = {
 
         if (toTrash.length == 0) return;
 
+        for (const card of toTrash) {
+          await game.trashCard(card, player);
+        }
+
         const totalCost = toTrash.map((c) => c.calculateCost(game)).reduce((prev, cur) => prev + cur);
 
         const toGain = await player.playerInput.choosePileFromSupply(player, game, {
@@ -724,10 +728,6 @@ const Forge: CardConfig = {
 
         if (!toGain) return; // return early if no options
         await game.gainCardFromSupply(toGain, player, false);
-
-        for (const card of toTrash) {
-          await game.trashCard(card, player);
-        }
       },
     },
   ],
