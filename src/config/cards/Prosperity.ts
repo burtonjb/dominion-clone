@@ -166,7 +166,7 @@ const Clerk: CardConfig = {
             sourceCard: card,
           });
           if (shouldPlay) {
-            game.playCard(card, activePlayer);
+            await game.playCard(card, activePlayer);
           }
         },
       },

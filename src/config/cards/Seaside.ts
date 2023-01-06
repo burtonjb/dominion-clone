@@ -499,7 +499,7 @@ const Sailor: CardConfig = {
             });
 
             if (shouldPlay) {
-              game.playCard(gainedCard, gainer);
+              await game.playCard(gainedCard, gainer);
               hasAlreadyTriggered = true;
             }
           }
