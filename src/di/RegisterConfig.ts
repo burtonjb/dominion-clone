@@ -16,6 +16,7 @@ import { register as registerBaseKingdom } from "../config/kingdom/Base";
 import { register as registerIntrigueKingdom } from "../config/kingdom/Intrigue";
 import { register as registerSeasideKingdom } from "../config/kingdom/Seaside";
 import { register as registerProsperityKingdom } from "../config/kingdom/Prosperity";
+import { register as registerHinterlandsKingdom } from "../config/kingdom/Hinterlands";
 
 function registerCards() {
   registerBasic();
@@ -31,6 +32,7 @@ function registerKingdoms() {
   registerIntrigueKingdom();
   registerSeasideKingdom();
   registerProsperityKingdom();
+  registerHinterlandsKingdom();
 }
 
 function registerAll() {

@@ -9,6 +9,7 @@ import { HumanPlayerInput } from "./config/input/HumanInput";
 import { rl } from "./util/PromiseExtensions";
 
 async function main() {
+  logger.debug(`Starting game with args ${JSON.stringify(process.argv)}`);
   const game = createGame(2, false, new Date().getTime());
   // TODO: better way to set this up
   game.players[0].playerInput = new HumanPlayerInput();

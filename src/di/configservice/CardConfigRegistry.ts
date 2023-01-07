@@ -28,23 +28,23 @@ export class CardConfigRegistry {
     params.forEach((p) => this.register(p));
   }
 
-  getParams(name: string): CardConfig {
+  getConfig(name: string): CardConfig {
     const params = this.cards.get(name);
     if (!params) throw new ConfigError(`Failed to find config for ${name}`);
     return params;
   }
 
-  getParamsOrUndef(name: string): CardConfig | undefined {
+  getConfigOrUndef(name: string): CardConfig | undefined {
     return this.cards.get(name);
   }
 
   newCard(name: string): Card {
-    const params = this.getParams(name);
+    const params = this.getConfig(name);
     return new Card(params);
   }
 
   newCardOrUndef(name: string): Card | undefined {
-    const params = this.getParamsOrUndef(name);
+    const params = this.getConfigOrUndef(name);
     if (!params) return undefined;
     return new Card(params);
   }

@@ -1,5 +1,8 @@
+import { CardPile } from "../../domain/objects/CardPile";
 import { Kingdom, KingdomConfig } from "../../domain/objects/Kingdom";
-import { createKingdom } from "../CreateKingdom";
+import { createNInstances } from "../../util/ArrayExtensions";
+import { getNumberOfPileCards } from "../CreateKingdom";
+import { cardConfigRegistry } from "./CardConfigRegistry";
 import { ConfigError } from "./ConfigRegistryError";
 
 export class KingdomConfigRegistry {
@@ -25,18 +28,22 @@ export class KingdomConfigRegistry {
     params.forEach((p) => this.register(p));
   }
 
-  getParams(name: string): KingdomConfig {
+  getConfig(name: string): KingdomConfig {
     const out = this.kingdoms.get(name);
     if (!out) throw new ConfigError(`Unable to find config for ${name}`);
     return out;
   }
 
-  getParamsOfUndef(name: string): KingdomConfig | undefined {
+  getConfigOrUndef(name: string): KingdomConfig | undefined {
     return this.kingdoms.get(name);
   }
 
   newKingdom(numberOfPlayers: number, name: string): Kingdom {
-    return createKingdom(numberOfPlayers, this.getParams(name).cards);
+    const kingdom = this.newKingdomOrUndef(numberOfPlayers, name);
+    if (!kingdom) {
+      throw new ConfigError(`Unable to find config for ${name}`);
+    }
+    return kingdom;
   }
 
   newKingdomOrUndef(numberOfPlayers: number, name: string): Kingdom | undefined {
@@ -44,7 +51,16 @@ export class KingdomConfigRegistry {
     if (config == undefined) {
       return undefined;
     }
-    return createKingdom(numberOfPlayers, config.cards);
+
+    const cardPiles = config.cards.map((c) => {
+      const cardConfig = cardConfigRegistry.getConfig(c);
+      const instances = createNInstances(getNumberOfPileCards(numberOfPlayers, cardConfig), () =>
+        cardConfigRegistry.newCard(c)
+      );
+      return new CardPile(c, instances);
+    });
+
+    return new Kingdom(cardPiles);
   }
 }
 

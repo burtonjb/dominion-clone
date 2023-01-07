@@ -17,22 +17,9 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
 
   // create players and their starting cards
   const players = createPlayers(random, numberOfPlayers);
-  const kingdomCards = cardConfigRegistry.values().filter((c) => c.kingdomCard);
-  shuffleArray(kingdomCards, random);
-  const selectedCards = kingdomCards.slice(0, 10);
-  selectedCards.sort((a, b) => {
-    if (a.cost == b.cost) {
-      return a.name < b.name ? -1 : 1;
-    } else {
-      return a.cost < b.cost ? -1 : 1;
-    }
-  });
 
   // create the kingdom based on the number of players
-  const kingdom = createKingdom(
-    numberOfPlayers,
-    selectedCards.map((c) => c.name)
-  );
+  const kingdom = createKingdom(numberOfPlayers, random);
 
   if (!usePlatAndColony) usePlatAndColony = false;
   const supply = createSupply(numberOfPlayers, kingdom, usePlatAndColony);
