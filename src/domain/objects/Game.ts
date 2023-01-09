@@ -14,6 +14,7 @@ export interface GameParams {
 }
 
 export enum TurnPhase {
+  START_OF_TURN = "StartOfTurn",
   ACTION = "Action",
   BUY = "Buy",
   CLEAN_UP = "Clean up",
@@ -202,6 +203,7 @@ export class Game {
   }
 
   public async startTurn(activePlayer: Player) {
+    this.currentPhase = TurnPhase.START_OF_TURN;
     activePlayer.startTurn();
 
     this.ui?.render();
