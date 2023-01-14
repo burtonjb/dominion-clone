@@ -1,10 +1,10 @@
 # Dominion Clone
 
 A terminal-based dominion clone.
-Supporting cards up to Hinterlands 2nd ed!
+Supporting the 2nd edition sets (Base, Intrigue, Seaside, Prosperity, Hinterlands)
 
-
-
+## Gameplay
+![gameplay](./docs/animated_gameplay_vs_code_terminal.gif)
 
 ### Debugging
 You can attach a debugger similar to other nodejs applications
