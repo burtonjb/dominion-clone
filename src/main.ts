@@ -4,9 +4,10 @@ import { Game, TurnPhase } from "./domain/objects/Game";
 import { GameScreen } from "./ui/GameScreen";
 import { BaseTerminalScreen } from "./ui/Terminal";
 import { logger } from "./util/Logger";
-import { BigMoneyAiInput } from "./config/input/BaseAiInput";
+import { BadBigMoneyAiInput } from "./config/input/BaseAiInput";
 import { HumanPlayerInput } from "./config/input/HumanInput";
 import { rl } from "./util/PromiseExtensions";
+import { OptimizedBigMoneyAiInput } from "./config/input/OptimizedBigMoneyInput";
 
 async function main() {
   logger.debug(`Starting game with args ${JSON.stringify(process.argv)}`);
@@ -14,8 +15,8 @@ async function main() {
   // TODO: better way to set this up
   game.players[0].playerInput = new HumanPlayerInput();
   game.players[0].name = "P1";
-  game.players[1].playerInput = new BigMoneyAiInput();
-  game.players[1].name = "P2";
+  game.players[1].playerInput = new OptimizedBigMoneyAiInput();
+  game.players[1].name = "OBM";
 
   // log all info for game start (kingdom, seed, cards, starting hands)
   logger.info(`Creating kingdom ${game.supply.allPiles().map((p) => p.name)}`);

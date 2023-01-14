@@ -14,9 +14,13 @@ import {
 import { shuffleArray } from "../../util/ArrayExtensions";
 import * as BasicCards from "../cards/Basic";
 
-// AI that plays big money (poorly)
-// You can extend this class if you want to override some of the behavior
-export class BigMoneyAiInput implements PlayerInput {
+/* AI that plays big money (really quite poorly)
+ * You can extend this class if you want to override some of the behavior
+ *
+ * While the AI is quite bad, it does provide an ok starting point for AIs - they can extend this class and override the important
+ * fields (though I should probably make a better base class)
+ */
+export class BadBigMoneyAiInput implements PlayerInput {
   async chooseInteger(player: Player, game: Game, params: ChooseIntegerParams): Promise<number> {
     return params.defaultValue;
   }
