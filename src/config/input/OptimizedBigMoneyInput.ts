@@ -12,10 +12,10 @@ import { BadBigMoneyAiInput } from "./BaseAiInput";
  * I've tested it a bit:
  * I ran some small scripts (some small modifications to disable rendering in main and only have AI players)
  * Then I wrapped it in a bash script - `for i in {1..1000}; do node dist/src/main.js; done` and ran until I got bored
- * From the 1145 games OBM played against BBM (Bad big money) here are the stats:
- * OBM won 691 games (60.3%)
- * BBM won 515 games (45%)
- * There were 62 ties (5.4%)
+ * From the 1000 games OBM played against BBM (Bad big money) here are the stats:
+ * OBM won 806 games (80.6%)
+ * BBM won 211 games (21.1%)
+ * There were 17 ties (0.02%)
  */
 export class OptimizedBigMoneyAiInput extends BadBigMoneyAiInput {
   private provincePile: CardPile | undefined;
@@ -31,8 +31,8 @@ export class OptimizedBigMoneyAiInput extends BadBigMoneyAiInput {
 
   private cachePiles(game: Game) {
     this.provincePile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Province.name);
-    this.duchyPile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Province.name);
-    this.estatePile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Province.name);
+    this.duchyPile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Duchy.name);
+    this.estatePile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Estate.name);
     this.goldPile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Gold.name);
     this.silverPile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Silver.name);
     this.pilesCached = true;
