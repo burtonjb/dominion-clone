@@ -830,7 +830,10 @@ const Wheelwright: CardConfig = {
 
         const selected = await player.playerInput.choosePileFromSupply(player, game, {
           prompt: `Choose a card to gain costing up to ${discarded.calculateCost(game)}`,
-          filter: (pile) => pile.cards.length > 0 && pile.cards[0].calculateCost(game) <= discarded.calculateCost(game),
+          filter: (pile) =>
+            pile.cards.length > 0 &&
+            pile.cards[0].calculateCost(game) <= discarded.calculateCost(game) &&
+            pile.cards[0].types.includes(CardType.ACTION),
           sourceCard: card,
         });
 
