@@ -1,6 +1,7 @@
 ## Feature roadmap
+* finish the cards marked with TODO
 * add stats tracking - victory points/turn and money/turn for now
-* add a game ending splash screen - list of cards and VP per player
+* ~~add a game ending splash screen - list of cards and VP per player~~
 * Easy way to configure games - ui for game/kingdom config?
 * Update the prompts so there's some flavor in them (e.g. pirate's input prompt should say avast or arrg, masquerade should reference 'Fidelio' (either from Robot Chicken or Eyes Wide Shut))
   * update card text/prompts so that it covers reaction and other effects 

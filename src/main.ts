@@ -8,6 +8,7 @@ import { BadBigMoneyAiInput } from "./config/input/BaseAiInput";
 import { HumanPlayerInput } from "./config/input/HumanInput";
 import { rl } from "./util/PromiseExtensions";
 import { OptimizedBigMoneyAiInput } from "./config/input/OptimizedBigMoneyInput";
+import { GameEndingScreen } from "./ui/GameEndingScreen";
 
 async function main() {
   logger.debug(`Starting game with args ${JSON.stringify(process.argv)}`);
@@ -23,8 +24,10 @@ async function main() {
 
   const showDebugInfoInUi = process.argv.some((arg) => arg.toUpperCase() == "DEBUG");
 
-  const gameScreen = new GameScreen(new BaseTerminalScreen(), game, showDebugInfoInUi);
+  const baseTerminal = new BaseTerminalScreen();
+  const gameScreen = new GameScreen(baseTerminal, game, showDebugInfoInUi);
   game.ui = gameScreen; // you can leave this unset and then it won't display anything - and leaving it off will speed up bot v bot gameplay
+  const gameEndingScreen = new GameEndingScreen(baseTerminal, game, gameScreen);
 
   let isGameFinished = false;
   while (!isGameFinished) {
@@ -45,6 +48,9 @@ async function main() {
     logger.info(gameScreen.formatPlayerOverview(player));
     logger.info(`${player.allCards().map((c) => c.name)}`);
   }
+  gameEndingScreen.render();
+  gameEndingScreen.waitForInput();
+
   rl.close();
 }
 
