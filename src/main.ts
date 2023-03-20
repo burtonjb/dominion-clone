@@ -4,20 +4,23 @@ import { Game, TurnPhase } from "./domain/objects/Game";
 import { GameScreen } from "./ui/GameScreen";
 import { BaseTerminalScreen } from "./ui/Terminal";
 import { logger } from "./util/Logger";
-import { BadBigMoneyAiInput } from "./config/input/BaseAiInput";
 import { HumanPlayerInput } from "./config/input/HumanInput";
 import { rl } from "./util/PromiseExtensions";
 import { OptimizedBigMoneyAiInput } from "./config/input/OptimizedBigMoneyInput";
 import { GameEndingScreen } from "./ui/GameEndingScreen";
+import { BotSingleCardAction } from "./config/input/BotSingleCardAction";
 
+/*
+ * The main game loop
+ */
 async function main() {
   logger.debug(`Starting game with args ${JSON.stringify(process.argv)}`);
   const game = createGame(2, false, new Date().getTime());
   // TODO: better way to set this up
   game.players[0].playerInput = new HumanPlayerInput();
   game.players[0].name = "P1";
-  game.players[1].playerInput = new OptimizedBigMoneyAiInput();
-  game.players[1].name = "OBM";
+  game.players[1].playerInput = new BotSingleCardAction();
+  game.players[1].name = "SABM";
 
   // log all info for game start (kingdom, seed, cards, starting hands)
   logger.info(`Creating kingdom ${game.supply.allPiles().map((p) => p.name)}`);
@@ -30,23 +33,32 @@ async function main() {
   const gameEndingScreen = new GameEndingScreen(baseTerminal, game, gameScreen);
 
   let isGameFinished = false;
-  while (!isGameFinished) {
+  try {
+    while (!isGameFinished) {
+      game.ui?.render();
+
+      if (game.currentPhase == TurnPhase.ACTION) {
+        await handleActionPhase(game);
+      } else if (game.currentPhase == TurnPhase.BUY) {
+        await handleBuyPhase(game);
+      } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
+        isGameFinished = await handleCleanUpPhase(game);
+      }
+    }
     game.ui?.render();
 
-    if (game.currentPhase == TurnPhase.ACTION) {
-      await handleActionPhase(game);
-    } else if (game.currentPhase == TurnPhase.BUY) {
-      await handleBuyPhase(game);
-    } else if (game.currentPhase == TurnPhase.CLEAN_UP) {
-      isGameFinished = await handleCleanUpPhase(game);
+    logger.info(`Winners: ${game.calculateWinners().map((p) => p.name)}`);
+    for (const player of game.players) {
+      logger.info(gameScreen.formatPlayerOverview(player));
+      logger.info(`${player.allCards().map((c) => c.name)}`);
     }
-  }
-  game.ui?.render();
-
-  logger.info(`Winners: ${game.calculateWinners().map((p) => p.name)}`);
-  for (const player of game.players) {
-    logger.info(gameScreen.formatPlayerOverview(player));
-    logger.info(`${player.allCards().map((c) => c.name)}`);
+  } catch (error) {
+    logger.error(`${error}`);
+    if (error instanceof Error) {
+      logger.error(`${error.stack}`);
+    }
+    rl.close();
+    return;
   }
   gameEndingScreen.render();
   gameEndingScreen.waitForInput();

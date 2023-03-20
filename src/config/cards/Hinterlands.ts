@@ -81,6 +81,7 @@ const Develop: CardConfig = {
   playEffects: [
     {
       // somewhat moderate rewording and has slightly different effects than the card when piles are low
+      // FIXME: the moderate rewording pretty much broke the card.
       prompt:
         "Trash a card from your hand. Gain a card costing 1 more or less than it. Gain another card onto your deck costing 1 more or less but not the same as chosen before",
       effect: async (card: Card, player: Player, game: Game) => {

@@ -18,18 +18,18 @@ import { BadBigMoneyAiInput } from "./BaseAiInput";
  * There were 17 ties (0.02%)
  */
 export class OptimizedBigMoneyAiInput extends BadBigMoneyAiInput {
-  private provincePile: CardPile | undefined;
-  private duchyPile: CardPile | undefined;
-  private estatePile: CardPile | undefined;
-  private goldPile: CardPile | undefined;
-  private silverPile: CardPile | undefined;
-  private pilesCached = false;
+  protected provincePile: CardPile | undefined;
+  protected duchyPile: CardPile | undefined;
+  protected estatePile: CardPile | undefined;
+  protected goldPile: CardPile | undefined;
+  protected silverPile: CardPile | undefined;
+  protected pilesCached = false;
 
   constructor() {
     super();
   }
 
-  private cachePiles(game: Game) {
+  cachePiles(game: Game) {
     this.provincePile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Province.name);
     this.duchyPile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Duchy.name);
     this.estatePile = game.supply.nonEmptyPiles().find((c) => c.name == BasicCards.Estate.name);
@@ -38,10 +38,10 @@ export class OptimizedBigMoneyAiInput extends BadBigMoneyAiInput {
     this.pilesCached = true;
   }
 
-  async chooseCardToBuy(player: Player, game: Game): Promise<CardPile | undefined> {
-    const commonPileConditions = (pile: CardPile | undefined) =>
-      pile && pile.cards.length > 0 && player.money >= pile.cards[0].calculateCost(game);
+  commonPileConditions = (pile: CardPile | undefined, player: Player, game: Game) =>
+    pile && pile.cards.length > 0 && player.money >= pile.cards[0].calculateCost(game);
 
+  async chooseCardToBuy(player: Player, game: Game): Promise<CardPile | undefined> {
     if (!this.pilesCached) {
       this.cachePiles(game);
     }
@@ -50,12 +50,12 @@ export class OptimizedBigMoneyAiInput extends BadBigMoneyAiInput {
     const gainsToEndGame = this.gainsToEndGame(game);
 
     // Prioritized list of cards to gain for BM
-    if (commonPileConditions(this.provincePile) && playerTotalMoney > 18) return this.provincePile;
-    if (commonPileConditions(this.duchyPile) && gainsToEndGame <= 4) return this.duchyPile;
-    if (commonPileConditions(this.estatePile) && gainsToEndGame <= 2) return this.estatePile;
-    if (commonPileConditions(this.goldPile)) return this.goldPile;
-    if (commonPileConditions(this.duchyPile) && gainsToEndGame <= 6) return this.duchyPile;
-    if (commonPileConditions(this.silverPile)) return this.silverPile;
+    if (this.commonPileConditions(this.provincePile, player, game) && playerTotalMoney > 18) return this.provincePile;
+    if (this.commonPileConditions(this.duchyPile, player, game) && gainsToEndGame <= 4) return this.duchyPile;
+    if (this.commonPileConditions(this.estatePile, player, game) && gainsToEndGame <= 2) return this.estatePile;
+    if (this.commonPileConditions(this.goldPile, player, game)) return this.goldPile;
+    if (this.commonPileConditions(this.duchyPile, player, game) && gainsToEndGame <= 6) return this.duchyPile;
+    if (this.commonPileConditions(this.silverPile, player, game)) return this.silverPile;
   }
 
   // estimates the total amount of money a player has

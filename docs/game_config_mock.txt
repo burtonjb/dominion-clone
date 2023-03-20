@@ -1,0 +1,10 @@
+== Player Options ==
+(Human player) 
+(Bot player)
+-> Add a bot
+
+== Kingdom Options ==
+Expansions
+
+== Preconfigured kingdoms ==
+Base    Intrigue    Seaside Prosperity  Hinterlands
