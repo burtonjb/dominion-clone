@@ -125,7 +125,7 @@ export function formatEvent(event: Event, includeDebugInfo = false): string {
   const formattedOut = includeDebugInfo ? `${event.eventCounter}: ` : "";
 
   /*
-   * I don't like this design but I wanted to try it out. 
+   * I don't like this design but I wanted to try it out.
    */
   switch (event.type) {
     case "TestEvent":

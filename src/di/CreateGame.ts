@@ -1,4 +1,5 @@
 import * as BasicCards from "../config/cards/Basic";
+import { DominionExpansion } from "../domain/objects/Card";
 import { CardPile } from "../domain/objects/CardPile";
 import { Game } from "../domain/objects/Game";
 import { Kingdom } from "../domain/objects/Kingdom";
@@ -7,10 +8,23 @@ import { Supply } from "../domain/objects/Supply";
 import { createNInstances, shuffleArray } from "../util/ArrayExtensions";
 import { Random } from "../util/Random";
 import { cardConfigRegistry } from "./configservice/CardConfigRegistry";
+import { kingdomConfigRegistry } from "./configservice/KingdomConfigRegistry";
 import { createKingdom } from "./CreateKingdom";
 import registerAll from "./RegisterConfig";
+import { logger } from "../util/Logger";
 
-export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, seed?: number): Game {
+export function createGame(
+  numberOfPlayers: number,
+  inputKingdom?: string,
+  maxExpansions?: number,
+  disableExpansions?: Array<string>,
+  forceExpansions?: Array<string>,
+  disableCards?: Array<string>,
+  forceCards?: Array<string>,
+  usePlatAndColony?: boolean,
+  useCardOfTheDay?: boolean,
+  seed?: number
+): Game {
   // construct utility classes and "services"
   const random = new Random(seed);
   registerAll();
@@ -19,10 +33,20 @@ export function createGame(numberOfPlayers: number, usePlatAndColony?: boolean, 
   const players = createPlayers(random, numberOfPlayers);
 
   // create the kingdom based on the number of players
-  const kingdom = createKingdom(numberOfPlayers, random);
+  const kingdom = createKingdom(
+    numberOfPlayers,
+    random,
+    inputKingdom,
+    maxExpansions,
+    disableExpansions,
+    forceExpansions,
+    disableCards,
+    forceCards,
+    useCardOfTheDay
+  );
 
-  if (!usePlatAndColony) usePlatAndColony = false;
-  const supply = createSupply(numberOfPlayers, kingdom, usePlatAndColony);
+  const determinedPlatAndColony = usePlatinumAndColony(random, kingdom, inputKingdom, usePlatAndColony);
+  const supply = createSupply(numberOfPlayers, kingdom, determinedPlatAndColony);
 
   const game = new Game(random, players, supply);
 
@@ -39,6 +63,32 @@ function createPlayers(random: Random, numberOfPlayers: number): Array<Player> {
     players.push(new Player(createName(i), random, initialCards));
   }
   return players;
+}
+
+function usePlatinumAndColony(
+  random: Random,
+  kingdom: Kingdom,
+  inputKingdom?: string,
+  usePlatAndColony?: boolean
+): boolean {
+  if (usePlatAndColony != undefined) {
+    // I guess this means in theory kingdom configuration can be overridden with this flag
+    return usePlatAndColony;
+  }
+
+  if (inputKingdom && kingdomConfigRegistry.getConfigOrUndef(inputKingdom)) {
+    return kingdomConfigRegistry.getConfigOrUndef(inputKingdom)?.usePlatinumAndColony ?? false;
+  }
+
+  // the rules in dominion is that there's a X/10 chance to use plat/colony, where X = # of prosperity cards in the kingdom
+  const prosperityCards = kingdom.kingdomPiles.filter(
+    (p) => p.cards[0].expansion == DominionExpansion.PROSPERITY
+  ).length;
+  const roll = random.randomInt(0, 10);
+  logger.info(
+    `Rolling ${roll} compared to ${prosperityCards} cards from prosperity to determine to use colonies and platinums or not.`
+  );
+  return roll < prosperityCards;
 }
 
 function createName(index: number): string {
