@@ -23,7 +23,6 @@ export interface GameConfig {
 function gameConfig(): GameConfig {
   const argParser = new CommandLineArgumentParser();
   const args = argParser.parse();
-  console.log(args);
 
   return {
     seed: args.get("seed") as number | undefined,

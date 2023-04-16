@@ -86,8 +86,6 @@ export function createKingdom(
   selectedCardConfig.push(...forcedCards);
 
   const selectedCards = selectedCardConfig.map((c) => c.name);
-  console.log(forcedCards);
-  console.log(selectedCards);
   const cardPiles = getCardPilesFromCardNames(numberOfPlayers, selectedCards);
 
   return new Kingdom(cardPiles);

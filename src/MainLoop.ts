@@ -44,6 +44,9 @@ export async function main(config?: GameConfig) {
   const baseTerminal = new BaseTerminalScreen();
   const gameScreen = new GameScreen(baseTerminal, game, showDebugInfoInUi);
   game.ui = gameScreen; // you can leave this unset and then it won't display anything - and leaving it off will speed up bot v bot gameplay
+  if (config?.disableUi) {
+    game.ui = undefined;
+  }
   const gameEndingScreen = new GameEndingScreen(baseTerminal, game, gameScreen);
 
   let isGameFinished = false;
