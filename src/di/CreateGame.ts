@@ -16,6 +16,7 @@ import { logger } from "../util/Logger";
 export function createGame(
   numberOfPlayers: number,
   inputKingdom?: string,
+  useRandomKingdom?: boolean,
   maxExpansions?: number,
   disableExpansions?: Array<string>,
   forceExpansions?: Array<string>,
@@ -37,6 +38,7 @@ export function createGame(
     numberOfPlayers,
     random,
     inputKingdom,
+    useRandomKingdom,
     maxExpansions,
     disableExpansions,
     forceExpansions,

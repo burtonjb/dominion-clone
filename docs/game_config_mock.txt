@@ -14,3 +14,4 @@ force-cards="card1,card2" # will force the kingdom to use the provided cards
 use-colony-plat=true/false # boolean to force using the prosperity colony and platinum
 card-of-the-day=true # use the current day to generate a card that will be used in the kingdom
 disable-ui=true # will disable the ui that's displayed to the player (for ai v ai matches)
+random-recommended-kingom=true # will use a random recommended kingdom.

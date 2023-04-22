@@ -11,6 +11,7 @@ export function createKingdom(
   numberOfPlayers: number,
   random: Random,
   inputKingdom?: string,
+  useRandomRecommendedKingdom?: boolean,
   maxExpansions?: number,
   disableExpansions?: Array<string>,
   forceExpansions?: Array<string>,
@@ -29,8 +30,27 @@ export function createKingdom(
     } else {
       const selectedCards = kingdomConfig.cards;
       const piles = getCardPilesFromCardNames(numberOfPlayers, selectedCards);
-      return new Kingdom(piles);
+      return new Kingdom(kingdomConfig.name, piles);
     }
+  }
+
+  if (useRandomRecommendedKingdom) {
+    let preconfiguredKingdoms = kingdomConfigRegistry.values();
+    if (forceExpansions) {
+      preconfiguredKingdoms = preconfiguredKingdoms.filter((config) =>
+        config.expansions.some((exp) => forceExpansions.includes(exp))
+      );
+    }
+    if (disableExpansions) {
+      preconfiguredKingdoms = preconfiguredKingdoms.filter((config) =>
+        config.expansions.some((exp) => !disableExpansions.includes(exp))
+      );
+    }
+    const selectedPreconfiguredKingdom = preconfiguredKingdoms[random.randomInt(0, preconfiguredKingdoms.length)];
+    logger.info(`Using a random kingdom: ${selectedPreconfiguredKingdom.name}`);
+    const selectedCards = selectedPreconfiguredKingdom.cards;
+    const piles = getCardPilesFromCardNames(numberOfPlayers, selectedCards);
+    return new Kingdom(selectedPreconfiguredKingdom.name, piles);
   }
 
   const selectedExpansions = selectExpansions(random, maxExpansions, disableExpansions, forceExpansions);
@@ -88,7 +108,7 @@ export function createKingdom(
   const selectedCards = selectedCardConfig.map((c) => c.name);
   const cardPiles = getCardPilesFromCardNames(numberOfPlayers, selectedCards);
 
-  return new Kingdom(cardPiles);
+  return new Kingdom("random", cardPiles);
 }
 
 function selectExpansions(

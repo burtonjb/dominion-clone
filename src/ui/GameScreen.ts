@@ -28,7 +28,7 @@ export class GameScreen {
   }
 
   renderSupply() {
-    this.terminal.putString(0, 0, "======= SUPPLY =======");
+    this.terminal.putString(0, 0, `======= SUPPLY: ${this.game.supply.kingdom.name} =======`);
 
     this.game.supply.basePiles.forEach((pile, i) => {
       this.terminal.putString(0, 1 + i, this.formatCardPile(pile));

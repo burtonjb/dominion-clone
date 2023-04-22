@@ -11,7 +11,7 @@ export interface KingdomConfig {
 export class Kingdom {
   public kingdomPiles: Array<CardPile>;
 
-  constructor(kingdomCards: Array<CardPile>) {
+  constructor(readonly name: string, kingdomCards: Array<CardPile>) {
     this.kingdomPiles = kingdomCards;
   }
 }

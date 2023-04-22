@@ -20,6 +20,7 @@ export async function main(config?: GameConfig) {
   const game = createGame(
     2,
     config?.kingdom,
+    config?.randomRecommendedKingdom,
     config?.maxExpansions,
     config?.disableExpansions,
     config?.forceExpansions,

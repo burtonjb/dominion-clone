@@ -5,6 +5,7 @@ export interface GameConfig {
   seed?: number;
   // bots
   kingdom?: string;
+  randomRecommendedKingdom?: boolean;
 
   maxExpansions?: number;
   disableExpansions?: Array<string>;
@@ -28,6 +29,7 @@ function gameConfig(): GameConfig {
     seed: args.get("seed") as number | undefined,
     // TODO: bot config
     kingdom: args.get("kingdom") as string | undefined,
+    randomRecommendedKingdom: args.get("random-recommended-kingdom") as boolean | undefined,
 
     maxExpansions: args.get("max-expansions") as number | undefined,
     disableExpansions: args.get("disable-expansions") as Array<string> | undefined,
