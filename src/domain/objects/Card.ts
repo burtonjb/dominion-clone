@@ -46,11 +46,12 @@ export interface CardConfig {
 export class Card {
   private readonly params: CardConfig;
   public readonly id: number; // used to trace the exact card instance - for debugging mostly
-  public name: string;
-  public baseCost: number;
-  public types: Array<CardType>;
-  public worth: number;
-  public victoryPoints: number;
+  public readonly name: string;
+  public readonly baseCost: number;
+  public readonly types: Array<CardType>;
+  public readonly worth: number;
+  public readonly victoryPoints: number;
+  public readonly expansion: DominionExpansion;
 
   public durationEffects: Array<DurationEffect>;
 
@@ -63,6 +64,7 @@ export class Card {
     this.worth = params.worth ? params.worth : 0;
     this.victoryPoints = params.victoryPoints ? params.victoryPoints : 0;
     this.durationEffects = [];
+    this.expansion = params.expansion;
   }
 
   public canBuy(player: Player, game: Game): boolean {

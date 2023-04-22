@@ -60,7 +60,7 @@ export class KingdomConfigRegistry {
       return new CardPile(c, instances);
     });
 
-    return new Kingdom(cardPiles);
+    return new Kingdom(name, cardPiles);
   }
 }
 

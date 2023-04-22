@@ -1,10 +1,17 @@
-== Player Options ==
-(Human player) 
-(Bot player)
--> Add a bot
+# Command line options
+The kingdom can be configured with command line options.
 
-== Kingdom Options ==
-Expansions
+Below are example usages of command line options. If no value is provided it will instead print possible values
 
-== Preconfigured kingdoms ==
-Base    Intrigue    Seaside Prosperity  Hinterlands
+seed=123 # Uses the input as the seed to PRNG. Otherwise it will just use the time.
+bots="ai1,ai2" # Configures bots. Default is 1 bot, single action big money
+kingdom="kingdom name" # Uses a kingdom if provided. Default is no value, will generate a random kingdom
+max-expansions=2 # Will pick a shortlist of expansions before generating the kingdom. Default is None (all expansions)
+disable-expansions="exp1,exp2" # will not use the expansions when generating the kingdom
+force-expansions="exp1,exp2" # will only use the following expansions when generating the kingdom
+disable-cards="card1,card2" # will not use the cards when generating the kingdom
+force-cards="card1,card2" # will force the kingdom to use the provided cards
+use-colony-plat=true/false # boolean to force using the prosperity colony and platinum
+card-of-the-day=true # use the current day to generate a card that will be used in the kingdom
+disable-ui=true # will disable the ui that's displayed to the player (for ai v ai matches)
+random-recommended-kingom=true # will use a random recommended kingdom.
