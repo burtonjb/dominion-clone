@@ -22,6 +22,7 @@ export enum DominionExpansion {
   SEASIDE = "Seaside",
   PROSPERITY = "Prosperity",
   HINTERLANDS = "Hinterlands",
+  CORNUCOPIA = "Cornucopia",
 }
 
 export interface CardConfig {

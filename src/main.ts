@@ -1,3 +1,3 @@
 import { main } from "./MainLoop";
 
-main();
+main().catch((err) => console.error(err));

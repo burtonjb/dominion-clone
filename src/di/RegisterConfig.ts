@@ -4,6 +4,7 @@ import * as IntrigueCards from "../config/cards/Intrigue";
 import * as SeasideCards from "../config/cards/Seaside";
 import * as ProsperityCards from "../config/cards/Prosperity";
 import * as HinterlandsCards from "../config/cards/Hinterlands";
+import * as CornucopiaCards from "../config/cards/Cornucopia";
 
 import { register as registerBase } from "../config/cards/Base";
 import { register as registerBasic } from "../config/cards/Basic";
@@ -11,6 +12,7 @@ import { register as registerIntrigue } from "../config/cards/Intrigue";
 import { register as registerSeaside } from "../config/cards/Seaside";
 import { register as registerProsperity } from "../config/cards/Prosperity";
 import { register as registerHinterlands } from "../config/cards/Hinterlands";
+import { register as registerCornucopia } from "../config/cards/Cornucopia";
 
 import { register as registerBaseKingdom } from "../config/kingdom/Base";
 import { register as registerIntrigueKingdom } from "../config/kingdom/Intrigue";
@@ -25,6 +27,7 @@ function registerCards() {
   registerSeaside();
   registerProsperity();
   registerHinterlands();
+  registerCornucopia();
 }
 
 function registerKingdoms() {
@@ -49,4 +52,5 @@ export {
   SeasideCards as SeasideCards,
   ProsperityCards as ProsperityCards,
   HinterlandsCards as HinterlandsCards,
+  CornucopiaCards as CornucopiaCards,
 };

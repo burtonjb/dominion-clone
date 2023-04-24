@@ -45,4 +45,4 @@ function gameConfig(): GameConfig {
 }
 
 const config = gameConfig();
-main(config);
+main(config).catch((err) => console.error(err));

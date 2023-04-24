@@ -79,7 +79,7 @@ export async function main(config?: GameConfig) {
     return;
   }
   gameEndingScreen.render();
-  gameEndingScreen.waitForInput();
+  await gameEndingScreen.waitForInput();
 
   rl.close();
 }

@@ -398,7 +398,7 @@ const Bandit: CardConfig = {
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         const otherPlayers = game.otherPlayers();
         for (const otherPlayer of otherPlayers) {
-          attack(card, otherPlayer, game, async () => {
+          await attack(card, otherPlayer, game, async () => {
             const top2 = otherPlayer.topNCards(2);
             game.revealCards(top2, otherPlayer);
             const treasures = top2

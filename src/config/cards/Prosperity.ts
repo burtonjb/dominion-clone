@@ -138,7 +138,7 @@ const Clerk: CardConfig = {
       prompt: "Each other player with 5 or more cards in hand puts 1 ontop of their deck",
       effect: async (card: Card, activePlayer: Player, game: Game) => {
         for (const otherPlayer of game.otherPlayers().filter((p) => p.hand.length >= 5)) {
-          attack(card, otherPlayer, game, async () => {
+          await attack(card, otherPlayer, game, async () => {
             const toTopDeck = await otherPlayer.playerInput.chooseCardsFromList(otherPlayer, game, {
               prompt: "Choose a card to topdeck",
               cardList: otherPlayer.hand,

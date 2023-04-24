@@ -1,6 +1,9 @@
 {
     "root": true,
     "parser": "@typescript-eslint/parser",
+    "parserOptions": {
+      "project": "./tsconfig.json"
+    },
     "plugins": [
       "@typescript-eslint"
     ],
@@ -11,6 +14,7 @@
       "prettier"
     ],
     "rules": {
-      "no-constant-condition": "warn"
+      "no-constant-condition": "warn",
+      "@typescript-eslint/no-floating-promises": "error"
     }
   }
